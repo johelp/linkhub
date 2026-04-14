@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LogOut, LayoutDashboard, Settings, BarChart2 } from 'lucide-react'
+import { LayoutDashboard, Settings, BarChart2 } from 'lucide-react'
+import { SignOutButton } from './SignOutButton'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -9,69 +10,56 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/auth')
 
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, plan')
-    .eq('id', user.id)
-    .single()
+    .from('profiles').select('full_name, plan').eq('id', user.id).single()
 
-  const planColors: Record<string, string> = {
-    free: '#9A9D9F',
-    pro: '#E8150A',
-    agency: '#7C3AED',
-  }
   const plan = profile?.plan || 'free'
+  const planColors: Record<string, string> = { free: '#9A9D9F', pro: '#E8150A', agency: '#7C3AED' }
+  const initial = (profile?.full_name || user.email || '?')[0].toUpperCase()
 
   return (
-    <div className="flex h-screen" style={{background:'#F6F6F5'}}>
+    <div style={{ display: 'flex', height: '100vh', background: '#F6F6F5' }}>
       {/* SIDEBAR */}
-      <aside className="w-56 flex flex-col py-5 px-3" style={{background:'#fff',borderRight:'1px solid rgba(26,27,28,0.09)'}}>
-        <Link href="/dashboard" className="px-3 mb-6 block">
-          <span className="text-lg font-bold" style={{color:'#1A1B1C'}}>Link<span style={{color:'#E8150A'}}>Hub</span></span>
+      <aside style={{ width: 220, display: 'flex', flexDirection: 'column', padding: '20px 12px', background: '#fff', borderRight: '1px solid rgba(26,27,28,0.09)', flexShrink: 0 }}>
+        <Link href="/dashboard" style={{ padding: '0 12px', marginBottom: 24, display: 'block', textDecoration: 'none' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#1A1B1C' }}>Link<span style={{ color: '#E8150A' }}>Hub</span></span>
         </Link>
 
-        <nav className="flex-1 space-y-1">
-          <SideLink href="/dashboard" icon={<LayoutDashboard size={16}/>} label="Mis páginas" />
-          <SideLink href="/dashboard/analytics" icon={<BarChart2 size={16}/>} label="Analíticas" />
-          <SideLink href="/dashboard/settings" icon={<Settings size={16}/>} label="Ajustes" />
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <NavLink href="/dashboard" icon={<LayoutDashboard size={15} />} label="Mis páginas" />
+          <NavLink href="/dashboard/upgrade" icon={<BarChart2 size={15} />} label="Analíticas" />
+          <NavLink href="/dashboard/upgrade" icon={<Settings size={15} />} label="Ajustes" />
         </nav>
 
-        <div className="px-3 pt-4 border-t" style={{borderColor:'rgba(26,27,28,0.09)'}}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{background:'#E8150A'}}>
-              {(profile?.full_name || user.email || '?')[0].toUpperCase()}
+        <div style={{ paddingTop: 16, borderTop: '1px solid rgba(26,27,28,0.09)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px', marginBottom: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E8150A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+              {initial}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate" style={{color:'#1A1B1C'}}>{profile?.full_name || user.email}</p>
-              <span className="text-xs font-bold uppercase tracking-wide" style={{color: planColors[plan]}}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: '#1A1B1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {profile?.full_name || user.email}
+              </p>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: planColors[plan] }}>
                 {plan}
               </span>
             </div>
           </div>
-          <form action="/auth/signout" method="POST">
-            <button type="submit" className="w-full flex items-center gap-2 text-xs px-2 py-1.5 rounded-lg transition-colors hover:bg-gray-50" style={{color:'#9A9D9F'}}>
-              <LogOut size={13}/> Cerrar sesión
-            </button>
-          </form>
+          <SignOutButton />
         </div>
       </aside>
 
-      {/* MAIN */}
-      <main className="flex-1 overflow-auto">
+      <main style={{ flex: 1, overflow: 'auto' }}>
         {children}
       </main>
     </div>
   )
 }
 
-function SideLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-      style={{color:'#5A5D60'}}
-      onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = '#F6F6F5' }}
-      onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
-      {icon}
-      {label}
+    <Link href={href}
+      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 500, color: '#5A5D60', textDecoration: 'none' }}>
+      {icon}{label}
     </Link>
   )
 }

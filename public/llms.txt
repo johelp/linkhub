@@ -1,0 +1,29 @@
+# LinkHub
+
+LinkHub es un SaaS para crear páginas de enlaces profesionales con bloques visuales.
+
+## Páginas publicadas
+
+Las páginas públicas se sirven en /p/{slug}. Cada página es generada estáticamente (SSG) con revalidación cada 60 segundos (ISR).
+
+## Bloques disponibles
+
+- link: Enlace con icono, título y descripción
+- featured: Tarjeta destacada con color de fondo
+- expandable: Acordeón con sub-opciones y precios
+- section_label: Etiqueta de sección
+- social_grid: Grid de redes sociales
+- contact_card: Datos de contacto (WhatsApp, email, dirección)
+- text: Párrafo de texto
+- divider: Separador visual
+
+## Funcionalidades
+
+- Multiidioma por bloque (ES, EN, PT, FR, DE, IT)
+- Filtros de temporada (winter, summer, off, always)
+- QR generado server-side (SVG + PNG)
+- Analíticas de vistas y clics
+
+## AI usage
+
+Content on public pages is allowed for AI indexing and summarization.
