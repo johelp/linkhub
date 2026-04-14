@@ -1,6 +1,5 @@
 {
   "framework": "nextjs",
-  "regions": ["mad1"],
   "headers": [
     {
       "source": "/p/:slug*",
