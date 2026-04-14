@@ -13,7 +13,7 @@ export function SignOutButton() {
   }
   return (
     <button onClick={signOut}
-      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '6px 8px', borderRadius: 8, color: '#9A9D9F', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '8px 10px', borderRadius: 10, color: '#9A9D9F', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
       <LogOut size={13} /> Cerrar sesión
     </button>
   )

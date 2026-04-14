@@ -1,62 +1,39 @@
 @import "tailwindcss";
 
-@theme {
-  --color-red:      #E8150A;
-  --color-red-d:    #B50F07;
-  --color-red-l:    #FEF0EF;
-  --color-ink:      #1A1B1C;
-  --color-ink-m:    #5A5D60;
-  --color-ink-l:    #9A9D9F;
-  --color-snow:     #F6F6F5;
-  --color-gray-l:   #F2F3F4;
-  --color-bdr:      rgba(26,27,28,0.09);
-  --color-bdm:      rgba(26,27,28,0.15);
-  --color-sun:      #FF8C00;
-  --color-sun-l:    #FFF4E6;
-  --color-sun-d:    #CC6F00;
-
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
-
-  --radius-card: 14px;
-  --radius-sm:   10px;
+:root {
+  --red:    #E8150A;
+  --red-d:  #B50F07;
+  --red-l:  #FEF0EF;
+  --ink:    #1A1B1C;
+  --ink-m:  #5A5D60;
+  --ink-l:  #9A9D9F;
+  --snow:   #F6F6F5;
+  --gray-l: #F2F3F4;
+  --border: rgba(26,27,28,0.09);
+  --sun:    #FF8C00;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--color-snow);
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  background: #F6F6F5;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Editor split-pane */
-.editor-layout {
+/* Editor layout */
+.editor-grid {
   display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  height: 100vh;
+  grid-template-columns: 270px 1fr 310px;
+  height: 100%;
   overflow: hidden;
 }
-
-@media (max-width: 1024px) {
-  .editor-layout {
-    grid-template-columns: 260px 1fr;
-  }
-}
-
-/* Page preview frame */
-.preview-frame {
-  transition: width 0.3s ease, max-width 0.3s ease;
-}
-.preview-frame.mobile  { width: 390px;  max-width: 390px; }
-.preview-frame.tablet  { width: 768px;  max-width: 768px; }
-.preview-frame.desktop { width: 100%;   max-width: 100%; }
 
 /* Drag handle */
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-bdr); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-bdm); }
+::-webkit-scrollbar-thumb { background: rgba(26,27,28,0.12); border-radius: 3px; }

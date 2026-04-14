@@ -1,12 +1,18 @@
 'use client'
 import { useState } from 'react'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { generateSlug } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-export function NewPageButton({ canCreate, plan }: { canCreate: boolean; plan: string }) {
+interface Props {
+  canCreate: boolean
+  plan: string
+  asCard?: boolean  // renders as a grid card instead of button
+}
+
+export function NewPageButton({ canCreate, plan, asCard }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,58 +45,91 @@ export function NewPageButton({ canCreate, plan }: { canCreate: boolean; plan: s
     }).select('id').single()
 
     setLoading(false)
-    if (error) { toast.error('Error al crear la página'); return }
+    if (error) { toast.error('Error al crear la página: ' + error.message); return }
     toast.success('Página creada ✓')
+    setOpen(false)
+    setName('')
     router.push(`/editor/${data.id}`)
   }
 
   if (!canCreate) {
     return (
-      <a href="/dashboard/upgrade" className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-full"
-        style={{background:'#E8150A'}}>
-        <Plus size={16}/> Nueva página
+      <a href="/dashboard/upgrade"
+        style={asCard ? cardStyle : btnStyle}>
+        {asCard ? <><div style={cardIconStyle}><Plus size={20} color="#E8150A" /></div><span style={{ fontSize: 13, fontWeight: 500, color: '#5A5D60' }}>Nueva página</span></> : <><Plus size={15} /> Nueva página</>}
       </a>
     )
   }
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-full"
-        style={{background:'#E8150A'}}>
-        <Plus size={16}/> Nueva página
-      </button>
+      {asCard ? (
+        <button onClick={() => setOpen(true)} style={cardStyle}>
+          <div style={cardIconStyle}><Plus size={20} color="#E8150A" /></div>
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#5A5D60' }}>Nueva página</span>
+        </button>
+      ) : (
+        <button onClick={() => setOpen(true)} style={btnStyle}>
+          <Plus size={15} /> Nueva página
+        </button>
+      )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{background:'rgba(0,0,0,0.4)'}}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-bold text-lg mb-1" style={{color:'#1A1B1C'}}>Nueva página</h2>
-            <p className="text-sm mb-4" style={{color:'#9A9D9F'}}>Dale un nombre a tu página de enlaces</p>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.45)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1B1C' }}>Nueva página</h2>
+              <button onClick={() => { setOpen(false); setName('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A9D9F', padding: 4 }}>
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ fontSize: 13, color: '#9A9D9F', marginBottom: 16 }}>Dale un nombre a tu página de enlaces</p>
             <input
-              autoFocus
-              type="text"
-              value={name}
+              autoFocus type="text" value={name}
               onChange={e => setName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && create()}
               placeholder="Ej: Snowmotion Sierra Nevada"
-              className="w-full px-4 py-3 rounded-xl text-sm outline-none mb-3"
-              style={{background:'#F6F6F5',border:'1.5px solid rgba(26,27,28,0.09)',color:'#1A1B1C',fontFamily:'inherit'}}
+              style={{ width: '100%', padding: '12px 14px', borderRadius: 12, border: '1.5px solid rgba(26,27,28,0.12)', background: '#F6F6F5', fontSize: 14, color: '#1A1B1C', outline: 'none', fontFamily: 'inherit', marginBottom: 12 }}
+              onFocus={e => (e.target.style.borderColor = '#E8150A')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(26,27,28,0.12)')}
             />
-            <div className="flex gap-2">
-              <button onClick={() => setOpen(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{background:'#F2F3F4',color:'#5A5D60'}}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => { setOpen(false); setName('') }}
+                style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', background: '#F2F3F4', color: '#5A5D60', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Cancelar
               </button>
               <button onClick={create} disabled={!name.trim() || loading}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2"
-                style={{background:'#E8150A'}}>
-                {loading ? <Loader2 size={14} className="animate-spin"/> : null}
-                Crear
+                style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', background: '#E8150A', color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'wait' : 'pointer', opacity: !name.trim() || loading ? 0.6 : 1, fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {loading && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
+                Crear página
               </button>
             </div>
           </div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>
       )}
     </>
   )
+}
+
+const btnStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6,
+  fontSize: 13, fontWeight: 600, color: '#fff',
+  background: '#E8150A', border: 'none', borderRadius: 20,
+  padding: '9px 16px', cursor: 'pointer', fontFamily: 'inherit',
+}
+
+const cardStyle: React.CSSProperties = {
+  background: '#fff', border: '1.5px dashed rgba(26,27,28,0.15)',
+  borderRadius: 14, padding: 16, minHeight: 150,
+  display: 'flex', flexDirection: 'column', alignItems: 'center',
+  justifyContent: 'center', gap: 10, cursor: 'pointer',
+  textDecoration: 'none', width: '100%',
+  transition: 'border-color .15s',
+}
+
+const cardIconStyle: React.CSSProperties = {
+  width: 40, height: 40, borderRadius: 12,
+  background: '#FEF0EF', display: 'flex',
+  alignItems: 'center', justifyContent: 'center',
 }

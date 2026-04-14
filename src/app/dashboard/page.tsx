@@ -1,12 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Globe, Eye, EyeOff, Edit2, QrCode } from 'lucide-react'
+import { Globe, Edit2, QrCode } from 'lucide-react'
 import { PLAN_LIMITS } from '@/types'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { NewPageButton } from './NewPageButton'
 
 export const metadata = { title: 'Mis páginas | LinkHub' }
+
+const S = {
+  page: { padding: 24, maxWidth: 900 } as React.CSSProperties,
+  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 } as React.CSSProperties,
+  h1: { fontSize: 20, fontWeight: 700, color: '#1A1B1C' } as React.CSSProperties,
+  sub: { fontSize: 13, color: '#9A9D9F', marginTop: 2 } as React.CSSProperties,
+  banner: { marginBottom: 20, borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.15)' } as React.CSSProperties,
+  bannerText: { fontSize: 13, fontWeight: 600, color: '#E8150A' } as React.CSSProperties,
+  bannerSub: { fontSize: 12, color: '#B50F07', marginTop: 2 } as React.CSSProperties,
+  bannerBtn: { fontSize: 12, fontWeight: 700, color: '#fff', background: '#E8150A', padding: '8px 16px', borderRadius: 20, textDecoration: 'none', flexShrink: 0 } as React.CSSProperties,
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 } as React.CSSProperties,
+  empty: { textAlign: 'center', padding: '80px 0' } as React.CSSProperties,
+  emptyIcon: { fontSize: 56, marginBottom: 16 } as React.CSSProperties,
+  emptyTitle: { fontSize: 18, fontWeight: 700, color: '#1A1B1C', marginBottom: 8 } as React.CSSProperties,
+  emptySub: { fontSize: 14, color: '#9A9D9F', marginBottom: 24 } as React.CSSProperties,
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -18,18 +34,17 @@ export default async function DashboardPage() {
     supabase.from('pages_summary').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
   ])
 
-  const plan = profile?.plan || 'free'
-  const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]
+  const plan = (profile?.plan || 'free') as 'free' | 'pro' | 'agency'
+  const limits = PLAN_LIMITS[plan]
   const pageList = pages || []
   const canCreate = pageList.length < limits.pages
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div style={S.page}>
+      <div style={S.header}>
         <div>
-          <h1 className="text-xl font-bold" style={{color:'#1A1B1C'}}>Mis páginas</h1>
-          <p className="text-sm mt-0.5" style={{color:'#9A9D9F'}}>
+          <h1 style={S.h1}>Mis páginas</h1>
+          <p style={S.sub}>
             {pageList.length} {pageList.length === 1 ? 'página' : 'páginas'}
             {plan === 'free' && ` · Plan Free (máx. ${limits.pages})`}
           </p>
@@ -37,85 +52,65 @@ export default async function DashboardPage() {
         <NewPageButton canCreate={canCreate} plan={plan} />
       </div>
 
-      {/* Upgrade banner for Free */}
       {plan === 'free' && (
-        <div className="mb-5 rounded-xl px-4 py-3 flex items-center justify-between" style={{background:'#FEF0EF',border:'1px solid #E8150A22'}}>
+        <div style={S.banner}>
           <div>
-            <p className="text-sm font-semibold" style={{color:'#E8150A'}}>
-              ¿Necesitás temporadas, idiomas o más bloques?
-            </p>
-            <p className="text-xs mt-0.5" style={{color:'#B50F07'}}>
-              Pasate a Pro y desbloqueá todos los bloques por €19/mes
-            </p>
+            <p style={S.bannerText}>¿Necesitás temporadas, idiomas o más bloques?</p>
+            <p style={S.bannerSub}>Pasate a Pro y desbloqueá todos los bloques por €19/mes</p>
           </div>
-          <Link href="/dashboard/upgrade" className="text-xs font-bold text-white px-4 py-2 rounded-full flex-shrink-0"
-            style={{background:'#E8150A'}}>
-            Ver Pro →
-          </Link>
+          <Link href="/dashboard/upgrade" style={S.bannerBtn}>Ver Pro →</Link>
         </div>
       )}
 
-      {/* Pages grid */}
-      {pageList.length === 0 ? (
-        <EmptyState canCreate={canCreate} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pageList.map((page: any) => (
-            <PageCard key={page.id} page={page} />
-          ))}
-          {canCreate && <NewPageCard />}
-        </div>
-      )}
+      {pageList.length === 0
+        ? <EmptyState canCreate={canCreate} />
+        : (
+          <div style={S.grid}>
+            {pageList.map((p: any) => <PageCard key={p.id} page={p} />)}
+            {canCreate && <NewPageButton canCreate={true} plan={plan} asCard />}
+          </div>
+        )
+      }
     </div>
   )
 }
 
 function PageCard({ page }: { page: any }) {
-  const accentColor = page.primary_color || '#E8150A'
+  const accent = page.primary_color || '#E8150A'
   return (
-    <div className="bg-white rounded-2xl overflow-hidden group" style={{border:'1px solid rgba(26,27,28,0.09)'}}>
-      {/* Color bar */}
-      <div className="h-2" style={{background: accentColor}} />
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate" style={{color:'#1A1B1C'}}>{page.name}</h3>
-            <p className="text-xs mt-0.5 truncate" style={{color:'#9A9D9F'}}>
-              linkhub.app/p/{page.slug}
-            </p>
+    <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(26,27,28,0.09)' }}>
+      <div style={{ height: 4, background: accent }} />
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.name}</p>
+            <p style={{ fontSize: 11, color: '#9A9D9F', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>linkhub.app/p/{page.slug}</p>
           </div>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${
-            page.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 20, marginLeft: 8, flexShrink: 0, background: page.published ? '#ECFDF5' : '#F2F3F4', color: page.published ? '#16A34A' : '#9A9D9F' }}>
             {page.published ? '● Publicada' : '○ Borrador'}
           </span>
         </div>
-
-        <div className="flex items-center gap-3 text-xs mb-4" style={{color:'#9A9D9F'}}>
-          <span>{page.block_count} bloques</span>
+        <div style={{ fontSize: 11, color: '#9A9D9F', marginBottom: 14, display: 'flex', gap: 6 }}>
+          <span>{page.block_count ?? 0} bloques</span>
           <span>·</span>
-          <span>{formatNumber(page.views)} vistas</span>
+          <span>{formatNumber(page.views ?? 0)} vistas</span>
           <span>·</span>
           <span>{formatDate(page.updated_at)}</span>
         </div>
-
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 6 }}>
           <Link href={`/editor/${page.id}`}
-            className="flex-1 text-center text-xs font-semibold py-2 rounded-lg transition-colors"
-            style={{background:'#FEF0EF',color:'#E8150A'}}>
-            <Edit2 size={12} className="inline mr-1"/>Editar
+            style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '8px 0', borderRadius: 10, background: '#FEF0EF', color: '#E8150A', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <Edit2 size={12} /> Editar
           </Link>
           {page.published && (
             <Link href={`/p/${page.slug}`} target="_blank"
-              className="flex items-center justify-center px-3 py-2 rounded-lg transition-colors"
-              style={{background:'#F6F6F5',color:'#5A5D60'}}>
-              <Globe size={13}/>
+              style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <Globe size={13} />
             </Link>
           )}
           <Link href={`/dashboard/qr/${page.id}`}
-            className="flex items-center justify-center px-3 py-2 rounded-lg transition-colors"
-            style={{background:'#F6F6F5',color:'#5A5D60'}}>
-            <QrCode size={13}/>
+            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <QrCode size={13} />
           </Link>
         </div>
       </div>
@@ -123,30 +118,13 @@ function PageCard({ page }: { page: any }) {
   )
 }
 
-function NewPageCard() {
-  return (
-    <Link href="/dashboard/new" className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center gap-2 min-h-[160px] transition-colors hover:border-red"
-      style={{border:'1.5px dashed rgba(26,27,28,0.15)'}}>
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'#FEF0EF'}}>
-        <Plus size={20} style={{color:'#E8150A'}}/>
-      </div>
-      <span className="text-sm font-medium" style={{color:'#5A5D60'}}>Nueva página</span>
-    </Link>
-  )
-}
-
 function EmptyState({ canCreate }: { canCreate: boolean }) {
   return (
-    <div className="text-center py-20">
-      <div className="text-6xl mb-4">🔗</div>
-      <h2 className="font-bold text-lg mb-2" style={{color:'#1A1B1C'}}>Todavía no tenés páginas</h2>
-      <p className="text-sm mb-6" style={{color:'#9A9D9F'}}>Creá tu primera página de enlaces en menos de 2 minutos</p>
-      {canCreate && (
-        <Link href="/dashboard/new" className="inline-flex items-center gap-2 text-sm font-semibold text-white px-6 py-3 rounded-full"
-          style={{background:'#E8150A'}}>
-          <Plus size={16}/> Crear mi primera página
-        </Link>
-      )}
+    <div style={S.empty}>
+      <div style={S.emptyIcon}>🔗</div>
+      <h2 style={S.emptyTitle}>Todavía no tenés páginas</h2>
+      <p style={S.emptySub}>Creá tu primera página de enlaces en menos de 2 minutos</p>
+      {canCreate && <NewPageButton canCreate={true} plan="free" />}
     </div>
   )
 }
