@@ -49,7 +49,7 @@ export function PageView({ page }: Props) {
 
   // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
-    if (page.id === 'demo') return
+    if (page.id.startsWith('demo')) return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -62,7 +62,7 @@ export function PageView({ page }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
-    if (page.id === 'demo') return
+    if (page.id.startsWith('demo')) return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,

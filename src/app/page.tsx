@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { buildDemoPage } from './demoPage'
-import { PageView } from './p/[slug]/PageView'
 import { LivePreview } from './LivePreview'
+import { HeroShowcase } from './HeroShowcase'
 import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
 import { blockRequiresPro } from '@/types'
 
@@ -54,8 +53,6 @@ const plans = [
     cta: 'Empezar Pro', href: '/auth',
   },
 ]
-
-const demoPage = buildDemoPage()
 
 // Founding-member requests land here until there's a WhatsApp number or a
 // real form — update once hola@linkhub.app is an inbox you actually own
@@ -126,21 +123,9 @@ export default function LandingPage() {
             <p className="hero-fade-up" style={{ animationDelay: '.3s', fontSize: 12, color: LIGHT, marginTop: 14 }}>Sin tarjeta de crédito. Free para siempre. Lista en minutos.</p>
           </div>
 
-          {/* Phone mockup — real PageView component, not a screenshot */}
-          <div className="hero-scale-in" style={{ animationDelay: '.2s', display: 'flex', justifyContent: 'center', perspective: 1200 }}>
-            <div className="hero-float">
-              <div className="hero-phone-tilt">
-                <div style={{
-                  width: 300, borderRadius: 36, border: '10px solid #1A1B1C', background: '#fff',
-                  overflow: 'hidden', boxShadow: '0 30px 70px rgba(26,27,28,0.22)', maxHeight: 560,
-                }}>
-                  <div style={{ maxHeight: 540, overflow: 'hidden' }}>
-                    <PageView page={demoPage} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Phone mockup — rotates through a few example hubs, each the
+              real PageView component with example data, not screenshots */}
+          <HeroShowcase />
         </div>
       </section>
 
