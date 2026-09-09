@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed } from '@/lib/utils'
 
@@ -116,6 +116,7 @@ export function PageView({ page }: Props) {
               block={block}
               lang={lang}
               pc={pc}
+              pageId={page.id}
               expandedId={expandedId}
               setExpandedId={setExpandedId}
               onTrackClick={trackClick}
@@ -138,8 +139,8 @@ export function PageView({ page }: Props) {
 }
 
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClick }: {
-  block: Block; lang: Lang; pc: string
+function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick }: {
+  block: Block; lang: Lang; pc: string; pageId: string
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
 }) {
@@ -342,7 +343,56 @@ function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClic
       )
     }
 
+    case 'email_capture': {
+      const b = block as EmailCaptureBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { headline: '', description: '', buttonLabel: '' }
+      return <EmailCaptureForm pageId={pageId} lang={lang} pc={pc} headline={t.headline} description={t.description} buttonLabel={t.buttonLabel || 'Enviar'} />
+    }
+
     default:
       return null
   }
+}
+
+// ─── Email Capture Form ───────────────────────────────────────────
+function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel }: {
+  pageId: string; lang: Lang; pc: string; headline: string; description: string; buttonLabel: string
+}) {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim() || status === 'loading') return
+    if (pageId === 'demo') { setStatus('done'); return }
+    setStatus('loading')
+    const supabase = createClient()
+    const { error } = await supabase.from('email_subscribers').insert({ page_id: pageId, email: email.trim(), lang })
+    setStatus(error ? 'error' : 'done')
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
+      {status === 'done' ? (
+        <p style={{ fontSize: 13, fontWeight: 600, color: pc }}>✓ ¡Gracias! Ya estás en la lista.</p>
+      ) : (
+        <form onSubmit={submit}>
+          {headline && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{headline}</p>}
+          {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 12 }}>{description}</p>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="email" required value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1.5px solid rgba(26,27,28,0.12)', fontSize: 13, color: '#1A1B1C', outline: 'none', fontFamily: 'inherit' }}
+            />
+            <button type="submit" disabled={status === 'loading'}
+              style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 10, border: 'none', background: pc, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: status === 'loading' ? 0.6 : 1 }}>
+              {buttonLabel}
+            </button>
+          </div>
+          {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
+        </form>
+      )}
+    </div>
+  )
 }

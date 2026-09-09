@@ -237,6 +237,30 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'email_capture',
+    label: 'Captura de email',
+    description: 'Sumá contactos a tu lista antes de que se vayan',
+    icon: '📧',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'email_capture',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { headline: 'Sumate a la lista', description: 'Enterate primero de novedades y promos', buttonLabel: 'Enviar' },
+          en: { headline: '', description: '', buttonLabel: '' },
+          pt: { headline: '', description: '', buttonLabel: '' },
+          fr: { headline: '', description: '', buttonLabel: '' },
+          de: { headline: '', description: '', buttonLabel: '' },
+          it: { headline: '', description: '', buttonLabel: '' },
+        },
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(

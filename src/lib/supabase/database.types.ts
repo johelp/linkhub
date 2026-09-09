@@ -119,6 +119,18 @@ export type Database = {
         Update: { verified?: boolean; txt_record?: string | null }
         Relationships: []
       }
+      email_subscribers: {
+        Row: {
+          id: string
+          page_id: string
+          email: string
+          lang: string
+          created_at: string
+        }
+        Insert: { id?: string; page_id: string; email: string; lang?: string }
+        Update: never
+        Relationships: [{ foreignKeyName: 'email_subscribers_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
+      }
     }
     Views: {
       pages_summary: {

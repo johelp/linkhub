@@ -11,6 +11,7 @@ export type BlockType =
   | 'divider'
   | 'image_banner'
   | 'video_embed'
+  | 'email_capture'
   | 'text'
 
 // Blocks available without paying
@@ -214,10 +215,17 @@ export interface VideoEmbedBlock extends BlockBase {
   }
 }
 
+export interface EmailCaptureBlock extends BlockBase {
+  type: 'email_capture'
+  data: {
+    translations: Record<Lang, { headline: string; description: string; buttonLabel: string }>
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
-  | ImageBannerBlock | VideoEmbedBlock | TextBlock | DividerBlock
+  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

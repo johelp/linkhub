@@ -43,6 +43,7 @@ En el SQL Editor de Supabase, correr en orden:
 3. `supabase/migrations/003_two_plan_tiers.sql` — colapsa a 2 planes (`free`/`pro`); migra cualquier cuenta `agency` existente a `pro` y ajusta el `check` constraint.
 4. `supabase/migrations/004_stripe_billing.sql` — agrega `stripe_customer_id`, `stripe_subscription_id`, `stripe_subscription_status` a `profiles`, que usa el webhook de Stripe.
 5. `supabase/migrations/005_protect_billing_columns.sql` — **crítica, corre esta sí o sí**: sin ella, cualquier usuario logueado puede ponerse `plan = 'pro'` a sí mismo llamando a Supabase directo desde el navegador, sin pasar por Stripe (ver aviso de seguridad abajo).
+6. `supabase/migrations/006_email_capture.sql` — tabla `email_subscribers` para el bloque de captura de email.
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción

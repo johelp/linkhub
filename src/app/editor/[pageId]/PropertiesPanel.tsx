@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -86,6 +86,7 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'divider': return <DividerEditor block={block} onUpdate={onUpdate} />
     case 'image_banner': return <ImageBannerEditor block={block} onUpdate={onUpdate} />
     case 'video_embed': return <VideoEmbedEditor block={block} onUpdate={onUpdate} />
+    case 'email_capture': return <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -447,6 +448,27 @@ function VideoEmbedEditor({ block, onUpdate }: { block: VideoEmbedBlock; onUpdat
           ))}
         </div>
       </Section>
+    </div>
+  )
+}
+
+// ─── Email Capture Editor ────────────────────────────────────────
+function EmailCaptureEditor({ block, lang, onUpdate }: {
+  block: EmailCaptureBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<EmailCaptureBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { headline: '', description: '', buttonLabel: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Textos">
+        <Field label="Título"><Input value={t.headline} onChange={v => setT('headline', v)} placeholder="Sumate a la lista" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+        <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
     </div>
   )
 }

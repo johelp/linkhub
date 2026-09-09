@@ -3,6 +3,7 @@
 Stack: **Next.js 16 · Supabase · Stripe · Vercel/Railway · Tailwind v4 · Zustand · @dnd-kit**
 
 Guía completa de cuentas, variables de entorno, deploy y Stripe: ver [`SETUP.md`](./SETUP.md).
+Ideas y features planeadas (no construidas): ver [`ROADMAP.md`](./ROADMAP.md).
 
 ## Planes (por tipo de bloque)
 
