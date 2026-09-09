@@ -218,6 +218,25 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'video_embed',
+    label: 'Video',
+    description: 'YouTube, Vimeo o un video propio',
+    icon: '🎬',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'video_embed',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        url: '',
+        caption: '',
+        aspectRatio: '16:9' as const,
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(

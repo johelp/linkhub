@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -84,6 +84,8 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'contact_card': return <ContactCardEditor block={block} onUpdate={onUpdate} />
     case 'social_grid': return <SocialGridEditor block={block} onUpdate={onUpdate} />
     case 'divider': return <DividerEditor block={block} onUpdate={onUpdate} />
+    case 'image_banner': return <ImageBannerEditor block={block} onUpdate={onUpdate} />
+    case 'video_embed': return <VideoEmbedEditor block={block} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -383,6 +385,67 @@ function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id
             ))}
           </div>
         </Field>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Image Banner Editor ─────────────────────────────────────────
+function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpdate: (id: string, d: Partial<ImageBannerBlock['data']>) => void }) {
+  return (
+    <div className="space-y-4">
+      <Section label="Imagen">
+        <Field label="URL de la imagen">
+          <Input value={block.data.imageUrl} onChange={v => onUpdate(block.id, { imageUrl: v })} placeholder="https://..." />
+        </Field>
+        <Field label="Texto alternativo">
+          <Input value={block.data.altText} onChange={v => onUpdate(block.id, { altText: v })} placeholder="Descripción para accesibilidad" />
+        </Field>
+        <Field label="Enlace (opcional)">
+          <Input value={block.data.url || ''} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://" />
+        </Field>
+      </Section>
+      <Section label="Proporción">
+        <div className="flex gap-1">
+          {(['16:9', '4:3', '1:1', '3:1'] as const).map(r => (
+            <button key={r} onClick={() => onUpdate(block.id, { aspectRatio: r })}
+              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
+              style={{ background: block.data.aspectRatio === r ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r ? '#fff' : '#5A5D60' }}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Video Embed Editor ──────────────────────────────────────────
+function VideoEmbedEditor({ block, onUpdate }: { block: VideoEmbedBlock; onUpdate: (id: string, d: Partial<VideoEmbedBlock['data']>) => void }) {
+  return (
+    <div className="space-y-4">
+      <Section label="Video">
+        <Field label="URL de YouTube, Vimeo o archivo .mp4">
+          <Input value={block.data.url} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://youtube.com/watch?v=..." />
+        </Field>
+        <Field label="Leyenda (opcional)">
+          <Input value={block.data.caption || ''} onChange={v => onUpdate(block.id, { caption: v })} placeholder="Un video corto de presentación" />
+        </Field>
+      </Section>
+      <Section label="Proporción">
+        <div className="flex gap-1">
+          {([
+            { v: '16:9' as const, label: '16:9 horizontal' },
+            { v: '9:16' as const, label: '9:16 vertical' },
+            { v: '1:1' as const, label: '1:1 cuadrado' },
+          ]).map(r => (
+            <button key={r.v} onClick={() => onUpdate(block.id, { aspectRatio: r.v })}
+              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
+              style={{ background: block.data.aspectRatio === r.v ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r.v ? '#fff' : '#5A5D60' }}>
+              {r.v}
+            </button>
+          ))}
+        </div>
       </Section>
     </div>
   )

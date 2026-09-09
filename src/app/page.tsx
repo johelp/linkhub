@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import type { Page } from '@/types'
+import { buildDemoPage } from './demoPage'
 import { PageView } from './p/[slug]/PageView'
+import { LivePreview } from './LivePreview'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Crea tu página de enlaces profesional',
@@ -51,68 +52,7 @@ const plans = [
   },
 ]
 
-// Sample page rendered inside the hero phone mockup — it's the real PageView
-// component with example data, not a screenshot, so it never goes stale.
-const demoPage: Page = {
-  id: 'demo', user_id: 'demo', slug: 'sierra-nevada-ski',
-  name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
-  created_at: '', updated_at: '',
-  settings: {
-    defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',
-    primaryColor: R, backgroundColor: '#FFFFFF', fontFamily: 'DM Sans', showPoweredBy: false,
-    seo: { title: '', description: '', ogImage: null },
-  },
-  blocks: [
-    {
-      id: '1', type: 'featured', order: 0, visible: true, seasonFilter: 'always',
-      data: {
-        icon: '⛷️', colorScheme: 'blue',
-        badge: { es: 'Temporada 25/26', en: '', pt: '', fr: '', de: '', it: '' },
-        translations: {
-          es: { title: 'Reservá tu clase', description: 'Grupos e individuales, todos los niveles' },
-          en: { title: '', description: '' }, pt: { title: '', description: '' },
-          fr: { title: '', description: '' }, de: { title: '', description: '' }, it: { title: '', description: '' },
-        },
-        url: '#',
-      },
-    },
-    {
-      id: '2', type: 'link', order: 1, visible: true, seasonFilter: 'always',
-      data: {
-        icon: '🎿', iconBg: 'blue', openInNewTab: false, url: '#',
-        translations: {
-          es: { title: 'Alquiler de equipo', description: 'Esquís, botas y bastones' },
-          en: { title: '', description: '' }, pt: { title: '', description: '' },
-          fr: { title: '', description: '' }, de: { title: '', description: '' }, it: { title: '', description: '' },
-        },
-      },
-    },
-    {
-      id: '3', type: 'link', order: 2, visible: true, seasonFilter: 'always',
-      data: {
-        icon: '🎫', iconBg: 'green', openInNewTab: false, url: '#',
-        translations: {
-          es: { title: 'Forfaits y precios', description: 'Día, medio día y temporada' },
-          en: { title: '', description: '' }, pt: { title: '', description: '' },
-          fr: { title: '', description: '' }, de: { title: '', description: '' }, it: { title: '', description: '' },
-        },
-      },
-    },
-    {
-      id: '4', type: 'contact_card', order: 3, visible: true, seasonFilter: 'always',
-      data: { whatsapp: '34600000000', showHours: false },
-    },
-    {
-      id: '5', type: 'social_grid', order: 4, visible: true, seasonFilter: 'always',
-      data: {
-        items: [
-          { id: 's1', platform: 'instagram', url: '#', label: 'Instagram' },
-          { id: 's2', platform: 'facebook', url: '#', label: 'Facebook' },
-        ],
-      },
-    },
-  ],
-}
+const demoPage = buildDemoPage()
 
 // Founding-member requests land here until there's a WhatsApp number or a
 // real form — update once hola@linkhub.app is an inbox you actually own
@@ -164,7 +104,7 @@ export default function LandingPage() {
           className="lg:!grid-cols-[1.1fr_0.9fr]">
           <div style={{ textAlign: 'center' }} className="lg:!text-left">
             <div className="hero-fade-up" style={{ animationDelay: '0s', display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', background: '#FEF0EF', color: R, padding: '4px 12px', borderRadius: 20, marginBottom: 20 }}>
-              Pensado para negocios de temporada
+              ❄️ Preparate para la temporada de invierno
             </div>
             <h1 className="hero-fade-up" style={{ animationDelay: '.08s', fontSize: 42, fontWeight: 700, color: INK, lineHeight: 1.15, marginBottom: 18 }}>
               Tu página de enlaces,<br />
@@ -172,7 +112,7 @@ export default function LandingPage() {
             </h1>
             <p className="hero-fade-up mx-auto lg:!mx-0" style={{ animationDelay: '.16s', fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 28, maxWidth: 480 }}>
               Bloques visuales, multiidioma, filtros de temporada y QR.
-              Para negocios que necesitan más que un simple link en bio.
+              Armala ahora y llegá lista antes de que arranque la temporada.
             </p>
             <div className="hero-fade-up justify-center lg:!justify-start" style={{ animationDelay: '.24s', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/auth" className="hero-cta"
@@ -180,7 +120,7 @@ export default function LandingPage() {
                 Crear mi página gratis →
               </Link>
             </div>
-            <p className="hero-fade-up" style={{ animationDelay: '.3s', fontSize: 12, color: LIGHT, marginTop: 14 }}>Sin tarjeta de crédito. Free para siempre.</p>
+            <p className="hero-fade-up" style={{ animationDelay: '.3s', fontSize: 12, color: LIGHT, marginTop: 14 }}>Sin tarjeta de crédito. Free para siempre. Lista en minutos.</p>
           </div>
 
           {/* Phone mockup — real PageView component, not a screenshot */}
@@ -200,6 +140,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <LivePreview />
 
       {/* USE CASES */}
       <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>

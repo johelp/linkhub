@@ -1,7 +1,13 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock } from '@/types'
+import Image from 'next/image'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
+import { parseVideoEmbed } from '@/lib/utils'
+
+const ASPECT_RATIO: Record<string, number> = {
+  '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
+}
 
 interface Props { page: Page }
 
@@ -293,6 +299,46 @@ function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClic
         <p style={{ fontSize: sizes[b.data.size] || '14px', color: '#5A5D60', textAlign: b.data.align, marginBottom: 12, lineHeight: 1.6 }}>
           {t.content}
         </p>
+      )
+    }
+
+    case 'image_banner': {
+      const b = block as ImageBannerBlock
+      const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
+      if (!b.data.imageUrl) return null
+      const frame = (
+        <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', marginBottom: 8, background: '#F2F3F4' }}>
+          <Image src={b.data.imageUrl} alt={b.data.altText || ''} fill unoptimized style={{ objectFit: 'cover' }} />
+        </div>
+      )
+      if (!b.data.url) return frame
+      return (
+        <a href={b.data.url} target="_blank" rel="noopener noreferrer"
+          onClick={() => onTrackClick(b.id, 'image_banner', b.data.url!)} style={{ display: 'block' }}>
+          {frame}
+        </a>
+      )
+    }
+
+    case 'video_embed': {
+      const b = block as VideoEmbedBlock
+      const embed = parseVideoEmbed(b.data.url)
+      const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
+      if (!embed.embedUrl) return null
+      return (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', background: '#000' }}>
+            {embed.kind === 'file' ? (
+              <video src={embed.embedUrl} controls style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <iframe src={embed.embedUrl} title={b.data.caption || 'Video'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+            )}
+          </div>
+          {b.data.caption && <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
+        </div>
       )
     }
 

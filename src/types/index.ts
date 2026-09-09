@@ -10,6 +10,7 @@ export type BlockType =
   | 'contact_card'
   | 'divider'
   | 'image_banner'
+  | 'video_embed'
   | 'text'
 
 // Blocks available without paying
@@ -204,10 +205,19 @@ export interface DividerBlock extends BlockBase {
   data: { style: 'line' | 'dots' | 'space'; spacing: 'sm' | 'md' | 'lg' }
 }
 
+export interface VideoEmbedBlock extends BlockBase {
+  type: 'video_embed'
+  data: {
+    url: string          // YouTube, Vimeo, or a direct .mp4/.webm/.mov link
+    caption?: string
+    aspectRatio: '16:9' | '9:16' | '1:1'
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
-  | ImageBannerBlock | TextBlock | DividerBlock
+  | ImageBannerBlock | VideoEmbedBlock | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {
