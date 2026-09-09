@@ -313,6 +313,11 @@ function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpd
     <div className="space-y-4">
       <Section label="Datos de contacto">
         <Field label="WhatsApp"><Input value={d.whatsapp || ''} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+34 600 000 000" /></Field>
+        {d.whatsapp && (
+          <Field label="Mensaje predefinido de WhatsApp">
+            <Input value={d.whatsappMessage || ''} onChange={v => onUpdate(block.id, { whatsappMessage: v })} placeholder="Hola, quería consultar por..." />
+          </Field>
+        )}
         <Field label="Email"><Input value={d.email || ''} onChange={v => onUpdate(block.id, { email: v })} placeholder="hola@negocio.com" /></Field>
         <Field label="Teléfono"><Input value={d.phone || ''} onChange={v => onUpdate(block.id, { phone: v })} placeholder="+34 600 000 000" /></Field>
         <Field label="Dirección"><Input value={d.address || ''} onChange={v => onUpdate(block.id, { address: v })} placeholder="Calle, Ciudad" /></Field>

@@ -176,6 +176,7 @@ export interface ContactCardBlock extends BlockBase {
     address?: string
     mapUrl?: string
     whatsapp?: string
+    whatsappMessage?: string
     showHours: boolean
     hours?: {
       timezone: string

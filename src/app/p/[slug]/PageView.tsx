@@ -17,6 +17,13 @@ function formatMoney(amount: number, currency: string): string {
   }
 }
 
+function buildWhatsAppUrl(phone: string, message?: string): string {
+  const digits = phone.replace(/\D/g, '')
+  return message?.trim()
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(message.trim())}`
+    : `https://wa.me/${digits}`
+}
+
 interface Props { page: Page }
 
 const SOCIAL_ICONS: Record<string, string> = {
@@ -279,7 +286,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
     case 'contact_card': {
       const b = block as ContactCardBlock
       const items = [
-        b.data.whatsapp && { icon: '💬', label: 'WhatsApp', href: `https://wa.me/${b.data.whatsapp.replace(/\D/g, '')}` },
+        b.data.whatsapp && { icon: '💬', label: 'WhatsApp', href: buildWhatsAppUrl(b.data.whatsapp, b.data.whatsappMessage) },
         b.data.email && { icon: '✉️', label: b.data.email, href: `mailto:${b.data.email}` },
         b.data.phone && { icon: '📞', label: b.data.phone, href: `tel:${b.data.phone}` },
         b.data.address && { icon: '📍', label: b.data.address, href: b.data.mapUrl || '#' },
