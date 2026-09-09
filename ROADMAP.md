@@ -4,7 +4,7 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 
 ## ✅ Hecho
 
-- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours (13 en total, catálogo visible en la home)
+- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews (14 en total, catálogo visible en la home)
 - Mensaje predefinido en el link de WhatsApp del bloque de contacto
 - Preview instantáneo sin registro en el home (`LivePreview.tsx`)
 - Captura de email + export CSV por página (`/api/subscribers/export`, botón ✉️ en cada card del dashboard)
@@ -12,6 +12,7 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - 2 planes (Free / Pro)
 - Mercado Pago: conexión OAuth por usuario + bloque "Cobrar" + webhook (ver `SETUP.md` §7) — falta cargar credenciales reales y probar en sandbox
 - Entradas a eventos: bloque "Entradas a evento" (2-3 tipos de precio), ticket numerado + QR de validación por email vía Resend, pantalla de validación en `/dashboard/validate/[pageId]` (ver `SETUP.md` §8) — falta cargar `RESEND_API_KEY` y probar de punta a punta con Mercado Pago real
+- Google Analytics 4 + Meta Pixel por página (plan Pro): campos en Ajustes → Integraciones, IDs validados antes de inyectar el script en la página pública (ver `SETUP.md` §12)
 
 ## 🔲 Media kit / páginas con plantilla
 

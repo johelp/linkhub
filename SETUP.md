@@ -176,3 +176,13 @@ No tengo forma de hacerlo por acá — la integración de GitHub que uso no expo
 1. `github.com/johelp/linkhub` → **Settings** → scroll hasta el final → **Danger Zone** → **Change repository visibility** → **Make private**.
 2. Ojo con lo que dependa de que el repo sea público: si Vercel/Railway están conectados vía la GitHub App, en general el deploy sigue funcionando igual porque ya tienen permiso otorgado sobre el repo puntual — pero si en algún momento pierden acceso, hay que re-autorizar la app para repos privados desde la configuración de la integración.
 3. Dado que hubo una clave real filtrada en el historial (ver §5), pasar a privado reduce la superficie pero **no reemplaza rotar la key** — alguien que ya haya clonado el repo en la ventana en que fue público se la lleva igual.
+
+## 12. Google Analytics 4 y Meta Pixel (por página, plan Pro)
+
+No requiere ninguna cuenta ni variable de entorno del lado de LinkHub — es una configuración que carga cada usuario Pro desde el editor de su propia página (pestaña **Ajustes → Integraciones**), con sus propios IDs:
+
+1. **GA4**: Google Analytics → Administrar → Flujos de datos → Web → copiar el **ID de medición** (`G-XXXXXXXXXX`).
+2. **Meta Pixel**: Administrador de eventos de Meta → Conectar fuentes de datos → Web → copiar el **ID del píxel** (numérico).
+3. Pegar cada uno en el campo correspondiente del editor. Se valida el formato antes de inyectar nada en la página pública (si no matchea el patrón esperado, no se carga el script — no hay forma de meter código propio ahí).
+4. Sirve para armar públicos de remarketing y medir conversión de campañas pagas (Meta/Google Ads) sobre visitas y clics de la página pública — es aparte del analytics interno que ya trae LinkHub (vistas/clics en el dashboard).
+5. Gateado al plan Pro (mismo límite que el resto de analítica avanzada, `PLAN_LIMITS.analytics`).

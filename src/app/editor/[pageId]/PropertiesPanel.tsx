@@ -763,6 +763,30 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
         )}
       </Section>
 
+      <Section label="Integraciones">
+        {limits.analytics !== 'basic' ? (
+          <div className="space-y-1.5">
+            <Field label="Google Analytics 4 — Measurement ID">
+              <input type="text" placeholder="G-XXXXXXXXXX" value={settings.pixels?.ga4Id ?? ''}
+                onChange={e => onUpdate({ pixels: { ...settings.pixels, ga4Id: e.target.value.trim() } })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+            <Field label="Meta Pixel — ID">
+              <input type="text" placeholder="123456789012345" value={settings.pixels?.metaPixelId ?? ''}
+                onChange={e => onUpdate({ pixels: { ...settings.pixels, metaPixelId: e.target.value.trim() } })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+            <p className="text-xs" style={{ color: '#8B8D8F' }}>
+              Para medir visitas y armar públicos de remarketing en Google Ads / Meta Ads. Dejá vacío lo que no uses.
+            </p>
+          </div>
+        ) : (
+          <ProLock feature="Google Analytics 4 y Meta Pixel" />
+        )}
+      </Section>
+
       <Section label="General">
         <Toggle label="Mostrar 'Creado con LinkHub'" value={settings.showPoweredBy}
           onChange={v => onUpdate({ showPoweredBy: v })} />

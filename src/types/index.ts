@@ -84,6 +84,10 @@ export interface PageSettings {
     description: string
     ogImage: string | null
   }
+  pixels?: {
+    ga4Id?: string        // "G-XXXXXXXXXX"
+    metaPixelId?: string  // numeric Meta/Facebook Pixel ID
+  }
 }
 
 export interface Page {
