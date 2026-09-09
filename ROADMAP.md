@@ -4,7 +4,8 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 
 ## ✅ Hecho
 
-- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture
+- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours (13 en total, catálogo visible en la home)
+- Mensaje predefinido en el link de WhatsApp del bloque de contacto
 - Preview instantáneo sin registro en el home (`LivePreview.tsx`)
 - Captura de email + export CSV por página (`/api/subscribers/export`, botón ✉️ en cada card del dashboard)
 - Stripe: checkout, portal de facturación, webhook (ver `SETUP.md` §6)
