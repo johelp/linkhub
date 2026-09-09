@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -89,6 +89,7 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'email_capture': return <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />
     case 'payment_button': return <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />
     case 'event_tickets': return <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />
+    case 'business_hours': return <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -582,6 +583,66 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
         Cada entrada vendida manda un email con QR de validación, y las podés validar en la puerta desde el ícono 🎫 del dashboard.
       </p>
+    </div>
+  )
+}
+
+// ─── Business Hours Editor ────────────────────────────────────────
+const DAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] // display Mon..Sun
+
+function BusinessHoursEditor({ block, lang, onUpdate }: {
+  block: BusinessHoursBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<BusinessHoursBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+
+  function updateDay(day: number, patch: Partial<DaySchedule>) {
+    onUpdate(block.id, {
+      schedule: block.data.schedule.map(s => s.day === day ? { ...s, ...patch } : s),
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Section label="Título">
+        <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Horario de atención" /></Field>
+      </Section>
+      <Section label="Zona horaria">
+        <Input value={block.data.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
+        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
+      </Section>
+      <Section label="Horario por día">
+        {DAY_ORDER.map(day => {
+          const d = block.data.schedule.find(s => s.day === day)
+          if (!d) return null
+          return (
+            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+              <label className="flex items-center justify-between mb-2 cursor-pointer">
+                <span className="text-xs font-semibold" style={{ color: '#1A1B1C' }}>{DAY_LABELS[day]}</span>
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: '#5A5D60' }}>
+                  <input type="checkbox" checked={d.closed} onChange={e => updateDay(day, { closed: e.target.checked })} />
+                  Cerrado
+                </span>
+              </label>
+              {!d.closed && (
+                <div className="flex items-center gap-2">
+                  <input type="time" value={d.open} onChange={e => updateDay(day, { open: e.target.value })}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
+                  <span style={{ color: '#9A9D9F' }}>—</span>
+                  <input type="time" value={d.close} onChange={e => updateDay(day, { close: e.target.value })}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </Section>
     </div>
   )
 }

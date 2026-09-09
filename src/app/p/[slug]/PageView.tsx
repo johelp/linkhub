@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import { parseVideoEmbed } from '@/lib/utils'
+import { parseVideoEmbed, getBusinessOpenStatus } from '@/lib/utils'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -407,6 +407,12 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       )
     }
 
+    case 'business_hours': {
+      const b = block as BusinessHoursBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '' }
+      return <BusinessHoursCard title={t.title} timezone={b.data.timezone} schedule={b.data.schedule} pc={pc} />
+    }
+
     default:
       return null
   }
@@ -451,6 +457,55 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
           {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
         </form>
       )}
+    </div>
+  )
+}
+
+// ─── Business Hours Card ──────────────────────────────────────────
+const DAY_LABELS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] // display Mon..Sun
+
+function BusinessHoursCard({ title, timezone, schedule, pc }: {
+  title: string; timezone: string; schedule: DaySchedule[]; pc: string
+}) {
+  // Computed after mount only -- "now" depends on the viewer's clock, so
+  // rendering it during SSR would create a server/client mismatch.
+  const [status, setStatus] = useState<{ isOpen: boolean; today: DaySchedule | null } | null>(null)
+
+  useEffect(() => {
+    setStatus(getBusinessOpenStatus(timezone, schedule))
+  }, [timezone, schedule])
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{title}</div>
+        {status && (
+          <span style={{
+            fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
+            background: status.isOpen ? '#ECFDF5' : '#FEF0EF',
+            color: status.isOpen ? '#16A34A' : '#E8150A',
+          }}>
+            {status.isOpen ? '● Abierto ahora' : '○ Cerrado ahora'}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {DAY_ORDER.map(day => {
+          const d = schedule.find(s => s.day === day)
+          if (!d) return null
+          const isToday = status?.today?.day === day
+          return (
+            <div key={day} style={{
+              display: 'flex', justifyContent: 'space-between', fontSize: 12,
+              color: isToday ? pc : '#5A5D60', fontWeight: isToday ? 700 : 400,
+            }}>
+              <span>{DAY_LABELS_SHORT[day]}</span>
+              <span>{d.closed ? 'Cerrado' : `${d.open} – ${d.close}`}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

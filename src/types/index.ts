@@ -14,6 +14,7 @@ export type BlockType =
   | 'email_capture'
   | 'payment_button'
   | 'event_tickets'
+  | 'business_hours'
   | 'text'
 
 // Blocks available without paying
@@ -177,11 +178,23 @@ export interface ContactCardBlock extends BlockBase {
     mapUrl?: string
     whatsapp?: string
     whatsappMessage?: string
-    showHours: boolean
-    hours?: {
-      timezone: string
-      schedule: Array<{ days: string[]; open: string; close: string }>
-    }
+  }
+}
+
+// 0 = Sunday ... 6 = Saturday, matching Date#getDay().
+export interface DaySchedule {
+  day: number
+  closed: boolean
+  open: string   // "HH:MM", 24h
+  close: string  // "HH:MM", 24h
+}
+
+export interface BusinessHoursBlock extends BlockBase {
+  type: 'business_hours'
+  data: {
+    translations: Record<Lang, { title: string }>
+    timezone: string   // IANA tz, e.g. "America/Argentina/Buenos_Aires"
+    schedule: DaySchedule[]
   }
 }
 
@@ -253,7 +266,7 @@ export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | TextBlock | DividerBlock
+  | BusinessHoursBlock | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

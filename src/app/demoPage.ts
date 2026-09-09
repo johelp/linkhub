@@ -65,7 +65,7 @@ export function buildDemoPage(businessName?: string, generic = false): Page {
       },
       {
         id: '4', type: 'contact_card', order: 3, visible: true, seasonFilter: 'always',
-        data: { whatsapp: '34600000000', showHours: false },
+        data: { whatsapp: '34600000000' },
       },
       {
         id: '5', type: 'social_grid', order: 4, visible: true, seasonFilter: 'always',
