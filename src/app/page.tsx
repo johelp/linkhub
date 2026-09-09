@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { buildDemoPage } from './demoPage'
 import { PageView } from './p/[slug]/PageView'
 import { LivePreview } from './LivePreview'
+import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
+import { blockRequiresPro } from '@/types'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Crea tu página de enlaces profesional',
@@ -186,6 +188,28 @@ export default function LandingPage() {
               <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
               <p style={{ fontSize: 14, fontWeight: 600, color: INK, marginBottom: 6 }}>{f.title}</p>
               <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* BLOCKS */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>Bloques para armar tu página</h2>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
+          Arrastrá y soltá los que necesites. {BLOCK_REGISTRY.length} bloques y sumando.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          {BLOCK_REGISTRY.map(b => (
+            <div key={b.type} style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, position: 'relative' }}>
+              {blockRequiresPro(b.type) && (
+                <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, fontWeight: 700, letterSpacing: '.3px', textTransform: 'uppercase', color: R, background: '#FEF0EF', padding: '2px 7px', borderRadius: 20 }}>
+                  Pro
+                </span>
+              )}
+              <div style={{ fontSize: 22, marginBottom: 8 }}>{b.icon}</div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{b.label}</p>
+              <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{b.description}</p>
             </div>
           ))}
         </div>
