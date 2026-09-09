@@ -1,12 +1,20 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed } from '@/lib/utils'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
+}
+
+function formatMoney(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(amount)
+  } catch {
+    return `${amount} ${currency}`
+  }
 }
 
 interface Props { page: Page }
@@ -352,10 +360,6 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
     case 'payment_button': {
       const b = block as PaymentButtonBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
-      let price = `${b.data.price} ${b.data.currency}`
-      try {
-        price = new Intl.NumberFormat('es-AR', { style: 'currency', currency: b.data.currency }).format(b.data.price)
-      } catch { /* unsupported currency code — fall back to plain text above */ }
       return (
         <a href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}`}
           style={{ ...card, background: pc, border: 'none', color: '#fff' }}>
@@ -366,8 +370,33 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
             <div style={{ fontSize: 14, fontWeight: 600 }}>{t.title}</div>
             {t.description && <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t.description}</div>}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>{price}</div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(b.data.price, b.data.currency)}</div>
         </a>
+      )
+    }
+
+    case 'event_tickets': {
+      const b = block as EventTicketsBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      return (
+        <div style={{ marginBottom: 8 }}>
+          {(t.title || t.description) && (
+            <div style={{ marginBottom: 8 }}>
+              {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            </div>
+          )}
+          {b.data.tiers.map(tier => (
+            <a key={tier.id} href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
+              style={{ ...card, background: pc, border: 'none', color: '#fff', marginBottom: 6 }}>
+              <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
+                🎫
+              </div>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600 }}>{tier.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(tier.price, b.data.currency)}</div>
+            </a>
+          ))}
+        </div>
       )
     }
 

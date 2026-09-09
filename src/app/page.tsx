@@ -57,7 +57,7 @@ const demoPage = buildDemoPage()
 
 // Founding-member requests land here until there's a WhatsApp number or a
 // real form — update once hola@linkhub.app is an inbox you actually own
-// (or swap the domain). See SETUP.md §7.
+// (or swap the domain). See SETUP.md §9 (Dar plan Pro gratis).
 const LAUNCH_OFFER_HREF = 'mailto:hola@linkhub.app?subject=Cupo%20de%20lanzamiento%20LinkHub'
 
 export default function LandingPage() {

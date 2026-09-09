@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -88,6 +88,7 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'video_embed': return <VideoEmbedEditor block={block} onUpdate={onUpdate} />
     case 'email_capture': return <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />
     case 'payment_button': return <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />
+    case 'event_tickets': return <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -508,6 +509,73 @@ function PaymentButtonEditor({ block, lang, onUpdate }: {
       </Section>
       <p className="text-xs" style={{ color: '#9A9D9F' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a> para que este bloque cobre de verdad.
+      </p>
+    </div>
+  )
+}
+
+// ─── Event Tickets Editor ─────────────────────────────────────────
+function EventTicketsEditor({ block, lang, onUpdate }: {
+  block: EventTicketsBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<EventTicketsBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  const tiers = block.data.tiers
+
+  function updateTier(id: string, patch: Partial<{ name: string; price: number }>) {
+    onUpdate(block.id, { tiers: tiers.map(x => x.id === id ? { ...x, ...patch } : x) })
+  }
+  function addTier() {
+    if (tiers.length >= 3) return
+    onUpdate(block.id, { tiers: [...tiers, { id: generateId(), name: `Tipo ${tiers.length + 1}`, price: 0 }] })
+  }
+  function removeTier(id: string) {
+    if (tiers.length <= 1) return
+    onUpdate(block.id, { tiers: tiers.filter(x => x.id !== id) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Section label="Evento">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi evento" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+      </Section>
+      <Section label="Moneda">
+        <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Section>
+      <Section label={`Tipos de entrada (${tiers.length}/3)`}>
+        {tiers.map((tier, i) => (
+          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Tipo {i + 1}</span>
+              {tiers.length > 1 && (
+                <button onClick={() => removeTier(tier.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+              )}
+            </div>
+            <Field label="Nombre"><Input value={tier.name} onChange={v => updateTier(tier.id, { name: v })} placeholder="General, VIP..." /></Field>
+            <Field label="Precio">
+              <input type="number" min="0" step="0.01" value={tier.price}
+                onChange={e => updateTier(tier.id, { price: Number(e.target.value) || 0 })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+          </div>
+        ))}
+        {tiers.length < 3 && (
+          <button onClick={addTier} className="w-full py-2 text-xs font-semibold rounded-xl"
+            style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir tipo de entrada</button>
+        )}
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
+        Cada entrada vendida manda un email con QR de validación, y las podés validar en la puerta desde el ícono 🎫 del dashboard.
       </p>
     </div>
   )

@@ -13,6 +13,7 @@ export type BlockType =
   | 'video_embed'
   | 'email_capture'
   | 'payment_button'
+  | 'event_tickets'
   | 'text'
 
 // Blocks available without paying
@@ -232,10 +233,25 @@ export interface PaymentButtonBlock extends BlockBase {
   }
 }
 
+export interface TicketTier {
+  id: string
+  name: string
+  price: number
+}
+
+export interface EventTicketsBlock extends BlockBase {
+  type: 'event_tickets'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    tiers: TicketTier[]
+    currency: string
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
-  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock
+  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
   | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────

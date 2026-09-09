@@ -162,6 +162,8 @@ export type Database = {
           provider_payment_id: string | null
           provider_preference_id: string | null
           payer_email: string | null
+          tier_id: string | null
+          tier_name: string | null
           created_at: string
           updated_at: string
         }
@@ -170,9 +172,36 @@ export type Database = {
           status?: 'pending' | 'approved' | 'rejected' | 'refunded'
           amount: number; currency: string
           provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null
+          tier_id?: string | null; tier_name?: string | null
         }
-        Update: { status?: 'pending' | 'approved' | 'rejected' | 'refunded'; provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null }
+        Update: {
+          status?: 'pending' | 'approved' | 'rejected' | 'refunded'
+          provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null
+        }
         Relationships: [{ foreignKeyName: 'payments_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
+      }
+      tickets: {
+        Row: {
+          id: string
+          payment_id: string
+          page_id: string
+          tier_id: string
+          tier_name: string
+          code: string
+          buyer_email: string | null
+          status: 'issued' | 'used' | 'cancelled'
+          used_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string; payment_id: string; page_id: string; tier_id: string; tier_name: string
+          code: string; buyer_email?: string | null; status?: 'issued' | 'used' | 'cancelled'
+        }
+        Update: { status?: 'issued' | 'used' | 'cancelled'; used_at?: string | null }
+        Relationships: [
+          { foreignKeyName: 'tickets_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] },
+          { foreignKeyName: 'tickets_payment_id_fkey'; columns: ['payment_id']; referencedRelation: 'payments'; referencedColumns: ['id'] },
+        ]
       }
     }
     Views: {

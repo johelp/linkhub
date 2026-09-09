@@ -86,7 +86,10 @@ export async function getMercadoPagoPayment(accessToken: string, paymentId: stri
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!res.ok) throw new Error(`Mercado Pago payment lookup failed: ${res.status} ${await res.text()}`)
-  return res.json() as Promise<{ status: string; transaction_amount: number; currency_id: string; payer?: { email?: string } }>
+  return res.json() as Promise<{
+    status: string; transaction_amount: number; currency_id: string
+    external_reference?: string; payer?: { email?: string }
+  }>
 }
 
 // Verifies the `x-signature` header Mercado Pago sends on every webhook

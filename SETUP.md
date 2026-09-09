@@ -50,6 +50,7 @@ En el SQL Editor de Supabase, correr en orden:
 5. `supabase/migrations/005_protect_billing_columns.sql` — **crítica, corre esta sí o sí**: sin ella, cualquier usuario logueado puede ponerse `plan = 'pro'` a sí mismo llamando a Supabase directo desde el navegador, sin pasar por Stripe (ver aviso de seguridad abajo).
 6. `supabase/migrations/006_email_capture.sql` — tabla `email_subscribers` para el bloque de captura de email.
 7. `supabase/migrations/007_mercadopago_connect.sql` — tablas `payment_connections` (tokens OAuth, sin acceso desde el navegador ni para el dueño) y `payments` (log de cobros) para el bloque de Mercado Pago.
+8. `supabase/migrations/008_event_tickets.sql` — tabla `tickets` (sin acceso público de lectura, mismo criterio que `payment_connections`) y columnas `tier_id`/`tier_name` en `payments`, para el bloque de entradas a eventos.
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción
@@ -121,8 +122,19 @@ Notas:
 - El webhook verifica la firma `x-signature` (HMAC-SHA256) antes de confiar en cualquier notificación — sin `MERCADOPAGO_WEBHOOK_SECRET` configurado, el endpoint devuelve 503 en vez de aceptar eventos sin validar.
 - El precio del bloque se usa para generar una preferencia de pago **en el momento en que alguien hace click**, no al guardar el bloque — así que si cambiás el precio, el link ya generado antes deja de existir pero uno nuevo generado por un click posterior usa el precio actualizado. No hay links de cobro "cacheados" que puedan quedar desactualizados.
 - Si un negocio no conectó Mercado Pago todavía y alguien hace click en el bloque de todos modos, el visitante ve un error claro en vez de un cobro roto a medias.
+- El webhook además valida que el `external_reference` que devuelve la API de Mercado Pago coincida con el `ref` que vino en la URL de notificación, antes de marcar cualquier pago como aprobado (lo sumé después de una revisión de seguridad automatizada — sin esto, el `ref` de la URL no estaba atado a nada que Mercado Pago hubiera firmado).
 
-## 8. Dar plan Pro gratis a los primeros clientes (manual)
+## 8. Entradas a eventos (email + QR de validación)
+
+Sobre el bloque "Cobrar" de Mercado Pago: el bloque "Entradas a evento" permite 2-3 tipos de entrada con precios distintos. Cuando se aprueba un pago, el webhook genera un ticket numerado y (si Resend está configurado) manda un email con un link a `/t/[código]` que muestra el QR para presentar en la puerta.
+
+1. **Crear cuenta en [resend.com](https://resend.com)** → API Keys → copiá la key → `RESEND_API_KEY`.
+2. **Remitente**: mientras no verifiques un dominio propio en Resend, solo podés mandar desde `onboarding@resend.dev` (el default de `RESEND_FROM_EMAIL` ya apunta ahí) y solo a la dirección con la que te registraste en Resend — para mandarle tickets a compradores reales hace falta verificar tu propio dominio en Resend → Domains, y después sí poner `RESEND_FROM_EMAIL=Tu Negocio <tickets@tudominio.com>`.
+3. Sin `RESEND_API_KEY` configurada, los tickets se siguen generando igual (el negocio los ve en `/dashboard/validate/[pageId]`) pero no se manda el email — no rompe el flujo de pago, solo no avisa al comprador.
+4. **Validar entradas en la puerta**: `/dashboard/validate/[pageId]` (ícono 🎫 en cada página del dashboard) — funciona con cualquier lector de QR externo (te muestra el código como texto, lo pegás ahí) o tipeando el código a mano. Marca la entrada como usada de forma atómica, así que dos personas validando al mismo tiempo no pueden dejar pasar el mismo ticket dos veces.
+5. La tabla `tickets` tampoco tiene política de lectura pública en Supabase (mismo criterio que `payment_connections`): la página `/t/[código]` la consulta con el cliente de service role, filtrando siempre por el código exacto de la URL — nunca una lista sin filtrar. El código en sí es de alta entropía (10 caracteres, ~60 bits), tratado como un secreto no adivinable, igual que un link no listado.
+
+## 9. Dar plan Pro gratis a los primeros clientes (manual)
 
 Antes de tener Stripe funcionando, o para casos puntuales aunque ya lo tengas: Supabase → SQL Editor →
 
@@ -144,7 +156,7 @@ Notas:
 - El trigger de la migración 002 (`enforce_plan_limits`) lee `profiles.plan` en cada guardado de página, así que el cambio aplica al toque, sin reiniciar nada.
 - Si más adelante armás muchos códigos promocionales, conviene pasar esto a una tabla `promo_codes` + un flujo en `/dashboard/upgrade` en vez de tocar SQL a mano cada vez — lo dejamos para cuando el volumen lo justifique.
 
-## 9. Nota documentada: creadores de contenido (OnlyFans y similares) como público objetivo
+## 10. Nota documentada: creadores de contenido (OnlyFans y similares) como público objetivo
 
 Quedó planteado como posible público a futuro, sin construir nada todavía por decisión explícita (foco actual: dejar la base funcional). Cuando se retome, la conversación tuvo estas ideas sobre la mesa — quedan documentadas para no perderlas:
 
@@ -157,7 +169,7 @@ Cosas a resolver *antes* de construir esto (no son solo feature work):
 - Revisar los Términos de Servicio de Vercel/Railway y de la pasarela de pago que se use — varios prohíben o restringen explícitamente alojar/facturar contenido para adultos.
 - Puede requerir un plan/tier de precio distinto y verificación de identidad del creador (KYC), no solo del visitante.
 
-## 10. Poner el repo en privado
+## 11. Poner el repo en privado
 
 No tengo forma de hacerlo por acá — la integración de GitHub que uso no expone cambiar la visibilidad de un repo existente (solo puedo leer/escribir código, crear ramas y PRs). Lo hacés vos en 30 segundos:
 

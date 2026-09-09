@@ -10,6 +10,7 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Stripe: checkout, portal de facturación, webhook (ver `SETUP.md` §6)
 - 2 planes (Free / Pro)
 - Mercado Pago: conexión OAuth por usuario + bloque "Cobrar" + webhook (ver `SETUP.md` §7) — falta cargar credenciales reales y probar en sandbox
+- Entradas a eventos: bloque "Entradas a evento" (2-3 tipos de precio), ticket numerado + QR de validación por email vía Resend, pantalla de validación en `/dashboard/validate/[pageId]` (ver `SETUP.md` §8) — falta cargar `RESEND_API_KEY` y probar de punta a punta con Mercado Pago real
 
 ## 🔲 Media kit / páginas con plantilla
 
@@ -27,24 +28,13 @@ Lo que sí falta si querés algo más "push" (que LinkHub avise a n8n apenas pas
 
 Centro de ayuda mostrando qué se puede hacer con cada bloque, casos de uso, cómo armar filtros de temporada, etc. Es más trabajo de contenido/redacción que de código — antes de escribir nada conviene decidir: ¿Markdown estático dentro del repo (`/ayuda/[slug]`), o algo editable sin deploy (ej. Notion embebido, o una tabla en Supabase)? Te recomiendo empezar con Markdown estático simple; migrar a algo dinámico si crece.
 
+## 🔲 Repaso del editor + condicionales entre bloques
+
+Pendiente: revisar el editor completo y la lista de bloques disponibles con foco en que sea fácil y útil de usar. Se sumó la idea de "funciones condicionales entre bloques" — por ejemplo, mostrar/ocultar un bloque según el estado de otro (no solo el filtro de temporada que ya existe). Falta definir casos concretos de uso antes de diseñar la mecánica.
+
 ## 🔲 Recorrido guiado (onboarding tour)
 
 Tour interactivo la primera vez que alguien entra al editor (ej. resaltar "acá agregás bloques", "acá lo publicás"). Técnicamente: o una librería chica tipo `driver.js`/`react-joyride`, o algo casero con un estado `hasSeenTour` en `localStorage`. Recomiendo la librería — reinventar tooltips posicionados correctamente en todos los tamaños de pantalla no vale la pena.
-
-## 🔲 Entradas a eventos (ticketing) sobre Mercado Pago
-
-Mercado Pago Connect + el bloque "Cobrar" genérico ya están (ver ✅ arriba) — esto es la capa de ticketing específica encima, tal como quedó planteada:
-- 2-3 tipos de entrada con precios distintos por evento (hoy el bloque "Cobrar" es de un solo precio)
-- Al comprar: email automático con el ticket numerado + QR de validación
-- Endpoint + pantalla simple de "escanear y validar" en la puerta del evento (marca el ticket como usado, rechaza duplicados)
-
-Piezas que faltan:
-1. Servicio de email transaccional — hoy no hay ninguno conectado (Supabase Auth solo manda magic links de login). Ya decidido: **Resend**.
-2. Reusar `qrcode` (ya está en el proyecto, usado para el QR de la página) para generar el QR del ticket.
-3. Tablas nuevas: `event_tickets` (tipos de entrada + precio por bloque), `ticket_orders` (un ticket numerado por compra, con estado emitido/usado) — se apoyan en `payments` que ya existe.
-4. La pantalla de "escanear y validar" necesita pensar quién tiene acceso (¿el dueño de la página solamente, o puede invitar a alguien de staff a escanear sin darle su login completo?).
-
-Sigue siendo su propio desarrollo, pero más chico ahora que Mercado Pago ya está conectado — es "agregarle ticketing a un cobro que ya funciona", no arrancar de cero.
 
 ## 🔲 Productos digitales (PDFs, etc.)
 
@@ -52,13 +42,14 @@ Mismo bloque "Cobrar" que ya existe, pero hoy no entrega nada después de pagar 
 
 ## 🔲 Creadores de contenido +18 (documentado, no recomendado por ahora)
 
-Ver `SETUP.md` §9 — no promocionar todavía: ya hay un incumbente gratis (AllMyLinks) y un jugador grande que lo permite explícitamente (Beacons), y el riesgo de que Stripe cierre la cuenta de pagos de todo LinkHub si se asocia con contenido para adultos es real. Si se retoma, iría en una marca/entidad separada.
+Ver `SETUP.md` §10 — no promocionar todavía: ya hay un incumbente gratis (AllMyLinks) y un jugador grande que lo permite explícitamente (Beacons), y el riesgo de que Stripe cierre la cuenta de pagos de todo LinkHub si se asocia con contenido para adultos es real. Si se retoma, iría en una marca/entidad separada.
 
 ## 🔲 Tarjeta de fidelidad (suma de sellos) para comercios
 
 Buen fit con el caso de uso "comercios locales" y reusa el QR que ya existe.
 - **Versión simple**: link único por cliente + código; el comercio escanea el QR del cliente (o al revés) para sumar un sello. Solo necesita 2 tablas nuevas (`loyalty_cards`, `loyalty_stamps`) y una pantalla de "sumar sello". Buildable en una vuelta.
 - **Versión completa** (aparece en Apple Wallet / Google Wallet real): mucho más atractivo pero necesita certificados de Apple Developer + Google Wallet API — proyecto aparte, no un agregado chico.
+- Idea sumada: que las compras de productos digitales (no solo visitas al local) también sumen sellos — encajaría bien una vez que exista la entrega de productos digitales (ver más abajo), reusando la misma tabla `payments` como disparador.
 
 ## 🔲 Otras ideas sueltas de la comparación con la competencia
 

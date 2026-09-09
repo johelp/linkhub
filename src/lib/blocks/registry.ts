@@ -287,6 +287,32 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'event_tickets',
+    label: 'Entradas a evento',
+    description: 'Vendé 2-3 tipos de entrada con QR de validación por email',
+    icon: '🎫',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'event_tickets',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Mi evento', description: '' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        tiers: [{ id: generateId(), name: 'General', price: 0 }],
+        currency: 'ARS',
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(
