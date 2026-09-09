@@ -120,9 +120,24 @@ const demoPage: Page = {
   ],
 }
 
+// TODO: once you have a WhatsApp number or contact email set up, point this
+// at it (e.g. `https://wa.me/34XXXXXXXXX?text=...`) so the launch banner
+// below can actually collect founding-member requests instead of just
+// funneling into the normal signup flow. See SETUP.md §7.
+const LAUNCH_OFFER_HREF = '/auth'
+
 export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: SNOW }}>
+
+      {/* LAUNCH BANNER */}
+      <Link href={LAUNCH_OFFER_HREF} style={{
+        display: 'block', textAlign: 'center', fontSize: 12.5, fontWeight: 600,
+        color: '#fff', background: `linear-gradient(90deg, ${R}, #FF8C00)`,
+        padding: '9px 16px', textDecoration: 'none',
+      }}>
+        ❄️ Cupos de lanzamiento para esta temporada: los primeros negocios se llevan plan Pro gratis — Sumate →
+      </Link>
 
       {/* NAV */}
       <nav style={{ maxWidth: 1080, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -138,36 +153,56 @@ export default function LandingPage() {
       </nav>
 
       {/* HERO */}
-      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 24px 72px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 40, alignItems: 'center' }}
-        className="lg:!grid-cols-[1.1fr_0.9fr]">
-        <div style={{ textAlign: 'center' }} className="lg:!text-left">
-          <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', background: '#FEF0EF', color: R, padding: '4px 12px', borderRadius: 20, marginBottom: 20 }}>
-            Pensado para negocios de temporada
-          </div>
-          <h1 style={{ fontSize: 42, fontWeight: 700, color: INK, lineHeight: 1.15, marginBottom: 18 }}>
-            Tu página de enlaces,<br />
-            <span style={{ color: R }}>profesional y en minutos</span>
-          </h1>
-          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 28, maxWidth: 480 }} className="mx-auto lg:!mx-0">
-            Bloques visuales, multiidioma, filtros de temporada y QR.
-            Para negocios que necesitan más que un simple link en bio.
-          </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }} className="justify-center lg:!justify-start">
-            <Link href="/auth" style={{ fontSize: 14, fontWeight: 600, color: '#fff', background: R, padding: '13px 28px', borderRadius: 25, textDecoration: 'none' }}>
-              Crear mi página gratis →
-            </Link>
-          </div>
-          <p style={{ fontSize: 12, color: LIGHT, marginTop: 14 }}>Sin tarjeta de crédito. Free para siempre.</p>
-        </div>
+      <section style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Ambient gradient blobs */}
+        <div aria-hidden className="hero-glow" style={{
+          position: 'absolute', top: -180, left: '50%', width: 620, height: 620,
+          marginLeft: -420, borderRadius: '50%', filter: 'blur(70px)', opacity: 0.35,
+          background: `radial-gradient(circle, ${R} 0%, transparent 70%)`, pointerEvents: 'none',
+        }} />
+        <div aria-hidden className="hero-glow" style={{
+          position: 'absolute', top: -120, right: '50%', width: 520, height: 520,
+          marginRight: -460, borderRadius: '50%', filter: 'blur(70px)', opacity: 0.3,
+          background: 'radial-gradient(circle, #FF8C00 0%, transparent 70%)', pointerEvents: 'none',
+          animationDelay: '-6s',
+        }} />
 
-        {/* Phone mockup — real PageView component, not a screenshot */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{
-            width: 300, borderRadius: 36, border: '10px solid #1A1B1C', background: '#fff',
-            overflow: 'hidden', boxShadow: '0 24px 60px rgba(26,27,28,0.18)', maxHeight: 560,
-          }}>
-            <div style={{ maxHeight: 540, overflow: 'hidden' }}>
-              <PageView page={demoPage} />
+        <div style={{ position: 'relative', maxWidth: 1080, margin: '0 auto', padding: '40px 24px 72px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 40, alignItems: 'center' }}
+          className="lg:!grid-cols-[1.1fr_0.9fr]">
+          <div style={{ textAlign: 'center' }} className="lg:!text-left">
+            <div className="hero-fade-up" style={{ animationDelay: '0s', display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', background: '#FEF0EF', color: R, padding: '4px 12px', borderRadius: 20, marginBottom: 20 }}>
+              Pensado para negocios de temporada
+            </div>
+            <h1 className="hero-fade-up" style={{ animationDelay: '.08s', fontSize: 42, fontWeight: 700, color: INK, lineHeight: 1.15, marginBottom: 18 }}>
+              Tu página de enlaces,<br />
+              <span style={{ backgroundImage: `linear-gradient(90deg, ${R}, #FF8C00)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>profesional y en minutos</span>
+            </h1>
+            <p className="hero-fade-up mx-auto lg:!mx-0" style={{ animationDelay: '.16s', fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 28, maxWidth: 480 }}>
+              Bloques visuales, multiidioma, filtros de temporada y QR.
+              Para negocios que necesitan más que un simple link en bio.
+            </p>
+            <div className="hero-fade-up justify-center lg:!justify-start" style={{ animationDelay: '.24s', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Link href="/auth" className="hero-cta"
+                style={{ fontSize: 14, fontWeight: 600, color: '#fff', background: R, padding: '13px 28px', borderRadius: 25, textDecoration: 'none', display: 'inline-block' }}>
+                Crear mi página gratis →
+              </Link>
+            </div>
+            <p className="hero-fade-up" style={{ animationDelay: '.3s', fontSize: 12, color: LIGHT, marginTop: 14 }}>Sin tarjeta de crédito. Free para siempre.</p>
+          </div>
+
+          {/* Phone mockup — real PageView component, not a screenshot */}
+          <div className="hero-scale-in" style={{ animationDelay: '.2s', display: 'flex', justifyContent: 'center', perspective: 1200 }}>
+            <div className="hero-float">
+              <div className="hero-phone-tilt">
+                <div style={{
+                  width: 300, borderRadius: 36, border: '10px solid #1A1B1C', background: '#fff',
+                  overflow: 'hidden', boxShadow: '0 30px 70px rgba(26,27,28,0.22)', maxHeight: 560,
+                }}>
+                  <div style={{ maxHeight: 540, overflow: 'hidden' }}>
+                    <PageView page={demoPage} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
