@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, DividerBlock, TextBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props { page: Page }
@@ -26,8 +26,9 @@ export function PageView({ page }: Props) {
   const pc = page.settings.primaryColor || '#E8150A'
   const bg = page.settings.backgroundColor || '#F6F6F5'
 
-  // Track page view
+  // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
+    if (page.id === 'demo') return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -40,6 +41,7 @@ export function PageView({ page }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
+    if (page.id === 'demo') return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,
@@ -61,9 +63,7 @@ export function PageView({ page }: Props) {
   const showLangBar = enabledLangs.length > 1
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', fontFamily: `'DM Sans', sans-serif` }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
+    <div style={{ background: bg, minHeight: '100vh' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
 
         {/* Lang bar */}

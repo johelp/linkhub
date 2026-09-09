@@ -27,7 +27,8 @@ export function absoluteUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_APP_URL}${path}`
 }
 
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | null): string {
+  if (!date) return '—'
   return new Intl.DateTimeFormat('es-AR', {
     day: '2-digit', month: 'short', year: 'numeric'
   }).format(new Date(date))

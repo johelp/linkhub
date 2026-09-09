@@ -3,8 +3,11 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Globe, Edit2, QrCode } from 'lucide-react'
 import { PLAN_LIMITS } from '@/types'
+import type { Views } from '@/lib/supabase/database.types'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { NewPageButton } from './NewPageButton'
+
+type PageSummary = Views<'pages_summary'>
 
 export const metadata = { title: 'Mis páginas | LinkHub' }
 
@@ -49,7 +52,7 @@ export default async function DashboardPage() {
             {plan === 'free' && ` · Plan Free (máx. ${limits.pages})`}
           </p>
         </div>
-        <NewPageButton canCreate={canCreate} plan={plan} />
+        <NewPageButton canCreate={canCreate} />
       </div>
 
       {plan === 'free' && (
@@ -66,8 +69,8 @@ export default async function DashboardPage() {
         ? <EmptyState canCreate={canCreate} />
         : (
           <div style={S.grid}>
-            {pageList.map((p: any) => <PageCard key={p.id} page={p} />)}
-            {canCreate && <NewPageButton canCreate={true} plan={plan} asCard />}
+            {pageList.map((p) => <PageCard key={p.id} page={p} />)}
+            {canCreate && <NewPageButton canCreate={true} asCard />}
           </div>
         )
       }
@@ -75,7 +78,7 @@ export default async function DashboardPage() {
   )
 }
 
-function PageCard({ page }: { page: any }) {
+function PageCard({ page }: { page: PageSummary }) {
   const accent = page.primary_color || '#E8150A'
   return (
     <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(26,27,28,0.09)' }}>
@@ -124,7 +127,7 @@ function EmptyState({ canCreate }: { canCreate: boolean }) {
       <div style={S.emptyIcon}>🔗</div>
       <h2 style={S.emptyTitle}>Todavía no tenés páginas</h2>
       <p style={S.emptySub}>Creá tu primera página de enlaces en menos de 2 minutos</p>
-      {canCreate && <NewPageButton canCreate={true} plan="free" />}
+      {canCreate && <NewPageButton canCreate={true} />}
     </div>
   )
 }

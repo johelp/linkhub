@@ -21,14 +21,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Editor layout */
-.editor-grid {
-  display: grid;
-  grid-template-columns: 270px 1fr 310px;
-  height: 100%;
-  overflow: hidden;
-}
-
 /* Drag handle */
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }

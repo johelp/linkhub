@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -21,7 +21,7 @@ interface Props { plan: Plan }
 type Tab = 'block' | 'page' | 'seo'
 
 export function PropertiesPanel({ plan }: Props) {
-  const { page, selectedBlockId, updateBlock, updateSettings, updateSeo, previewLang } = useEditorStore()
+  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateSettings, updateSeo, previewLang } = useEditorStore()
   const [tab, setTab] = useState<Tab>('block')
   const limits = PLAN_LIMITS[plan]
 
@@ -54,7 +54,7 @@ export function PropertiesPanel({ plan }: Props) {
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'block' && (
           selectedBlock
-            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} onUpdate={updateBlock} />
+            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} />
             : <div className="text-center py-12">
                 <div className="text-3xl mb-2">👆</div>
                 <p className="text-xs" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
@@ -68,27 +68,32 @@ export function PropertiesPanel({ plan }: Props) {
 }
 
 // ─── Block Editor ────────────────────────────────────────────────
-function BlockEditor({ block, lang, plan, onUpdate }: {
+function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
   block: Block; lang: Lang; plan: Plan
   onUpdate: (id: string, data: Partial<Block['data']>) => void
+  onUpdateSeason: (id: string, seasonFilter: SeasonMode) => void
 }) {
   const limits = PLAN_LIMITS[plan]
 
   switch (block.type) {
-    case 'link': return <LinkEditor block={block as LinkBlock} lang={lang} limits={limits} onUpdate={onUpdate} />
-    case 'featured': return <FeaturedEditor block={block as FeaturedBlock} lang={lang} onUpdate={onUpdate} />
-    case 'expandable': return <ExpandableEditor block={block as ExpandableBlock} lang={lang} onUpdate={onUpdate} />
-    case 'section_label': return <SectionLabelEditor block={block as SectionLabelBlock} lang={lang} onUpdate={onUpdate} />
-    case 'text': return <TextEditor block={block as TextBlock} lang={lang} onUpdate={onUpdate} />
-    case 'contact_card': return <ContactCardEditor block={block as ContactCardBlock} onUpdate={onUpdate} />
-    case 'social_grid': return <SocialGridEditor block={block as SocialGridBlock} onUpdate={onUpdate} />
+    case 'link': return <LinkEditor block={block} lang={lang} limits={limits} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
+    case 'featured': return <FeaturedEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
+    case 'expandable': return <ExpandableEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
+    case 'section_label': return <SectionLabelEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
+    case 'text': return <TextEditor block={block} lang={lang} onUpdate={onUpdate} />
+    case 'contact_card': return <ContactCardEditor block={block} onUpdate={onUpdate} />
+    case 'social_grid': return <SocialGridEditor block={block} onUpdate={onUpdate} />
     case 'divider': return <DividerEditor block={block} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
 
 // ─── Link Editor ─────────────────────────────────────────────────
-function LinkEditor({ block, lang, limits, onUpdate }: { block: LinkBlock; lang: Lang; limits: import('@/types').PlanLimits; onUpdate: (id: string, d: any) => void }) {
+function LinkEditor({ block, lang, limits, onUpdate, onUpdateSeason }: {
+  block: LinkBlock; lang: Lang; limits: import('@/types').PlanLimits
+  onUpdate: (id: string, d: Partial<LinkBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -124,13 +129,17 @@ function LinkEditor({ block, lang, limits, onUpdate }: { block: LinkBlock; lang:
           </div>
         </Field>
       </Section>
-      {limits.seasonFilter && <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />}
+      {limits.seasonFilter && <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />}
     </div>
   )
 }
 
 // ─── Featured Editor ─────────────────────────────────────────────
-function FeaturedEditor({ block, lang, onUpdate }: { block: FeaturedBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function FeaturedEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: FeaturedBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<FeaturedBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -164,13 +173,17 @@ function FeaturedEditor({ block, lang, onUpdate }: { block: FeaturedBlock; lang:
           </div>
         </Field>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Expandable Editor ───────────────────────────────────────────
-function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: ExpandableBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<ExpandableBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', subtitle: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -189,8 +202,10 @@ function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; l
     onUpdate(block.id, { children: children.map(c => c.id === childId ? { ...c, url } : c) })
   }
   function addChild() {
-    const newChild = { id: generateId(), icon: '▸', translations: { es: { label: 'Opción', price: '' }, en: { label: 'Option', price: '' }, pt: { label: 'Opção', price: '' } } as any, url: '' }
-    onUpdate(block.id, { children: [...children, newChild] })
+    const translations = Object.fromEntries(
+      ALL_LANGS.map(l => [l.code, { label: 'Opción', price: '' }])
+    ) as Record<Lang, { label: string; price?: string }>
+    onUpdate(block.id, { children: [...children, { id: generateId(), icon: '▸', translations, url: '' }] })
   }
   function removeChild(id: string) {
     onUpdate(block.id, { children: children.filter(c => c.id !== id) })
@@ -221,13 +236,17 @@ function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; l
         <button onClick={addChild} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
           style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir opción</button>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Section Label Editor ────────────────────────────────────────
-function SectionLabelEditor({ block, lang, onUpdate }: { block: SectionLabelBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function SectionLabelEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: SectionLabelBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<SectionLabelBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { text: '' }
   return (
     <div className="space-y-4">
@@ -238,13 +257,13 @@ function SectionLabelEditor({ block, lang, onUpdate }: { block: SectionLabelBloc
           })} placeholder="SECCIÓN" />
         </Field>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Text Editor ─────────────────────────────────────────────────
-function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; onUpdate: (id: string, d: Partial<TextBlock['data']>) => void }) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { content: '' }
   return (
     <div className="space-y-4">
@@ -283,7 +302,7 @@ function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; o
 }
 
 // ─── Contact Card Editor ─────────────────────────────────────────
-function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpdate: (id: string, d: any) => void }) {
+function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpdate: (id: string, d: Partial<ContactCardBlock['data']>) => void }) {
   const d = block.data
   return (
     <div className="space-y-4">
@@ -301,7 +320,7 @@ function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpd
 // ─── Social Grid Editor ──────────────────────────────────────────
 const PLATFORMS = ['instagram', 'facebook', 'tiktok', 'youtube', 'twitter', 'linkedin', 'whatsapp'] as const
 
-function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdate: (id: string, d: any) => void }) {
+function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdate: (id: string, d: Partial<SocialGridBlock['data']>) => void }) {
   const items = block.data.items
   function updateItem(id: string, key: string, val: string) {
     onUpdate(block.id, { items: items.map(i => i.id === id ? { ...i, [key]: val } : i) })
@@ -338,8 +357,7 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
 }
 
 // ─── Divider Editor ──────────────────────────────────────────────
-function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: string, d: any) => void }) {
-  const b = block as any
+function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id: string, d: Partial<DividerBlock['data']>) => void }) {
   return (
     <div className="space-y-4">
       <Section label="Estilo">
@@ -348,7 +366,7 @@ function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: strin
             {(['line', 'space'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { style: s })}
                 className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: b.data.style === s ? '#E8150A' : '#F6F6F5', color: b.data.style === s ? '#fff' : '#5A5D60' }}>
+                style={{ background: block.data.style === s ? '#E8150A' : '#F6F6F5', color: block.data.style === s ? '#fff' : '#5A5D60' }}>
                 {s === 'line' ? 'Línea' : 'Espacio'}
               </button>
             ))}
@@ -359,7 +377,7 @@ function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: strin
             {(['sm', 'md', 'lg'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { spacing: s })}
                 className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: b.data.spacing === s ? '#E8150A' : '#F6F6F5', color: b.data.spacing === s ? '#fff' : '#5A5D60' }}>
+                style={{ background: block.data.spacing === s ? '#E8150A' : '#F6F6F5', color: block.data.spacing === s ? '#fff' : '#5A5D60' }}>
                 {s.toUpperCase()}
               </button>
             ))}
@@ -426,7 +444,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
       <Section label="Temporada">
         {limits.seasonFilter ? (
           <Field label="Modo temporada">
-            <select value={settings.seasonMode} onChange={e => onUpdate({ seasonMode: e.target.value as any })}
+            <select value={settings.seasonMode} onChange={e => onUpdate({ seasonMode: e.target.value as SeasonMode })}
               className="w-full px-3 py-2 rounded-xl text-sm outline-none"
               style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
               <option value="always">Siempre activo</option>
@@ -522,11 +540,11 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   )
 }
 
-function SeasonField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SeasonField({ value, onChange }: { value: SeasonMode; onChange: (v: SeasonMode) => void }) {
   return (
     <Section label="Visibilidad por temporada">
       <Field label="Mostrar en">
-        <select value={value} onChange={e => onChange(e.target.value)}
+        <select value={value} onChange={e => onChange(e.target.value as SeasonMode)}
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
           style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
           <option value="always">Siempre</option>

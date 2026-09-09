@@ -7,7 +7,7 @@ export interface BlockDef {
   description: string
   icon: string
   category: 'content' | 'navigation' | 'social' | 'layout'
-  createDefault: (lang: Lang) => Block
+  createDefault: () => Block
 }
 
 const defaultLangs = (text: string, desc = '') =>
@@ -22,7 +22,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Botón de enlace con icono, título y descripción',
     icon: '🔗',
     category: 'navigation',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'link',
       order: 0,
@@ -43,7 +43,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Tarjeta hero con color de fondo llamativo',
     icon: '⭐',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'featured',
       order: 0,
@@ -68,7 +68,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Acordeón con sub-opciones y precios',
     icon: '📂',
     category: 'navigation',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'expandable',
       order: 0,
@@ -102,7 +102,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Separador con texto en mayúsculas',
     icon: '🏷️',
     category: 'layout',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'section_label',
       order: 0,
@@ -124,7 +124,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Grid de iconos de redes sociales',
     icon: '📱',
     category: 'social',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'social_grid',
       order: 0,
@@ -144,7 +144,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'WhatsApp, email, dirección y horario',
     icon: '📞',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'contact_card',
       order: 0,
@@ -166,7 +166,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Línea o espacio separador',
     icon: '➖',
     category: 'layout',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'divider',
       order: 0,
@@ -181,7 +181,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Párrafo de texto con soporte multiidioma',
     icon: '📝',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'text',
       order: 0,
@@ -204,7 +204,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Imagen con enlace opcional',
     icon: '🖼️',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'image_banner',
       order: 0,

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import type { Page, Lang } from '@/types'
+import type { Page } from '@/types'
 import { PageView } from './PageView'
 
 interface Props {

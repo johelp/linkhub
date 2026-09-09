@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Page, Block, BlockType, Lang, PageSettings } from '@/types'
+import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode } from '@/types'
 import { generateId } from '@/lib/utils'
 import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 
@@ -22,6 +22,7 @@ interface EditorState {
 
   addBlock: (type: BlockType, afterId?: string) => void
   updateBlock: (id: string, data: Partial<Block['data']>) => void
+  updateBlockSeasonFilter: (id: string, seasonFilter: SeasonMode | 'always') => void
   removeBlock: (id: string) => void
   reorderBlocks: (blocks: Block[]) => void
   duplicateBlock: (id: string) => void
@@ -65,7 +66,7 @@ export const useEditorStore = create<EditorState>()(
       if (!state.page) return
       const def = BLOCK_BY_TYPE[type]
       if (!def) return
-      const newBlock = def.createDefault(state.previewLang)
+      const newBlock = def.createDefault()
       const blocks = state.page.blocks
       const insertIndex = afterId
         ? blocks.findIndex(b => b.id === afterId) + 1
@@ -82,6 +83,14 @@ export const useEditorStore = create<EditorState>()(
       const block = state.page.blocks.find(b => b.id === id)
       if (!block) return
       Object.assign(block.data, data)
+      state.isDirty = true
+    }),
+
+    updateBlockSeasonFilter: (id, seasonFilter) => set(state => {
+      if (!state.page) return
+      const block = state.page.blocks.find(b => b.id === id)
+      if (!block) return
+      block.seasonFilter = seasonFilter
       state.isDirty = true
     }),
 

@@ -8,11 +8,10 @@ import toast from 'react-hot-toast'
 
 interface Props {
   canCreate: boolean
-  plan: string
   asCard?: boolean  // renders as a grid card instead of button
 }
 
-export function NewPageButton({ canCreate, plan, asCard }: Props) {
+export function NewPageButton({ canCreate, asCard }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
