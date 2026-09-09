@@ -6,7 +6,7 @@ import { LivePreview } from './LivePreview'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Crea tu página de enlaces profesional',
-  description: 'Crea páginas de enlaces profesionales con bloques visuales, multiidioma, filtros de temporada y QR.',
+  description: 'Crea páginas de enlaces profesionales con bloques visuales, multiidioma, analíticas y QR.',
 }
 
 const R = '#E8150A'
@@ -17,9 +17,10 @@ const SNOW = '#F6F6F5'
 const BORDER = 'rgba(26,27,28,0.09)'
 
 const useCases = [
-  { icon: '⛷️', title: 'Escuelas de esquí y estaciones', desc: 'Horarios de temporada, reserva de clases y forfaits en un solo link, con bloques que se activan solo en invierno.' },
-  { icon: '🏖️', title: 'Alquileres y turismo de verano', desc: 'Mismo negocio, otra temporada: activá los bloques de playa/verano y ocultá los de nieve sin duplicar la página.' },
   { icon: '💇', title: 'Servicios y comercios locales', desc: 'WhatsApp, ubicación, horarios y redes sociales — todo lo que un cliente necesita antes de visitarte.' },
+  { icon: '🎨', title: 'Creadores y freelancers', desc: 'Portfolio, redes, contacto y captura de email para tu lista, todo en un solo link.' },
+  { icon: '🏔️', title: 'Turismo y negocios de temporada', desc: 'Filtros automáticos por temporada cuando tu oferta cambia con el año — invierno, verano, o lo que sea.' },
+  { icon: '🎉', title: 'Eventos y lanzamientos', desc: 'Un link temporal con toda la info, listo para compartir por QR o redes.' },
 ]
 
 const steps = [
@@ -69,7 +70,7 @@ export default function LandingPage() {
         color: '#fff', background: `linear-gradient(90deg, ${R}, #FF8C00)`,
         padding: '9px 16px', textDecoration: 'none',
       }}>
-        ❄️ Cupos de lanzamiento para esta temporada: los primeros negocios se llevan plan Pro gratis — Escribinos →
+        🎉 Cupos de lanzamiento: los primeros negocios se llevan plan Pro gratis — Escribinos →
       </Link>
 
       {/* NAV */}
@@ -104,15 +105,15 @@ export default function LandingPage() {
           className="lg:!grid-cols-[1.1fr_0.9fr]">
           <div style={{ textAlign: 'center' }} className="lg:!text-left">
             <div className="hero-fade-up" style={{ animationDelay: '0s', display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: '.7px', textTransform: 'uppercase', background: '#FEF0EF', color: R, padding: '4px 12px', borderRadius: 20, marginBottom: 20 }}>
-              ❄️ Preparate para la temporada de invierno
+              Beta de lanzamiento abierta
             </div>
             <h1 className="hero-fade-up" style={{ animationDelay: '.08s', fontSize: 42, fontWeight: 700, color: INK, lineHeight: 1.15, marginBottom: 18 }}>
               Tu página de enlaces,<br />
               <span style={{ backgroundImage: `linear-gradient(90deg, ${R}, #FF8C00)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>profesional y en minutos</span>
             </h1>
             <p className="hero-fade-up mx-auto lg:!mx-0" style={{ animationDelay: '.16s', fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 28, maxWidth: 480 }}>
-              Bloques visuales, multiidioma, filtros de temporada y QR.
-              Armala ahora y llegá lista antes de que arranque la temporada.
+              Bloques visuales, multiidioma, captura de email y QR.
+              Para negocios y creadores que necesitan más que un simple link en bio.
             </p>
             <div className="hero-fade-up justify-center lg:!justify-start" style={{ animationDelay: '.24s', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/auth" className="hero-cta"
@@ -146,7 +147,7 @@ export default function LandingPage() {
       {/* USE CASES */}
       <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>¿Para quién es LinkHub?</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>Cualquier negocio cuya oferta cambia con la temporada o el mes.</p>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>Negocios, creadores y equipos que quieren algo más profesional que un link en bio simple.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {useCases.map(u => (
             <div key={u.title} style={{ background: '#fff', borderRadius: 16, padding: 22, border: `1px solid ${BORDER}` }}>
