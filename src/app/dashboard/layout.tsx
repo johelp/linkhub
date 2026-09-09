@@ -38,7 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           <SideLink href="/dashboard" icon={<LayoutDashboard size={15} />} label="Mis páginas" />
           <SideLink href="/dashboard/upgrade" icon={<TrendingUp size={15} />} label="Planes" />
-          <SideLink href="/dashboard/upgrade" icon={<Settings size={15} />} label="Ajustes" />
+          <SideLink href="/dashboard/settings" icon={<Settings size={15} />} label="Ajustes" />
         </nav>
 
         <div style={{ paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>

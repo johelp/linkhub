@@ -261,6 +261,32 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'payment_button',
+    label: 'Cobrar (Mercado Pago)',
+    description: 'Vendé un producto o servicio con Mercado Pago',
+    icon: '💳',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'payment_button',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Mi producto', description: '' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        price: 0,
+        currency: 'ARS',
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(

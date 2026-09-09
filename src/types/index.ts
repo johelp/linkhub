@@ -12,6 +12,7 @@ export type BlockType =
   | 'image_banner'
   | 'video_embed'
   | 'email_capture'
+  | 'payment_button'
   | 'text'
 
 // Blocks available without paying
@@ -222,10 +223,20 @@ export interface EmailCaptureBlock extends BlockBase {
   }
 }
 
+export interface PaymentButtonBlock extends BlockBase {
+  type: 'payment_button'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    price: number
+    currency: string   // ISO currency code Mercado Pago accepts, e.g. 'ARS', 'MXN', 'CLP'
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
-  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | TextBlock | DividerBlock
+  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock
+  | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

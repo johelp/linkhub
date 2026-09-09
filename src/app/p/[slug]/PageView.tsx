@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed } from '@/lib/utils'
 
@@ -347,6 +347,28 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       const b = block as EmailCaptureBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { headline: '', description: '', buttonLabel: '' }
       return <EmailCaptureForm pageId={pageId} lang={lang} pc={pc} headline={t.headline} description={t.description} buttonLabel={t.buttonLabel || 'Enviar'} />
+    }
+
+    case 'payment_button': {
+      const b = block as PaymentButtonBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      let price = `${b.data.price} ${b.data.currency}`
+      try {
+        price = new Intl.NumberFormat('es-AR', { style: 'currency', currency: b.data.currency }).format(b.data.price)
+      } catch { /* unsupported currency code — fall back to plain text above */ }
+      return (
+        <a href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}`}
+          style={{ ...card, background: pc, border: 'none', color: '#fff' }}>
+          <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
+            💳
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{t.title}</div>
+            {t.description && <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t.description}</div>}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>{price}</div>
+        </a>
+      )
     }
 
     default:

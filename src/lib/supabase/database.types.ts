@@ -131,6 +131,49 @@ export type Database = {
         Update: never
         Relationships: [{ foreignKeyName: 'email_subscribers_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
       }
+      payment_connections: {
+        Row: {
+          id: string
+          user_id: string
+          provider: string
+          provider_user_id: string
+          access_token: string
+          refresh_token: string
+          public_key: string | null
+          live_mode: boolean
+          connected_at: string
+        }
+        Insert: {
+          id?: string; user_id: string; provider?: string; provider_user_id: string
+          access_token: string; refresh_token: string; public_key?: string | null; live_mode?: boolean
+        }
+        Update: { access_token?: string; refresh_token?: string; public_key?: string | null; live_mode?: boolean }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          id: string
+          page_id: string
+          block_id: string
+          provider: string
+          status: 'pending' | 'approved' | 'rejected' | 'refunded'
+          amount: number
+          currency: string
+          provider_payment_id: string | null
+          provider_preference_id: string | null
+          payer_email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string; page_id: string; block_id: string; provider?: string
+          status?: 'pending' | 'approved' | 'rejected' | 'refunded'
+          amount: number; currency: string
+          provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null
+        }
+        Update: { status?: 'pending' | 'approved' | 'rejected' | 'refunded'; provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null }
+        Relationships: [{ foreignKeyName: 'payments_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
+      }
     }
     Views: {
       pages_summary: {

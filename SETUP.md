@@ -30,6 +30,11 @@ STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRICE_ID_PRO=
+
+# Mercado Pago — ver §7 para cómo obtener cada valor:
+MERCADOPAGO_CLIENT_ID=
+MERCADOPAGO_CLIENT_SECRET=
+MERCADOPAGO_WEBHOOK_SECRET=
 ```
 
 ⚠️ **Importante:** `SUPABASE_SERVICE_ROLE_KEY` bypasea todos los permisos (RLS) de la base. Nunca lo expongas al cliente ni lo commitees. Lo usa `src/lib/supabase/admin.ts`, importado únicamente por el webhook de Stripe (`/api/webhooks/stripe`) para actualizar `profiles.plan` sin sesión de usuario — no lo importes desde ningún componente cliente ni ruta que no sea de confianza.
@@ -44,6 +49,7 @@ En el SQL Editor de Supabase, correr en orden:
 4. `supabase/migrations/004_stripe_billing.sql` — agrega `stripe_customer_id`, `stripe_subscription_id`, `stripe_subscription_status` a `profiles`, que usa el webhook de Stripe.
 5. `supabase/migrations/005_protect_billing_columns.sql` — **crítica, corre esta sí o sí**: sin ella, cualquier usuario logueado puede ponerse `plan = 'pro'` a sí mismo llamando a Supabase directo desde el navegador, sin pasar por Stripe (ver aviso de seguridad abajo).
 6. `supabase/migrations/006_email_capture.sql` — tabla `email_subscribers` para el bloque de captura de email.
+7. `supabase/migrations/007_mercadopago_connect.sql` — tablas `payment_connections` (tokens OAuth, sin acceso desde el navegador ni para el dueño) y `payments` (log de cobros) para el bloque de Mercado Pago.
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción
@@ -100,7 +106,23 @@ Notas:
 - El webhook usa `SUPABASE_SERVICE_ROLE_KEY` (bypasea RLS) porque Stripe le pega sin sesión de usuario — es el único lugar del código que la usa.
 - Downgrade automático: cuando Stripe cancela o marca `unpaid`/`incomplete_expired` la suscripción, el webhook baja `profiles.plan` a `free` solo. No borra páginas ni bloques existentes — si el usuario tenía 5 páginas con bloques Pro y vuelve a Free, esas páginas siguen existiendo tal cual (el trigger de plan solo bloquea *nuevas* ediciones que excedan el límite Free, no retroactivamente). Si más adelante querés otra política (ej. despublicar automáticamente lo que excede el límite), es un cambio a decidir aparte.
 
-## 7. Dar plan Pro gratis a los primeros clientes (manual)
+## 7. Mercado Pago — activar el bloque "Cobrar"
+
+Igual que con Stripe: el código está completo (conexión OAuth, creación de pagos, webhook), pero no lo pude probar contra la API real de Mercado Pago en esta sesión — no tengo tus credenciales. Es una integración distinta a Stripe: acá LinkHub **no cobra en nombre tuyo**, cada usuario conecta su propia cuenta de Mercado Pago y el dinero va directo a esa cuenta — LinkHub nunca toca la plata ni ve la contraseña, solo pide permiso (OAuth) para generar links de cobro en su nombre.
+
+1. **Crear una aplicación de Mercado Pago**: [mercadopago.com/developers](https://www.mercadopago.com.ar/developers/panel) → Tus integraciones → Crear aplicación → elegí "Marketplace/Checkout Pro" como modelo de integración (es el que permite conectar cuentas de otros usuarios vía OAuth). Copiá el **Client ID** → `MERCADOPAGO_CLIENT_ID` y el **Client Secret** → `MERCADOPAGO_CLIENT_SECRET`.
+2. **Redirect URI**: en la configuración de la aplicación, agregá `https://tu-dominio.com/api/connect/mercadopago/callback` (y `http://localhost:3000/api/connect/mercadopago/callback` para probar en local) a la lista de URIs de redirección permitidas.
+3. **Webhook**: en la misma aplicación → Webhooks → configurá la notificación para el evento `payments`, apuntando a `https://tu-dominio.com/api/webhooks/mercadopago` (la URL real que reciben tiene además `?ref=...` agregado dinámicamente por cada cobro, eso es normal). Copiá la **clave secreta** que te muestran ahí → `MERCADOPAGO_WEBHOOK_SECRET`.
+4. Un usuario conecta su cuenta desde `/dashboard/settings` → "Conectar Mercado Pago". Después puede agregar el bloque "Cobrar (Mercado Pago)" en el editor con un precio y moneda.
+5. Probar en modo sandbox: Mercado Pago tiene [usuarios y tarjetas de prueba](https://www.mercadopago.com.ar/developers/es/docs/checkout-pro/additional-content/your-integrations/test/accounts) separados por país — necesitás crear un usuario de prueba "vendedor" (el que conecta la cuenta) y uno "comprador" (el que paga) desde el panel de developers.
+
+Notas:
+- La tabla `payment_connections` (que guarda el access token de cada usuario) **no es accesible desde el navegador ni con el usuario logueado** — ni siquiera el dueño puede leer su propio token vía RLS. Todo pasa por rutas del servidor con el cliente de service role. Esto es a propósito, después de lo que encontramos en el punto 5 de arriba: nunca hay que confiar en que "el dueño puede ver su fila" sea seguro cuando la fila tiene un secreto adentro.
+- El webhook verifica la firma `x-signature` (HMAC-SHA256) antes de confiar en cualquier notificación — sin `MERCADOPAGO_WEBHOOK_SECRET` configurado, el endpoint devuelve 503 en vez de aceptar eventos sin validar.
+- El precio del bloque se usa para generar una preferencia de pago **en el momento en que alguien hace click**, no al guardar el bloque — así que si cambiás el precio, el link ya generado antes deja de existir pero uno nuevo generado por un click posterior usa el precio actualizado. No hay links de cobro "cacheados" que puedan quedar desactualizados.
+- Si un negocio no conectó Mercado Pago todavía y alguien hace click en el bloque de todos modos, el visitante ve un error claro en vez de un cobro roto a medias.
+
+## 8. Dar plan Pro gratis a los primeros clientes (manual)
 
 Antes de tener Stripe funcionando, o para casos puntuales aunque ya lo tengas: Supabase → SQL Editor →
 
@@ -122,7 +144,7 @@ Notas:
 - El trigger de la migración 002 (`enforce_plan_limits`) lee `profiles.plan` en cada guardado de página, así que el cambio aplica al toque, sin reiniciar nada.
 - Si más adelante armás muchos códigos promocionales, conviene pasar esto a una tabla `promo_codes` + un flujo en `/dashboard/upgrade` en vez de tocar SQL a mano cada vez — lo dejamos para cuando el volumen lo justifique.
 
-## 8. Nota documentada: creadores de contenido (OnlyFans y similares) como público objetivo
+## 9. Nota documentada: creadores de contenido (OnlyFans y similares) como público objetivo
 
 Quedó planteado como posible público a futuro, sin construir nada todavía por decisión explícita (foco actual: dejar la base funcional). Cuando se retome, la conversación tuvo estas ideas sobre la mesa — quedan documentadas para no perderlas:
 
@@ -135,7 +157,7 @@ Cosas a resolver *antes* de construir esto (no son solo feature work):
 - Revisar los Términos de Servicio de Vercel/Railway y de la pasarela de pago que se use — varios prohíben o restringen explícitamente alojar/facturar contenido para adultos.
 - Puede requerir un plan/tier de precio distinto y verificación de identidad del creador (KYC), no solo del visitante.
 
-## 9. Poner el repo en privado
+## 10. Poner el repo en privado
 
 No tengo forma de hacerlo por acá — la integración de GitHub que uso no expone cambiar la visibilidad de un repo existente (solo puedo leer/escribir código, crear ramas y PRs). Lo hacés vos en 30 segundos:
 

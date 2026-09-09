@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -87,6 +87,7 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'image_banner': return <ImageBannerEditor block={block} onUpdate={onUpdate} />
     case 'video_embed': return <VideoEmbedEditor block={block} onUpdate={onUpdate} />
     case 'email_capture': return <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />
+    case 'payment_button': return <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -469,6 +470,45 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
         <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
       </Section>
       <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
+    </div>
+  )
+}
+
+// ─── Payment Button Editor ────────────────────────────────────────
+const MP_CURRENCIES = ['ARS', 'MXN', 'CLP', 'COP', 'PEN', 'UYU', 'BRL']
+
+function PaymentButtonEditor({ block, lang, onUpdate }: {
+  block: PaymentButtonBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<PaymentButtonBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Producto">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi producto" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+      </Section>
+      <Section label="Precio">
+        <Field label="Monto">
+          <input type="number" min="0" step="0.01" value={block.data.price}
+            onChange={e => onUpdate(block.id, { price: Number(e.target.value) || 0 })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Moneda">
+          <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a> para que este bloque cobre de verdad.
+      </p>
     </div>
   )
 }
