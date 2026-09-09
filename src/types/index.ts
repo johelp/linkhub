@@ -15,6 +15,7 @@ export type BlockType =
   | 'payment_button'
   | 'event_tickets'
   | 'business_hours'
+  | 'google_reviews'
   | 'text'
 
 // Blocks available without paying
@@ -198,6 +199,17 @@ export interface BusinessHoursBlock extends BlockBase {
   }
 }
 
+export interface GoogleReviewsBlock extends BlockBase {
+  type: 'google_reviews'
+  data: {
+    translations: Record<Lang, { title: string }>
+    rating: number         // 0-5, entered by the owner (no live API — see SETUP.md)
+    reviewCount: number
+    mapsUrl?: string        // link to the Google Maps listing, to view all reviews
+    placeId?: string        // enables the "leave a review" deep link (Google's own writereview URL)
+  }
+}
+
 export interface ImageBannerBlock extends BlockBase {
   type: 'image_banner'
   data: {
@@ -266,7 +278,7 @@ export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | TextBlock | DividerBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

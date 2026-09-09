@@ -346,6 +346,34 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'google_reviews',
+    label: 'Reseñas de Google',
+    description: 'Mostrá tu puntaje y sumá más reseñas',
+    icon: '⭐',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'google_reviews',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Nos calificaron en Google' },
+          en: { title: '' },
+          pt: { title: '' },
+          fr: { title: '' },
+          de: { title: '' },
+          it: { title: '' },
+        },
+        rating: 5,
+        reviewCount: 0,
+        mapsUrl: '',
+        placeId: '',
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(

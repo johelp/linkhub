@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -90,6 +90,7 @@ function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
     case 'payment_button': return <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />
     case 'event_tickets': return <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />
     case 'business_hours': return <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />
+    case 'google_reviews': return <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />
     default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 }
@@ -643,6 +644,51 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
           )
         })}
       </Section>
+    </div>
+  )
+}
+
+// ─── Google Reviews Editor ────────────────────────────────────────
+function GoogleReviewsEditor({ block, lang, onUpdate }: {
+  block: GoogleReviewsBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<GoogleReviewsBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Título">
+        <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nos calificaron en Google" /></Field>
+      </Section>
+      <Section label="Puntaje">
+        <Field label="Estrellas (0-5)">
+          <input type="number" min="0" max="5" step="0.1" value={block.data.rating}
+            onChange={e => onUpdate(block.id, { rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Cantidad de reseñas">
+          <input type="number" min="0" step="1" value={block.data.reviewCount}
+            onChange={e => onUpdate(block.id, { reviewCount: Math.max(0, Number(e.target.value) || 0) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+      </Section>
+      <Section label="Enlaces">
+        <Field label="Link a tu ficha de Google Maps">
+          <Input value={block.data.mapsUrl || ''} onChange={v => onUpdate(block.id, { mapsUrl: v })} placeholder="https://maps.google.com/?cid=..." />
+        </Field>
+        <Field label="Place ID (opcional, habilita 'Dejar reseña')">
+          <Input value={block.data.placeId || ''} onChange={v => onUpdate(block.id, { placeId: v })} placeholder="ChIJ..." />
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Google no permite incrustar reseñas reales sin una API paga, así que el puntaje lo cargás vos a mano (actualizalo cada tanto).
+        Buscá tu Place ID gratis en el{' '}
+        <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="underline">Place ID Finder de Google</a>.
+      </p>
     </div>
   )
 }

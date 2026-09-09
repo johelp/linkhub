@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus } from '@/lib/utils'
 
@@ -411,6 +411,43 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       const b = block as BusinessHoursBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { title: '' }
       return <BusinessHoursCard title={t.title} timezone={b.data.timezone} schedule={b.data.schedule} pc={pc} />
+    }
+
+    case 'google_reviews': {
+      const b = block as GoogleReviewsBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '' }
+      const fullStars = Math.round(b.data.rating)
+      const writeReviewUrl = b.data.placeId
+        ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(b.data.placeId)}`
+        : null
+      return (
+        <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 8 }}>{t.title}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 16, letterSpacing: 1 }}>
+              {'★'.repeat(fullStars)}<span style={{ color: '#E5E7EB' }}>{'★'.repeat(5 - fullStars)}</span>
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1B1C' }}>{b.data.rating.toFixed(1)}</span>
+            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#9A9D9F' }}>({b.data.reviewCount} reseñas)</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {b.data.mapsUrl && (
+              <a href={b.data.mapsUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => onTrackClick(b.id, 'google_reviews', b.data.mapsUrl!)}
+                style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '9px 0', borderRadius: 10, background: '#F6F6F5', color: '#1A1B1C', textDecoration: 'none' }}>
+                Ver en Google
+              </a>
+            )}
+            {writeReviewUrl && (
+              <a href={writeReviewUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => onTrackClick(b.id, 'google_reviews', writeReviewUrl)}
+                style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '9px 0', borderRadius: 10, background: pc, color: '#fff', textDecoration: 'none' }}>
+                Dejar reseña
+              </a>
+            )}
+          </div>
+        </div>
+      )
     }
 
     default:
