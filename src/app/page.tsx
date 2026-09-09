@@ -46,14 +46,8 @@ const plans = [
   {
     name: 'Pro', price: '19', suffix: '/mes',
     highlight: true,
-    features: ['Páginas ilimitadas', 'Todos los bloques', 'Multiidioma (ES, EN, PT…)', 'Filtros de temporada', 'QR personalizado SVG+PNG', 'Analíticas completas'],
+    features: ['Páginas ilimitadas', 'Todos los bloques', 'Multiidioma (ES, EN, PT…)', 'Filtros de temporada', 'QR personalizado SVG+PNG', 'Analíticas completas + export CSV', 'Dominio propio', 'Soporte prioritario'],
     cta: 'Empezar Pro', href: '/auth',
-  },
-  {
-    name: 'Agency', price: '49', suffix: '/mes',
-    highlight: false,
-    features: ['Todo lo de Pro', 'Dominio propio', 'Export CSV de analíticas', 'Soporte prioritario'],
-    cta: 'Contactar', href: '/auth',
   },
 ]
 
@@ -120,11 +114,10 @@ const demoPage: Page = {
   ],
 }
 
-// TODO: once you have a WhatsApp number or contact email set up, point this
-// at it (e.g. `https://wa.me/34XXXXXXXXX?text=...`) so the launch banner
-// below can actually collect founding-member requests instead of just
-// funneling into the normal signup flow. See SETUP.md §7.
-const LAUNCH_OFFER_HREF = '/auth'
+// Founding-member requests land here until there's a WhatsApp number or a
+// real form — update once hola@linkhub.app is an inbox you actually own
+// (or swap the domain). See SETUP.md §7.
+const LAUNCH_OFFER_HREF = 'mailto:hola@linkhub.app?subject=Cupo%20de%20lanzamiento%20LinkHub'
 
 export default function LandingPage() {
   return (
@@ -136,7 +129,7 @@ export default function LandingPage() {
         color: '#fff', background: `linear-gradient(90deg, ${R}, #FF8C00)`,
         padding: '9px 16px', textDecoration: 'none',
       }}>
-        ❄️ Cupos de lanzamiento para esta temporada: los primeros negocios se llevan plan Pro gratis — Sumate →
+        ❄️ Cupos de lanzamiento para esta temporada: los primeros negocios se llevan plan Pro gratis — Escribinos →
       </Link>
 
       {/* NAV */}
@@ -256,12 +249,12 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING */}
-      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 80px' }}>
+      <section style={{ maxWidth: 620, margin: '0 auto', padding: '0 24px 80px' }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 10 }}>Precios simples</h2>
         <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 40 }}>
-          El salto a Pro es cuando necesitás más bloques.
+          Empezá gratis. El salto a Pro es cuando necesitás más bloques.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
           {plans.map(p => (
             <div key={p.name} style={{ background: '#fff', borderRadius: 18, padding: 24, position: 'relative', border: p.highlight ? `2px solid ${R}` : `1px solid ${BORDER}` }}>
               {p.highlight && (

@@ -1,5 +1,5 @@
 // ─── Plans ──────────────────────────────────────────────────────
-export type Plan = 'free' | 'pro' | 'agency'
+export type Plan = 'free' | 'pro'
 
 export type BlockType =
   | 'link'
@@ -40,15 +40,6 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     analytics: 'basic',
   },
   pro: {
-    pages: 999,
-    advancedBlocks: true,
-    multiLanguage: true,
-    seasonFilter: true,
-    customQR: true,
-    customDomain: false,
-    analytics: 'full',
-  },
-  agency: {
     pages: 999,
     advancedBlocks: true,
     multiLanguage: true,

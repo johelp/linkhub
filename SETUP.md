@@ -9,7 +9,7 @@ Checklist de todo lo que hace falta para tener el proyecto corriendo en producci
 | [Supabase](https://supabase.com) | DB Postgres + Auth (magic link) + Storage | Free (o Pro cuando haya tráfico real) | Sí |
 | Hosting: [Vercel](https://vercel.com) o [Railway](https://railway.app) | Deploy de la app Next.js | Ya tenés Railway pago | Sí (uno de los dos) |
 | Dominio propio (ej. `linkhub.app`) | URL final del producto | — | Recomendado antes de lanzar |
-| [Stripe](https://stripe.com) | Cobro de planes Pro/Agency | — | Solo cuando actives pagos (Fase 2) |
+| [Stripe](https://stripe.com) | Cobro del plan Pro | — | Sí, para activar pagos reales (ver §6) |
 
 No hace falta cuenta de email transaccional aparte: Supabase Auth manda el magic link con su propio servicio (límite bajo en el plan Free — si mandás muchos emails de login, conviene configurar un SMTP propio en Supabase → Authentication → Email Templates → SMTP Settings).
 
@@ -25,20 +25,23 @@ SUPABASE_SERVICE_ROLE_KEY=         # Supabase → Project Settings → API (serv
 NEXT_PUBLIC_APP_URL=               # URL pública final (https://tu-dominio.com)
 NEXT_PUBLIC_APP_NAME=LinkHub
 
-# Cuando actives Stripe:
+# Stripe — ver §6 para cómo obtener cada valor:
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_ID_PRO=
 ```
 
-⚠️ **Importante:** `SUPABASE_SERVICE_ROLE_KEY` bypasea todos los permisos (RLS) de la base. Nunca lo expongas al cliente ni lo commitees. El proyecto actual no lo usa en ningún lado del código (`grep -r SUPABASE_SERVICE_ROLE_KEY src/` no da resultados) — está en el `.env.local.example` por si en el futuro se necesita para tareas admin (ej. un endpoint de backoffice para dar planes gratis a mano).
+⚠️ **Importante:** `SUPABASE_SERVICE_ROLE_KEY` bypasea todos los permisos (RLS) de la base. Nunca lo expongas al cliente ni lo commitees. Lo usa `src/lib/supabase/admin.ts`, importado únicamente por el webhook de Stripe (`/api/webhooks/stripe`) para actualizar `profiles.plan` sin sesión de usuario — no lo importes desde ningún componente cliente ni ruta que no sea de confianza.
 
 ## 3. Base de datos (Supabase)
 
 En el SQL Editor de Supabase, correr en orden:
 
 1. `supabase/migrations/001_initial_schema.sql` — esquema completo (profiles, pages, analytics_events, custom_domains, RLS).
-2. `supabase/migrations/002_plan_enforcement_and_views.sql` — agregado en esta sesión: corrige el contador de vistas (nunca se incrementaba) y agrega el enforcement de límites de plan a nivel de base de datos (no se podía bypasear el gating de bloques Pro llamando la API de Supabase directo).
+2. `supabase/migrations/002_plan_enforcement_and_views.sql` — corrige el contador de vistas (nunca se incrementaba) y agrega el enforcement de límites de plan a nivel de base de datos (no se podía bypasear el gating de bloques Pro llamando la API de Supabase directo).
+3. `supabase/migrations/003_two_plan_tiers.sql` — colapsa a 2 planes (`free`/`pro`); migra cualquier cuenta `agency` existente a `pro` y ajusta el `check` constraint.
+4. `supabase/migrations/004_stripe_billing.sql` — agrega `stripe_customer_id`, `stripe_subscription_id`, `stripe_subscription_status` a `profiles`, que usa el webhook de Stripe.
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción
@@ -70,21 +73,29 @@ El commit `c8a5f31` en `main` subió credenciales reales de Supabase (anon key +
 2. Actualizá las env vars en Vercel/Railway con las nuevas keys.
 3. Revisá los logs de la base por actividad sospechosa mientras estuvo expuesta.
 
-## 6. Antes de cobrar (Stripe — Fase 2)
+## 6. Stripe — activar pagos reales
 
-Todavía no hay integración de Stripe en el código (solo las env vars comentadas). Cuando quieras activarlo, hace falta:
-- Checkout Session (o Payment Links) para Pro (€19) y Agency (€49)
-- Webhook (`/api/webhooks/stripe`) que actualice `profiles.plan` y `profiles.plan_expires_at` cuando el pago se confirma/cancela/vence
-- Manejo de downgrade cuando vence la suscripción (¿qué pasa con páginas/bloques que superan el límite del plan Free? hoy el trigger de la migración 002 lo bloquearía en la próxima edición, pero no borra contenido existente — hay que decidir la política)
+El código ya está: Checkout Session (`/api/checkout`), portal de facturación para cancelar/cambiar tarjeta (`/api/billing-portal`), y el webhook que sincroniza el estado (`/api/webhooks/stripe`). Lo que falta es configurar tu cuenta de Stripe y cargar 4 env vars — no lo pude probar en vivo en esta sesión porque no tengo tus keys, así que probalo end-to-end en modo test antes de pasar a producción.
 
-## 7. Dar plan Pro/Agency gratis a los primeros clientes (manual)
+1. **Crear el producto y precio**: Stripe Dashboard → Product catalog → Add product → "LinkHub Pro", precio recurrente mensual €19 → copiá el **Price ID** (`price_...`) → `STRIPE_PRICE_ID_PRO`.
+2. **API keys**: Developers → API keys → copiá la Secret key (`sk_test_...` en modo test) → `STRIPE_SECRET_KEY`, y la Publishable key (`pk_test_...`) → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (hoy solo se usa para decidir si mostrar el botón de pago o "Próximamente" en `/dashboard/upgrade` — si más adelante embebés Stripe.js en vez de redirigir al Checkout alojado, ahí se vuelve imprescindible).
+3. **Webhook**: Developers → Webhooks → Add endpoint → URL: `https://tu-dominio.com/api/webhooks/stripe` → eventos a escuchar: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` → copiá el **Signing secret** (`whsec_...`) → `STRIPE_WEBHOOK_SECRET`.
+4. Probar en modo test con una [tarjeta de prueba](https://docs.stripe.com/testing) (`4242 4242 4242 4242`, cualquier fecha futura/CVC): registrate, andá a `/dashboard/upgrade`, "Empezar Pro", completá el checkout, y confirmá que `profiles.plan` pasó a `pro` (mirá los logs del webhook en Stripe Dashboard → Developers → Webhooks → tu endpoint, para ver si el evento llegó y qué devolvió).
+5. Para probar el webhook en local antes de tener dominio: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` (Stripe CLI) te da un `whsec_...` temporal para `.env.local`.
 
-Mientras no haya Stripe, para regalar plan Pro o Agency a un cliente puntual: Supabase → SQL Editor →
+Notas:
+- Mientras `STRIPE_PRICE_ID_PRO` no esté seteado, `/api/checkout` devuelve un 503 controlado y el botón en `/dashboard/upgrade` muestra "Próximamente" — no rompe nada tenerlo sin configurar.
+- El webhook usa `SUPABASE_SERVICE_ROLE_KEY` (bypasea RLS) porque Stripe le pega sin sesión de usuario — es el único lugar del código que la usa.
+- Downgrade automático: cuando Stripe cancela o marca `unpaid`/`incomplete_expired` la suscripción, el webhook baja `profiles.plan` a `free` solo. No borra páginas ni bloques existentes — si el usuario tenía 5 páginas con bloques Pro y vuelve a Free, esas páginas siguen existiendo tal cual (el trigger de plan solo bloquea *nuevas* ediciones que excedan el límite Free, no retroactivamente). Si más adelante querés otra política (ej. despublicar automáticamente lo que excede el límite), es un cambio a decidir aparte.
+
+## 7. Dar plan Pro gratis a los primeros clientes (manual)
+
+Antes de tener Stripe funcionando, o para casos puntuales aunque ya lo tengas: Supabase → SQL Editor →
 
 ```sql
 -- Por email (más práctico que buscar el UUID a mano)
 update public.profiles
-set plan = 'pro',                              -- o 'agency'
+set plan = 'pro',
     plan_expires_at = null                      -- null = no vence; o poné una fecha ej. '2027-03-01'
 where email = 'cliente@ejemplo.com';
 ```
@@ -111,3 +122,11 @@ Cosas a resolver *antes* de construir esto (no son solo feature work):
 - Términos de servicio / política de contenido: LinkHub pasaría a alojar links hacia contenido para adultos, lo cual tiene implicancias legales y de moderación que hoy el proyecto no contempla (no hay ToS ni política de uso aceptable en el repo).
 - Revisar los Términos de Servicio de Vercel/Railway y de la pasarela de pago que se use — varios prohíben o restringen explícitamente alojar/facturar contenido para adultos.
 - Puede requerir un plan/tier de precio distinto y verificación de identidad del creador (KYC), no solo del visitante.
+
+## 9. Poner el repo en privado
+
+No tengo forma de hacerlo por acá — la integración de GitHub que uso no expone cambiar la visibilidad de un repo existente (solo puedo leer/escribir código, crear ramas y PRs). Lo hacés vos en 30 segundos:
+
+1. `github.com/johelp/linkhub` → **Settings** → scroll hasta el final → **Danger Zone** → **Change repository visibility** → **Make private**.
+2. Ojo con lo que dependa de que el repo sea público: si Vercel/Railway están conectados vía la GitHub App, en general el deploy sigue funcionando igual porque ya tienen permiso otorgado sobre el repo puntual — pero si en algún momento pierden acceso, hay que re-autorizar la app para repos privados desde la configuración de la integración.
+3. Dado que hubo una clave real filtrada en el historial (ver §5), pasar a privado reduce la superficie pero **no reemplaza rotar la key** — alguien que ya haya clonado el repo en la ventana en que fue público se la lleva igual.

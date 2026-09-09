@@ -9,8 +9,11 @@ export type Database = {
           email: string
           full_name: string | null
           avatar_url: string | null
-          plan: 'free' | 'pro' | 'agency'
+          plan: 'free' | 'pro'
           plan_expires_at: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
           created_at: string
           updated_at: string
         }
@@ -19,15 +22,21 @@ export type Database = {
           email: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'pro' | 'agency'
+          plan?: 'free' | 'pro'
           plan_expires_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
         }
         Update: {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'pro' | 'agency'
+          plan?: 'free' | 'pro'
           plan_expires_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
         }
         Relationships: []
       }

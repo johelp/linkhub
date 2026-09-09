@@ -11,7 +11,7 @@ const BORDER = 'rgba(26,27,28,0.09)'
 const SNOW = '#F6F6F5'
 const R = '#E8150A'
 
-const planColors: Record<string, string> = { free: LIGHT, pro: R, agency: '#7C3AED' }
+const planColors: Record<string, string> = { free: LIGHT, pro: R }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()

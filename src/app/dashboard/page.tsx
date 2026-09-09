@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Globe, Edit2, QrCode } from 'lucide-react'
-import { PLAN_LIMITS } from '@/types'
+import { PLAN_LIMITS, type Plan } from '@/types'
 import type { Views } from '@/lib/supabase/database.types'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { NewPageButton } from './NewPageButton'
@@ -37,7 +37,7 @@ export default async function DashboardPage() {
     supabase.from('pages_summary').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
   ])
 
-  const plan = (profile?.plan || 'free') as 'free' | 'pro' | 'agency'
+  const plan = (profile?.plan || 'free') as Plan
   const limits = PLAN_LIMITS[plan]
   const pageList = pages || []
   const canCreate = pageList.length < limits.pages
