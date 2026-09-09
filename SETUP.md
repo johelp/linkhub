@@ -42,6 +42,7 @@ En el SQL Editor de Supabase, correr en orden:
 2. `supabase/migrations/002_plan_enforcement_and_views.sql` — corrige el contador de vistas (nunca se incrementaba) y agrega el enforcement de límites de plan a nivel de base de datos (no se podía bypasear el gating de bloques Pro llamando la API de Supabase directo).
 3. `supabase/migrations/003_two_plan_tiers.sql` — colapsa a 2 planes (`free`/`pro`); migra cualquier cuenta `agency` existente a `pro` y ajusta el `check` constraint.
 4. `supabase/migrations/004_stripe_billing.sql` — agrega `stripe_customer_id`, `stripe_subscription_id`, `stripe_subscription_status` a `profiles`, que usa el webhook de Stripe.
+5. `supabase/migrations/005_protect_billing_columns.sql` — **crítica, corre esta sí o sí**: sin ella, cualquier usuario logueado puede ponerse `plan = 'pro'` a sí mismo llamando a Supabase directo desde el navegador, sin pasar por Stripe (ver aviso de seguridad abajo).
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción
@@ -72,6 +73,16 @@ El commit `c8a5f31` en `main` subió credenciales reales de Supabase (anon key +
 1. Andá a Supabase → Project Settings → API → **Reset** el `service_role` key (y considerá resetear el `anon` key también).
 2. Actualizá las env vars en Vercel/Railway con las nuevas keys.
 3. Revisá los logs de la base por actividad sospechosa mientras estuvo expuesta.
+
+### ⚠️ Segundo hallazgo (detectado en revisión automatizada de seguridad, ya corregido en el código — falta que corras la migración)
+
+La política RLS `"Users can update own profile"` (`001_initial_schema.sql`) permite `update` sobre **cualquier columna** de la propia fila, no solo las pensadas para que el usuario edite (nombre, avatar). Postgres RLS restringe filas, no columnas. Antes de la migración 005, cualquier usuario logueado podía ejecutar esto desde la consola del navegador y quedar en plan Pro gratis, sin tocar Stripe:
+
+```js
+await supabase.from('profiles').update({ plan: 'pro' }).eq('id', miPropioId)
+```
+
+Se corrigió con un trigger (`005_protect_billing_columns.sql`) que bloquea cambios a `plan`, `stripe_customer_id`, `stripe_subscription_id`, `stripe_subscription_status` y `plan_expires_at` cuando la request viene de una sesión de usuario normal — solo el webhook de Stripe (service role) o vos corriendo SQL directo pueden tocarlos. **Corré esa migración antes de anunciar que Stripe está activo**, si no cualquiera puede saltarse el pago.
 
 ## 6. Stripe — activar pagos reales
 
