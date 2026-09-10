@@ -4,7 +4,8 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 
 ## ✅ Hecho
 
-- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews (14 en total, catálogo visible en la home)
+- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews, loyalty_card, menu_pdf (17 en total, catálogo visible en la home)
+- Bloque "Carta / Menú" (`menu_pdf`, plan Pro): link a un PDF (o cualquier archivo alojado externamente — Drive, Dropbox, etc.) con la carta/menú del local, con botón para verla o descargarla en la página pública. Abre LinkHub a bares y restós sin necesitar generación de imágenes ni ningún servicio pago nuevo — se descartó integrar QR Monster (Stable Diffusion + ControlNet) por requerir una API de inferencia externa con costo por generación, fuera de alcance de esta vuelta
 - Mensaje predefinido en el link de WhatsApp del bloque de contacto
 - Preview instantáneo sin registro en el home (`LivePreview.tsx`)
 - Captura de email + export CSV por página (`/api/subscribers/export`, botón ✉️ en cada card del dashboard)
@@ -17,6 +18,15 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Comisión de LinkHub por venta vía Mercado Pago Split Payments (`marketplace_fee`): desactivada por defecto, se activa con `MERCADOPAGO_PLATFORM_FEE_PERCENT` (ver `SETUP.md` §7.6). No necesita nada nuevo del lado de la app de Mercado Pago porque ya está creada como "Marketplace/Checkout Pro"
 - Tarjeta de fidelidad — versión simple (plan Pro): bloque "Tarjeta de sellos". El visitante toca "Obtener mi tarjeta" en la página pública y le queda un link único guardado en su navegador (`/l/[code]`, con QR); el dueño suma sellos o canjea el premio desde `Dashboard → 🎟️/🏅 (esta página)` escaneando o tipeando ese código. Sin Apple/Google Wallet todavía — queda anotado como posible mejora futura, no es parte de esta versión
 - Páginas con plantilla: el botón "Nueva página" del dashboard (`NewPageButton.tsx`) ahora pregunta primero "Vacía / Catálogo de precios / Ficha de contacto / Media kit" (`src/lib/blocks/templates.ts`) y precarga los bloques correspondientes en vez de arrancar siempre en blanco. "Catálogo de precios" usa solo bloques gratuitos (funciona en Free); "Ficha de contacto" y "Media kit" usan bloques Pro (`featured`, `contact_card`, etc.) — a un usuario Free que las elige se lo manda directo a `/dashboard/upgrade` en vez de dejarlo chocar con el trigger de Supabase que las bloquearía igual
+
+## 🔲 Revisar costos por uso (no por bloque)
+
+Duda planteada: ¿entradas a eventos y tarjeta de sellos consumen más que un LinkHub simple? Repuesta corta: los bloques en sí no cuestan nada (son filas en Postgres) — lo que sí escala con uso es **Resend** (emails de tickets, gratis hasta 3k/mes y después cobra por email) y cualquier futura API paga de terceros (por eso se descartó QR Monster, ver arriba). Mercado Pago/Stripe no cuestan — generan ingreso.
+
+Antes de tocar el modelo de planes, conviene:
+1. Medir cuánto está consumiendo Resend realmente una vez que haya tráfico (hoy: 0, no hay credenciales cargadas).
+2. Si hace falta, meter un límite de uso (ej. "X emails de entradas incluidos por mes en Pro, después $Y por email o hay que cargar tu propia `RESEND_API_KEY`") en vez de mover bloques entre Free/Pro — mantiene el modelo de 2 planes simple y solo mide donde el costo real vive.
+3. No es urgente mientras no haya volumen real de ventas/entradas — anotado para revisar con números concretos de Supabase/Resend/Vercel cuando el proyecto tenga tráfico.
 
 ## 🔲 Media kit / páginas con plantilla — mejoras futuras
 

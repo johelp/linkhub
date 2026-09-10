@@ -64,7 +64,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
   {
     id: 'contact',
     label: 'Ficha de contacto',
-    description: 'Presentación, horario de atención, datos de contacto y redes',
+    description: 'Presentación, horario, carta/menú, contacto y redes',
     icon: '📇',
     buildBlocks: (name) => [
       {
@@ -92,11 +92,15 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         },
       },
       {
-        id: generateId(), type: 'contact_card', order: 2, visible: true, seasonFilter: 'always',
+        id: generateId(), type: 'menu_pdf', order: 2, visible: true, seasonFilter: 'always',
+        data: { translations: esOnly({ title: 'Nuestra carta', description: 'Ver menú completo' }), url: '' },
+      },
+      {
+        id: generateId(), type: 'contact_card', order: 3, visible: true, seasonFilter: 'always',
         data: { phone: '', email: '', address: '', mapUrl: '', whatsapp: '', whatsappMessage: 'Hola! Quería hacerte una consulta' },
       },
       {
-        id: generateId(), type: 'social_grid', order: 3, visible: true, seasonFilter: 'always',
+        id: generateId(), type: 'social_grid', order: 4, visible: true, seasonFilter: 'always',
         data: {
           items: [
             { id: generateId(), platform: 'instagram', url: 'https://instagram.com/', label: 'Instagram' },

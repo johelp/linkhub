@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuPdfBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 
@@ -218,6 +218,26 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
           style={card}>
           <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
             {b.data.icon}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
+            {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+          </div>
+          <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
+        </a>
+      )
+    }
+
+    case 'menu_pdf': {
+      const b = block as MenuPdfBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      if (!b.data.url) return null
+      return (
+        <a href={b.data.url} target="_blank" rel="noopener noreferrer"
+          onClick={() => onTrackClick(b.id, 'menu_pdf', b.data.url)}
+          style={card}>
+          <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: '#FEF0EF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
+            📋
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuPdfBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -95,6 +95,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'menu_pdf': editor = <MenuPdfEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 
@@ -533,6 +534,33 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
         <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
       </Section>
       <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
+    </div>
+  )
+}
+
+// ─── Menu / Carta PDF Editor ───────────────────────────────────────
+function MenuPdfEditor({ block, lang, onUpdate }: {
+  block: MenuPdfBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<MenuPdfBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Textos">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nuestra carta" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Ver menú completo" /></Field>
+      </Section>
+      <Section label="Archivo">
+        <Field label="Link al PDF de la carta/menú">
+          <Input value={block.data.url} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://..." />
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Subí tu carta a Google Drive, Dropbox o donde ya la tengas alojada y pegá acá el link público de descarga/visualización.
+      </p>
     </div>
   )
 }

@@ -375,6 +375,31 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'menu_pdf',
+    label: 'Carta / Menú',
+    description: 'Link a tu carta o menú en PDF, con botón para verla o descargarla',
+    icon: '📋',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'menu_pdf',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Nuestra carta', description: 'Ver menú completo' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        url: '',
+      },
+    }),
+  },
+  {
     type: 'loyalty_card',
     label: 'Tarjeta de sellos',
     description: 'Fidelizá clientes: sumá un sello por visita y canjeá un premio',

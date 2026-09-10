@@ -18,6 +18,7 @@ export type BlockType =
   | 'google_reviews'
   | 'loyalty_card'
   | 'text'
+  | 'menu_pdf'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -299,11 +300,19 @@ export interface EventTicketsBlock extends BlockBase {
   }
 }
 
+export interface MenuPdfBlock extends BlockBase {
+  type: 'menu_pdf'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    url: string   // link to a PDF (or any hosted file) with the menu/carta
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuPdfBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {
