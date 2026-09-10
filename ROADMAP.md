@@ -55,6 +55,25 @@ Buen fit con el caso de uso "comercios locales" y reusa el QR que ya existe.
 - **Versión completa** (aparece en Apple Wallet / Google Wallet real): mucho más atractivo pero necesita certificados de Apple Developer + Google Wallet API — proyecto aparte, no un agregado chico.
 - Idea sumada: que las compras de productos digitales (no solo visitas al local) también sumen sellos — encajaría bien una vez que exista la entrega de productos digitales (ver más abajo), reusando la misma tabla `payments` como disparador.
 
+## 🔲 Agenda de citas / reservas (bloque nuevo, plan Pro)
+
+Spec: el dueño define horarios disponibles por día (igual que `business_hours`) y un cliente reserva un turno desde la página pública, sin pasar por WhatsApp/llamada.
+
+Diseño propuesto para una v1 simple (reusando patrones que ya existen en el proyecto):
+- **Bloque nuevo** `booking` — similar a `business_hours` pero agrega `slotDurationMinutes` (ej. 30/60) y, a diferencia de horario de atención, sí necesita persistencia (qué turnos ya están ocupados), no solo cálculo en el cliente.
+- **2 tablas nuevas**: `booking_slots` config (o se reusa el JSON del bloque, igual que `business_hours`) y `bookings` (page_id, block_id, slot_start timestamptz, client_name, client_contact, status: `confirmed`/`cancelled`). Un índice único en `(block_id, slot_start)` evita el doble booking a nivel de base, no solo de app — mismo criterio que ya se usó para no confiar solo en el chequeo del servidor.
+- **Flujo del cliente**: en la página pública, el bloque muestra los próximos N días con horarios libres (calculados restando `bookings` confirmadas al `schedule` del bloque, con la misma lógica de zona horaria IANA que ya tiene `getBusinessOpenStatus`); el cliente elige un turno, pone nombre + contacto, y queda reservado al toque (sin pago, como pide el spec) — igual de simple que el flujo de "captura de email", no el de checkout.
+- **Confirmación**: mail al cliente con el turno (reusa Resend, ya integrado) + un link para cancelar (`/r/[code]`, mismo patrón que `/t/[code]` de las entradas).
+- **Owner**: pantalla `/dashboard/bookings/[pageId]` con la lista de próximos turnos — mismo patrón que `/dashboard/validate/[pageId]`.
+- Gateado a Pro (`limits.advancedBlocks`), como el resto de los bloques no triviales.
+
+Decisiones que quedan pendientes de definir cuando se arranque a construir (cambian el alcance):
+1. ¿Un solo servicio/duración por página, o varios servicios con duraciones distintas (ej. "corte" 30 min, "color" 90 min)? V1 de un solo servicio es sensiblemente más simple.
+2. ¿La reserva queda confirmada al instante, o el dueño la tiene que aprobar manualmente antes? Instantánea es más simple y es lo que describe el spec tal cual.
+3. ¿Reserva gratuita (como está arriba) o con seña/depósito vía Mercado Pago? Si se suma seña, reusa el mismo `createMercadoPagoPreference` que ya existe para entradas.
+
+Recomendación: arrancar con la versión más simple de las tres (1 servicio, confirmación instantánea, sin seña) — es la que describe el spec y es del tamaño de lo que ya se construyó para `event_tickets` o `business_hours`.
+
 ## 🔲 Otras ideas sueltas de la comparación con la competencia
 
 - Verificación de dominio propio con UI (la tabla `custom_domains` existe en la base pero no hay pantalla)
