@@ -39,6 +39,20 @@ const features = [
   { icon: '⚡', title: 'Rápida y optimizada para SEO', desc: 'SSG + ISR. Carga instantánea y pensada para buscadores e IA.' },
 ]
 
+// Precios y comisiones relevados en sep. 2026 desde los sitios de cada
+// plataforma (o coberturas de terceros recientes cuando el sitio oficial no
+// publica el número) -- no son datos inventados, pero cada plataforma puede
+// cambiarlos en cualquier momento. LinkHub no cobra comisión propia por
+// venta salvo que el dueño de la página la active a propósito (ver
+// MERCADOPAGO_PLATFORM_FEE_PERCENT en SETUP.md), así que el 0% de acá es el
+// comportamiento por defecto real, no una promesa de marketing.
+const comparison = [
+  { name: 'LinkHub', free: true, paidFrom: '€19/mes', fee: '0%', mercadoPago: true, highlight: true },
+  { name: 'Linktree', free: true, paidFrom: '$8/mes', fee: '9–12%*', mercadoPago: false },
+  { name: 'Beacons', free: true, paidFrom: '$10/mes', fee: '9%*', mercadoPago: false },
+  { name: 'Stan Store', free: false, paidFrom: '$29/mes', fee: '0%', mercadoPago: false },
+]
+
 const plans = [
   {
     name: 'Free', price: '0', suffix: '',
@@ -233,6 +247,56 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* COMPARISON */}
+      <section style={{ maxWidth: 780, margin: '0 auto', padding: '0 24px 80px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 10 }}>Cómo nos comparamos</h2>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 32 }}>
+          Frente a los link-in-bio más conocidos, LinkHub arranca más barato y no te cobra por vender.
+        </p>
+        <div style={{ overflowX: 'auto', border: `1px solid ${BORDER}`, borderRadius: 16, background: '#fff' }}>
+          <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '14px 16px', color: LIGHT, fontWeight: 600, fontSize: 12 }}></th>
+                {comparison.map(c => (
+                  <th key={c.name} style={{
+                    textAlign: 'center', padding: '14px 12px', fontWeight: 700, color: c.highlight ? R : INK,
+                    background: c.highlight ? '#FEF0EF' : 'transparent',
+                  }}>
+                    {c.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {([
+                { label: 'Plan gratis', get: (c: typeof comparison[number]) => c.free ? '✓' : '—' },
+                { label: 'Plan pago desde', get: (c: typeof comparison[number]) => c.paidFrom },
+                { label: 'Comisión propia sobre ventas', get: (c: typeof comparison[number]) => c.fee },
+                { label: 'Mercado Pago (LatAm)', get: (c: typeof comparison[number]) => c.mercadoPago ? '✓' : '—' },
+              ]).map((row, i) => (
+                <tr key={row.label} style={{ borderTop: `1px solid ${BORDER}` }}>
+                  <td style={{ padding: '12px 16px', color: MUTED, fontWeight: 500 }}>{row.label}</td>
+                  {comparison.map(c => (
+                    <td key={c.name} style={{
+                      textAlign: 'center', padding: '12px 12px', fontWeight: 600,
+                      color: row.get(c) === '✓' ? '#16A34A' : row.get(c) === '—' ? LIGHT : INK,
+                      background: c.highlight ? '#FEF0EF' : i % 2 === 0 ? 'transparent' : 'transparent',
+                    }}>
+                      {row.get(c)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: 11, color: LIGHT, textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
+          *Linktree y Beacons bajan la comisión a 0% recién en sus planes más caros ($35/mes y $30-90/mes respectivamente).
+          Precios públicos relevados en septiembre 2026, cada plataforma puede cambiarlos — confirmá en su sitio antes de decidir.
+        </p>
       </section>
 
       {/* FOOTER */}

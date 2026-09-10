@@ -36,11 +36,17 @@ export function LivePreview() {
 
         <div style={{
           width: 300, borderRadius: 36, border: '10px solid #1A1B1C', background: '#fff',
-          overflow: 'hidden', boxShadow: '0 24px 60px rgba(26,27,28,0.16)', maxHeight: 480,
+          overflow: 'hidden', boxShadow: '0 24px 60px rgba(26,27,28,0.16)', maxHeight: 480, position: 'relative',
         }}>
           <div style={{ maxHeight: 460, overflow: 'hidden' }}>
             <PageView page={page} />
           </div>
+          {/* Same reasoning as HeroShowcase: fade the cut instead of
+              hard-clipping the page content mid-block. */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, height: 80, pointerEvents: 'none',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0), #fff)',
+          }} />
         </div>
 
         <Link href="/auth" className="hero-cta"

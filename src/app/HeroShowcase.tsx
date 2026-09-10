@@ -19,11 +19,18 @@ export function HeroShowcase() {
         <div className="hero-phone-tilt">
           <div style={{
             width: 300, borderRadius: 36, border: '10px solid #1A1B1C', background: '#fff',
-            overflow: 'hidden', boxShadow: '0 30px 70px rgba(26,27,28,0.22)', maxHeight: 560,
+            overflow: 'hidden', boxShadow: '0 30px 70px rgba(26,27,28,0.22)', maxHeight: 560, position: 'relative',
           }}>
             <div key={HERO_EXAMPLES[index].page.id} className="hero-fade-up" style={{ animationDuration: '0.4s', maxHeight: 540, overflow: 'hidden' }}>
               <PageView page={HERO_EXAMPLES[index].page} />
             </div>
+            {/* The real page is taller than the phone screen -- fade the cut
+                instead of hard-clipping mid-block, so it reads as "there's
+                more below" rather than a broken layout. */}
+            <div style={{
+              position: 'absolute', left: 0, right: 0, bottom: 0, height: 90, pointerEvents: 'none',
+              background: 'linear-gradient(to bottom, rgba(255,255,255,0), #fff)',
+            }} />
           </div>
         </div>
       </div>
