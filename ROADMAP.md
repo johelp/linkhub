@@ -15,6 +15,7 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Google Analytics 4 + Meta Pixel por página (plan Pro): campos en Ajustes → Integraciones, IDs validados antes de inyectar el script en la página pública (ver `SETUP.md` §12)
 - Condicionales entre bloques (plan Pro): cualquier bloque puede mostrarse solo "cuando [bloque de horario] esté abierto/cerrado" — aparece como sección "Visibilidad condicional" en el editor del bloque en cuanto hay al menos un bloque de horario de atención en la página. Ej: mostrar "Dejanos tu mensaje" (captura de email) solo si está cerrado
 - Comisión de LinkHub por venta vía Mercado Pago Split Payments (`marketplace_fee`): desactivada por defecto, se activa con `MERCADOPAGO_PLATFORM_FEE_PERCENT` (ver `SETUP.md` §7.6). No necesita nada nuevo del lado de la app de Mercado Pago porque ya está creada como "Marketplace/Checkout Pro"
+- Tarjeta de fidelidad — versión simple (plan Pro): bloque "Tarjeta de sellos". El visitante toca "Obtener mi tarjeta" en la página pública y le queda un link único guardado en su navegador (`/l/[code]`, con QR); el dueño suma sellos o canjea el premio desde `Dashboard → 🎟️/🏅 (esta página)` escaneando o tipeando ese código. Sin Apple/Google Wallet todavía — queda anotado como posible mejora futura, no es parte de esta versión
 
 ## 🔲 Media kit / páginas con plantilla
 
@@ -48,11 +49,9 @@ Mismo bloque "Cobrar" que ya existe, pero hoy no entrega nada después de pagar 
 
 Ver `SETUP.md` §10 — no promocionar todavía: ya hay un incumbente gratis (AllMyLinks) y un jugador grande que lo permite explícitamente (Beacons), y el riesgo de que Stripe cierre la cuenta de pagos de todo LinkHub si se asocia con contenido para adultos es real. Si se retoma, iría en una marca/entidad separada.
 
-## 🔲 Tarjeta de fidelidad (suma de sellos) para comercios
+## 🔲 Tarjeta de fidelidad — Apple Wallet / Google Wallet (v2)
 
-Buen fit con el caso de uso "comercios locales" y reusa el QR que ya existe.
-- **Versión simple**: link único por cliente + código; el comercio escanea el QR del cliente (o al revés) para sumar un sello. Solo necesita 2 tablas nuevas (`loyalty_cards`, `loyalty_stamps`) y una pantalla de "sumar sello". Buildable en una vuelta.
-- **Versión completa** (aparece en Apple Wallet / Google Wallet real): mucho más atractivo pero necesita certificados de Apple Developer + Google Wallet API — proyecto aparte, no un agregado chico.
+La versión simple ya está construida (ver ✅ Hecho: bloque "Tarjeta de sellos"). Esto es la mejora que queda pendiente a propósito: que la tarjeta aparezca como un pase real en Apple Wallet / Google Wallet en vez de solo un link con QR. Mucho más atractivo pero necesita certificados de Apple Developer + Google Wallet API — proyecto aparte, no un agregado chico, así que se dejó afuera de la v1 a pedido explícito.
 - Idea sumada: que las compras de productos digitales (no solo visitas al local) también sumen sellos — encajaría bien una vez que exista la entrega de productos digitales (ver más abajo), reusando la misma tabla `payments` como disparador.
 
 ## 🔲 Agenda de citas / reservas (bloque nuevo, plan Pro)

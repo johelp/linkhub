@@ -51,6 +51,7 @@ En el SQL Editor de Supabase, correr en orden:
 6. `supabase/migrations/006_email_capture.sql` — tabla `email_subscribers` para el bloque de captura de email.
 7. `supabase/migrations/007_mercadopago_connect.sql` — tablas `payment_connections` (tokens OAuth, sin acceso desde el navegador ni para el dueño) y `payments` (log de cobros) para el bloque de Mercado Pago.
 8. `supabase/migrations/008_event_tickets.sql` — tabla `tickets` (sin acceso público de lectura, mismo criterio que `payment_connections`) y columnas `tier_id`/`tier_name` en `payments`, para el bloque de entradas a eventos.
+9. `supabase/migrations/009_loyalty_cards.sql` — tabla `loyalty_cards` (sin acceso público de lectura, mismo criterio que `tickets`) para el bloque "Tarjeta de sellos".
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción

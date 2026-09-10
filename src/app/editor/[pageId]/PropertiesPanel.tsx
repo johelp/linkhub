@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -94,6 +94,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'event_tickets': editor = <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 
@@ -745,6 +746,49 @@ function GoogleReviewsEditor({ block, lang, onUpdate }: {
         Google no permite incrustar reseñas reales sin una API paga, así que el puntaje lo cargás vos a mano (actualizalo cada tanto).
         Buscá tu Place ID gratis en el{' '}
         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="underline">Place ID Finder de Google</a>.
+      </p>
+    </div>
+  )
+}
+
+// ─── Loyalty Card Editor ─────────────────────────────────────────
+function LoyaltyCardEditor({ block, lang, onUpdate }: {
+  block: LoyaltyCardBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<LoyaltyCardBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Textos">
+        <Field label="Título">
+          <Input value={t.title} onChange={v => setT('title', v)} placeholder="Tarjeta de sellos" />
+        </Field>
+        <Field label="Descripción">
+          <Input value={t.description} onChange={v => setT('description', v)} placeholder="Sumá un sello en cada visita" />
+        </Field>
+      </Section>
+      <Section label="Sellos y premio">
+        <Field label="Icono del sello (emoji)">
+          <Input value={block.data.stampIcon} onChange={v => onUpdate(block.id, { stampIcon: v })} placeholder="☕" />
+        </Field>
+        <Field label="Sellos para ganar el premio">
+          <input type="number" min="1" step="1" value={block.data.targetStamps}
+            onChange={e => onUpdate(block.id, { targetStamps: Math.max(1, Number(e.target.value) || 1) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Premio">
+          <Input value={block.data.rewardDescription[lang] || block.data.rewardDescription.es || ''}
+            onChange={v => onUpdate(block.id, { rewardDescription: { ...block.data.rewardDescription, [lang]: v } })}
+            placeholder="Un producto gratis" />
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Cada visitante obtiene su propia tarjeta con un código único. Vos le sumás los sellos desde{' '}
+        <span className="font-semibold">Dashboard → 🎟️ (esta página)</span> escaneando o tipeando su código.
       </p>
     </div>
   )

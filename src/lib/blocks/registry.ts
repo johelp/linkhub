@@ -374,6 +374,33 @@ export const BLOCK_REGISTRY: BlockDef[] = [
       },
     }),
   },
+  {
+    type: 'loyalty_card',
+    label: 'Tarjeta de sellos',
+    description: 'Fidelizá clientes: sumá un sello por visita y canjeá un premio',
+    icon: '🎟️',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'loyalty_card',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Tarjeta de sellos', description: 'Sumá un sello en cada visita' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        stampIcon: '☕',
+        targetStamps: 10,
+        rewardDescription: { es: 'Un producto gratis', en: '', pt: '', fr: '', de: '', it: '' } as Record<Lang, string>,
+      },
+    }),
+  },
 ]
 
 export const BLOCK_BY_TYPE = Object.fromEntries(

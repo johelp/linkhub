@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Globe, Edit2, QrCode, Mail, Ticket } from 'lucide-react'
+import { Globe, Edit2, QrCode, Mail, Ticket, Award } from 'lucide-react'
 import { PLAN_LIMITS, type Plan } from '@/types'
 import type { Views } from '@/lib/supabase/database.types'
 import { formatDate, formatNumber } from '@/lib/utils'
@@ -122,6 +122,10 @@ function PageCard({ page }: { page: PageSummary }) {
           <Link href={`/dashboard/validate/${page.id}`} title="Validar entradas"
             style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <Ticket size={13} />
+          </Link>
+          <Link href={`/dashboard/loyalty/${page.id}`} title="Tarjeta de sellos"
+            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Award size={13} />
           </Link>
         </div>
       </div>

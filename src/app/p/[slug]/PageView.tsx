@@ -1,9 +1,10 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock } from '@/types'
+import { useRouter } from 'next/navigation'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import { parseVideoEmbed, getBusinessOpenStatus } from '@/lib/utils'
+import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -469,6 +470,17 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       )
     }
 
+    case 'loyalty_card': {
+      const b = block as LoyaltyCardBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      return (
+        <LoyaltyCardWidget pageId={pageId} blockId={b.id} pc={pc}
+          title={t.title} description={t.description}
+          stampIcon={b.data.stampIcon} targetStamps={b.data.targetStamps}
+          rewardDescription={b.data.rewardDescription[lang] || b.data.rewardDescription.es || ''} />
+      )
+    }
+
     default:
       return null
   }
@@ -513,6 +525,60 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
           {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
         </form>
       )}
+    </div>
+  )
+}
+
+// ─── Loyalty Card Widget ───────────────────────────────────────────
+function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon, targetStamps, rewardDescription }: {
+  pageId: string; blockId: string; pc: string
+  title: string; description: string; stampIcon: string; targetStamps: number; rewardDescription: string
+}) {
+  const isDemo = pageId.startsWith('demo')
+  const storageKey = `linkhub_loyalty_${pageId}_${blockId}`
+  const router = useRouter()
+  const [code, setCode] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    try {
+      setCode(localStorage.getItem(storageKey))
+    } catch {
+      // Private browsing / blocked storage -- just can't remember the card, no big deal.
+    }
+  }, [storageKey])
+
+  async function getCard() {
+    if (loading || isDemo) return
+    setLoading(true)
+    const newCode = generateId()
+    const supabase = createClient()
+    const { error } = await supabase.from('loyalty_cards').insert({ page_id: pageId, block_id: blockId, code: newCode })
+    if (error) { setLoading(false); return }
+    try { localStorage.setItem(storageKey, newCode) } catch { /* see above */ }
+    router.push(`/l/${newCode}`)
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
+      <div style={{ fontSize: 28, marginBottom: 6 }}>{stampIcon}</div>
+      {title && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{title}</p>}
+      {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 4 }}>{description}</p>}
+      <p style={{ fontSize: 11, color: '#9A9D9F', marginBottom: 12 }}>
+        {targetStamps} sellos = {rewardDescription || 'un premio'}
+      </p>
+      {code ? (
+        <a href={`/l/${code}`}
+          style={{ display: 'inline-block', padding: '10px 20px', borderRadius: 10, background: pc, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          Ver mi tarjeta →
+        </a>
+      ) : (
+        <button onClick={getCard} disabled={loading}
+          style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: pc, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+          {loading ? 'Un momento...' : 'Obtener mi tarjeta'}
+        </button>
+      )}
+      {isDemo && <p style={{ fontSize: 10, color: '#9A9D9F', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
     </div>
   )
 }

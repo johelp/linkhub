@@ -16,6 +16,7 @@ export type BlockType =
   | 'event_tickets'
   | 'business_hours'
   | 'google_reviews'
+  | 'loyalty_card'
   | 'text'
 
 // Blocks available without paying
@@ -224,6 +225,16 @@ export interface GoogleReviewsBlock extends BlockBase {
   }
 }
 
+export interface LoyaltyCardBlock extends BlockBase {
+  type: 'loyalty_card'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    stampIcon: string                    // emoji shown for each stamp, e.g. "☕"
+    targetStamps: number                 // stamps needed to earn the reward
+    rewardDescription: Record<Lang, string>  // e.g. "Café gratis"
+  }
+}
+
 export interface ImageBannerBlock extends BlockBase {
   type: 'image_banner'
   data: {
@@ -292,7 +303,7 @@ export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | TextBlock | DividerBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

@@ -203,6 +203,22 @@ export type Database = {
           { foreignKeyName: 'tickets_payment_id_fkey'; columns: ['payment_id']; referencedRelation: 'payments'; referencedColumns: ['id'] },
         ]
       }
+      loyalty_cards: {
+        Row: {
+          id: string
+          page_id: string
+          block_id: string
+          code: string
+          stamps_count: number
+          last_redeemed_at: string | null
+          created_at: string
+        }
+        Insert: { id?: string; page_id: string; block_id: string; code: string; stamps_count?: number; last_redeemed_at?: string | null }
+        Update: { stamps_count?: number; last_redeemed_at?: string | null }
+        Relationships: [
+          { foreignKeyName: 'loyalty_cards_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] },
+        ]
+      }
     }
     Views: {
       pages_summary: {
