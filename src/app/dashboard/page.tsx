@@ -52,7 +52,7 @@ export default async function DashboardPage() {
             {plan === 'free' && ` · Plan Free (máx. ${limits.pages})`}
           </p>
         </div>
-        <NewPageButton canCreate={canCreate} />
+        <NewPageButton canCreate={canCreate} plan={plan} />
       </div>
 
       {plan === 'free' && (
@@ -66,11 +66,11 @@ export default async function DashboardPage() {
       )}
 
       {pageList.length === 0
-        ? <EmptyState canCreate={canCreate} />
+        ? <EmptyState canCreate={canCreate} plan={plan} />
         : (
           <div style={S.grid}>
             {pageList.map((p) => <PageCard key={p.id} page={p} />)}
-            {canCreate && <NewPageButton canCreate={true} asCard />}
+            {canCreate && <NewPageButton canCreate={true} plan={plan} asCard />}
           </div>
         )
       }
@@ -133,13 +133,13 @@ function PageCard({ page }: { page: PageSummary }) {
   )
 }
 
-function EmptyState({ canCreate }: { canCreate: boolean }) {
+function EmptyState({ canCreate, plan }: { canCreate: boolean; plan: Plan }) {
   return (
     <div style={S.empty}>
       <div style={S.emptyIcon}>🔗</div>
       <h2 style={S.emptyTitle}>Todavía no tenés páginas</h2>
       <p style={S.emptySub}>Creá tu primera página de enlaces en menos de 2 minutos</p>
-      {canCreate && <NewPageButton canCreate={true} />}
+      {canCreate && <NewPageButton canCreate={true} plan={plan} />}
     </div>
   )
 }

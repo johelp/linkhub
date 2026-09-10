@@ -16,10 +16,14 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Condicionales entre bloques (plan Pro): cualquier bloque puede mostrarse solo "cuando [bloque de horario] esté abierto/cerrado" — aparece como sección "Visibilidad condicional" en el editor del bloque en cuanto hay al menos un bloque de horario de atención en la página. Ej: mostrar "Dejanos tu mensaje" (captura de email) solo si está cerrado
 - Comisión de LinkHub por venta vía Mercado Pago Split Payments (`marketplace_fee`): desactivada por defecto, se activa con `MERCADOPAGO_PLATFORM_FEE_PERCENT` (ver `SETUP.md` §7.6). No necesita nada nuevo del lado de la app de Mercado Pago porque ya está creada como "Marketplace/Checkout Pro"
 - Tarjeta de fidelidad — versión simple (plan Pro): bloque "Tarjeta de sellos". El visitante toca "Obtener mi tarjeta" en la página pública y le queda un link único guardado en su navegador (`/l/[code]`, con QR); el dueño suma sellos o canjea el premio desde `Dashboard → 🎟️/🏅 (esta página)` escaneando o tipeando ese código. Sin Apple/Google Wallet todavía — queda anotado como posible mejora futura, no es parte de esta versión
+- Páginas con plantilla: el botón "Nueva página" del dashboard (`NewPageButton.tsx`) ahora pregunta primero "Vacía / Catálogo de precios / Ficha de contacto / Media kit" (`src/lib/blocks/templates.ts`) y precarga los bloques correspondientes en vez de arrancar siempre en blanco. "Catálogo de precios" usa solo bloques gratuitos (funciona en Free); "Ficha de contacto" y "Media kit" usan bloques Pro (`featured`, `contact_card`, etc.) — a un usuario Free que las elige se lo manda directo a `/dashboard/upgrade` en vez de dejarlo chocar con el trigger de Supabase que las bloquearía igual
 
-## 🔲 Media kit / páginas con plantilla
+## 🔲 Media kit / páginas con plantilla — mejoras futuras
 
-Hoy un usuario Pro ya puede crear varias páginas y armar lo que quiera con los bloques existentes — un "media kit" (foto, bio, stats, contacto, redes) es 100% armable hoy a mano. Lo que falta es que sea **fácil**: un botón "Nueva página desde plantilla" en el dashboard que arranque con bloques pre-cargados (media kit, ficha de contacto, catálogo de precios) en vez de una página vacía. Es chico — reutiliza `demoPage.ts` como patrón. Buen candidato para una próxima vuelta corta.
+La v1 (ver ✅ Hecho) cubre los 3 casos pedidos con plantillas fijas hardcodeadas. Ideas para una vuelta futura si hace falta más:
+- Más plantillas (ej. "portfolio", "restaurante", "evento" reusando el patrón de `buildEventExample` en `demoPage.ts`)
+- Dejar que el usuario edite/guarde sus propias plantillas a partir de una página existente ("Duplicar como plantilla"), no solo las 3 fijas
+- Miniatura visual de cada plantilla en el picker en vez de solo icono + texto
 
 ## 🔲 Integración con n8n
 
