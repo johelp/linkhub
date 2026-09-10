@@ -21,7 +21,7 @@ interface Props { plan: Plan }
 type Tab = 'block' | 'page' | 'seo'
 
 export function PropertiesPanel({ plan }: Props) {
-  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateSettings, updateSeo, previewLang } = useEditorStore()
+  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang } = useEditorStore()
   const [tab, setTab] = useState<Tab>('block')
   const limits = PLAN_LIMITS[plan]
 
@@ -54,7 +54,8 @@ export function PropertiesPanel({ plan }: Props) {
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'block' && (
           selectedBlock
-            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} />
+            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
+                onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
             : <div className="text-center py-12">
                 <div className="text-3xl mb-2">👆</div>
                 <p className="text-xs" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
@@ -68,31 +69,84 @@ export function PropertiesPanel({ plan }: Props) {
 }
 
 // ─── Block Editor ────────────────────────────────────────────────
-function BlockEditor({ block, lang, plan, onUpdate, onUpdateSeason }: {
-  block: Block; lang: Lang; plan: Plan
+function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, onUpdateCondition }: {
+  block: Block; lang: Lang; plan: Plan; allBlocks: Block[]
   onUpdate: (id: string, data: Partial<Block['data']>) => void
   onUpdateSeason: (id: string, seasonFilter: SeasonMode) => void
+  onUpdateCondition: (id: string, condition: import('@/types').BlockCondition | undefined) => void
 }) {
   const limits = PLAN_LIMITS[plan]
 
+  let editor: React.ReactNode
   switch (block.type) {
-    case 'link': return <LinkEditor block={block} lang={lang} limits={limits} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
-    case 'featured': return <FeaturedEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
-    case 'expandable': return <ExpandableEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
-    case 'section_label': return <SectionLabelEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />
-    case 'text': return <TextEditor block={block} lang={lang} onUpdate={onUpdate} />
-    case 'contact_card': return <ContactCardEditor block={block} onUpdate={onUpdate} />
-    case 'social_grid': return <SocialGridEditor block={block} onUpdate={onUpdate} />
-    case 'divider': return <DividerEditor block={block} onUpdate={onUpdate} />
-    case 'image_banner': return <ImageBannerEditor block={block} onUpdate={onUpdate} />
-    case 'video_embed': return <VideoEmbedEditor block={block} onUpdate={onUpdate} />
-    case 'email_capture': return <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />
-    case 'payment_button': return <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />
-    case 'event_tickets': return <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />
-    case 'business_hours': return <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />
-    case 'google_reviews': return <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />
-    default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
+    case 'link': editor = <LinkEditor block={block} lang={lang} limits={limits} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'featured': editor = <FeaturedEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'expandable': editor = <ExpandableEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'section_label': editor = <SectionLabelEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'text': editor = <TextEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'contact_card': editor = <ContactCardEditor block={block} onUpdate={onUpdate} />; break
+    case 'social_grid': editor = <SocialGridEditor block={block} onUpdate={onUpdate} />; break
+    case 'divider': editor = <DividerEditor block={block} onUpdate={onUpdate} />; break
+    case 'image_banner': editor = <ImageBannerEditor block={block} onUpdate={onUpdate} />; break
+    case 'video_embed': editor = <VideoEmbedEditor block={block} onUpdate={onUpdate} />; break
+    case 'email_capture': editor = <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'payment_button': editor = <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'event_tickets': editor = <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
+
+  // "business_hours" itself is the only source type today, so it can't condition on another one.
+  const sources = block.type === 'business_hours'
+    ? []
+    : (allBlocks.filter(b => b.type === 'business_hours') as BusinessHoursBlock[])
+
+  return (
+    <div className="space-y-4">
+      {editor}
+      {limits.advancedBlocks && sources.length > 0 && (
+        <ConditionField block={block} sources={sources} onUpdate={onUpdateCondition} />
+      )}
+    </div>
+  )
+}
+
+// ─── Conditional visibility (based on a business_hours block elsewhere on the page) ──
+function ConditionField({ block, sources, onUpdate }: {
+  block: Block
+  sources: BusinessHoursBlock[]
+  onUpdate: (id: string, condition: import('@/types').BlockCondition | undefined) => void
+}) {
+  const c = block.condition
+  const value = c?.type === 'business_hours' ? `${c.sourceBlockId}:${c.when}` : 'always'
+
+  return (
+    <Section label="Visibilidad condicional">
+      <Field label="Mostrar este bloque...">
+        <select value={value}
+          onChange={e => {
+            if (e.target.value === 'always') { onUpdate(block.id, undefined); return }
+            const [sourceBlockId, when] = e.target.value.split(':') as [string, 'open' | 'closed']
+            onUpdate(block.id, { type: 'business_hours', sourceBlockId, when })
+          }}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          <option value="always">Siempre</option>
+          {sources.flatMap(s => {
+            const title = s.data.translations.es?.title || 'Horario de atención'
+            return [
+              <option key={`${s.id}:open`} value={`${s.id}:open`}>Cuando &quot;{title}&quot; esté abierto</option>,
+              <option key={`${s.id}:closed`} value={`${s.id}:closed`}>Cuando &quot;{title}&quot; esté cerrado</option>,
+            ]
+          })}
+        </select>
+      </Field>
+      <p className="text-xs" style={{ color: '#8B8D8F' }}>
+        Por ejemplo: mostrá &quot;Dejanos tu mensaje&quot; solo cuando estás cerrado, u ocultá la promo del día solo mientras estás abierto.
+      </p>
+    </Section>
+  )
 }
 
 // ─── Link Editor ─────────────────────────────────────────────────
@@ -616,6 +670,9 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
         <Input value={block.data.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
         <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
       </Section>
+      <p className="text-xs rounded-xl p-2.5" style={{ color: '#5A5D60', background: '#F6F6F5' }}>
+        💡 Con este bloque en la página, cualquier otro bloque puede configurarse para mostrarse solo cuando estés abierto o cerrado (sección &quot;Visibilidad condicional&quot; en su editor).
+      </p>
       <Section label="Horario por día">
         {DAY_ORDER.map(day => {
           const d = block.data.schedule.find(s => s.day === day)

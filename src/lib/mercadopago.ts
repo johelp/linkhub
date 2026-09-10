@@ -57,6 +57,10 @@ export async function createMercadoPagoPreference(params: {
   externalReference: string
   notificationUrl: string
   backUrl: string
+  // LinkHub's cut, auto-deducted from the seller's payout by Mercado Pago itself
+  // (Split Payments 1:1 -- https://www.mercadopago.com.ar/developers/es/docs/split-payments/split-1-1/overview).
+  // A fixed amount in the same currency, not a percentage -- the caller does that math.
+  marketplaceFee?: number
 }): Promise<MpPreference> {
   const res = await fetch(`${MP_API}/checkout/preferences`, {
     method: 'POST',
@@ -75,6 +79,7 @@ export async function createMercadoPagoPreference(params: {
       notification_url: params.notificationUrl,
       back_urls: { success: params.backUrl, failure: params.backUrl, pending: params.backUrl },
       auto_return: 'approved',
+      ...(params.marketplaceFee ? { marketplace_fee: params.marketplaceFee } : {}),
     }),
   })
   if (!res.ok) throw new Error(`Mercado Pago preference creation failed: ${res.status} ${await res.text()}`)

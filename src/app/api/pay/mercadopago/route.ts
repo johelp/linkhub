@@ -77,6 +77,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'No se pudo iniciar el pago' }, { status: 500 })
   }
 
+  // Optional platform commission, off by default -- see SETUP.md § Mercado Pago.
+  // MERCADOPAGO_PLATFORM_FEE_PERCENT unset or 0 means no fee, no behavior change.
+  const platformFeePercent = Math.min(Math.max(Number(process.env.MERCADOPAGO_PLATFORM_FEE_PERCENT) || 0, 0), 100)
+  const marketplaceFee = platformFeePercent > 0
+    ? Math.round(price * platformFeePercent) / 100
+    : undefined
+
   try {
     const preference = await createMercadoPagoPreference({
       accessToken: connection.access_token,
@@ -86,6 +93,7 @@ export async function GET(request: NextRequest) {
       externalReference: paymentRow.id,
       notificationUrl: absoluteUrl(`/api/webhooks/mercadopago?ref=${paymentRow.id}`),
       backUrl: absoluteUrl(`/p/${typedPage.slug}`),
+      marketplaceFee,
     })
 
     await admin.from('payments').update({ provider_preference_id: preference.id }).eq('id', paymentRow.id)

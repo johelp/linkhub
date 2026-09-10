@@ -106,12 +106,22 @@ export interface Page {
 }
 
 // ─── Blocks ─────────────────────────────────────────────────────
+// Show/hide a block based on the live state of a business_hours block
+// elsewhere on the same page. Absent = always visible (default, and the
+// only option before this field existed, so old rows need no migration).
+export type BlockCondition = {
+  type: 'business_hours'
+  sourceBlockId: string
+  when: 'open' | 'closed'
+}
+
 export interface BlockBase {
   id: string
   type: BlockType
   order: number
   visible: boolean
   seasonFilter: SeasonMode | 'always'
+  condition?: BlockCondition
 }
 
 export interface LinkBlock extends BlockBase {

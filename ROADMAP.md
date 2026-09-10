@@ -13,6 +13,8 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Mercado Pago: conexión OAuth por usuario + bloque "Cobrar" + webhook (ver `SETUP.md` §7) — falta cargar credenciales reales y probar en sandbox
 - Entradas a eventos: bloque "Entradas a evento" (2-3 tipos de precio), ticket numerado + QR de validación por email vía Resend, pantalla de validación en `/dashboard/validate/[pageId]` (ver `SETUP.md` §8) — falta cargar `RESEND_API_KEY` y probar de punta a punta con Mercado Pago real
 - Google Analytics 4 + Meta Pixel por página (plan Pro): campos en Ajustes → Integraciones, IDs validados antes de inyectar el script en la página pública (ver `SETUP.md` §12)
+- Condicionales entre bloques (plan Pro): cualquier bloque puede mostrarse solo "cuando [bloque de horario] esté abierto/cerrado" — aparece como sección "Visibilidad condicional" en el editor del bloque en cuanto hay al menos un bloque de horario de atención en la página. Ej: mostrar "Dejanos tu mensaje" (captura de email) solo si está cerrado
+- Comisión de LinkHub por venta vía Mercado Pago Split Payments (`marketplace_fee`): desactivada por defecto, se activa con `MERCADOPAGO_PLATFORM_FEE_PERCENT` (ver `SETUP.md` §7.6). No necesita nada nuevo del lado de la app de Mercado Pago porque ya está creada como "Marketplace/Checkout Pro"
 
 ## 🔲 Media kit / páginas con plantilla
 
@@ -30,9 +32,9 @@ Lo que sí falta si querés algo más "push" (que LinkHub avise a n8n apenas pas
 
 Centro de ayuda mostrando qué se puede hacer con cada bloque, casos de uso, cómo armar filtros de temporada, etc. Es más trabajo de contenido/redacción que de código — antes de escribir nada conviene decidir: ¿Markdown estático dentro del repo (`/ayuda/[slug]`), o algo editable sin deploy (ej. Notion embebido, o una tabla en Supabase)? Te recomiendo empezar con Markdown estático simple; migrar a algo dinámico si crece.
 
-## 🔲 Repaso del editor + condicionales entre bloques
+## 🔲 Repaso UX del editor (bloques, no lo que ya se hizo abajo)
 
-Pendiente: revisar el editor completo y la lista de bloques disponibles con foco en que sea fácil y útil de usar. Se sumó la idea de "funciones condicionales entre bloques" — por ejemplo, mostrar/ocultar un bloque según el estado de otro (no solo el filtro de temporada que ya existe). Falta definir casos concretos de uso antes de diseñar la mecánica.
+El caso de uso concreto de "condicionales entre bloques" ya está resuelto (ver ✅ Hecho). Queda pendiente, más abierto: repasar el editor completo con foco en que sea fácil de usar a simple vista — nombres de bloque más claros si hace falta, mejor agrupación en el modal "Añadir bloque", quizás una búsqueda si la lista de bloques sigue creciendo. No hay una lista concreta de cambios todavía, solo la intención de revisarlo con ojos frescos.
 
 ## 🔲 Recorrido guiado (onboarding tour)
 

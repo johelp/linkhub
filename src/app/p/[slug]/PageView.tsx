@@ -47,6 +47,19 @@ export function PageView({ page }: Props) {
   const pc = page.settings.primaryColor || '#E8150A'
   const bg = page.settings.backgroundColor || '#F6F6F5'
 
+  // "Is business X open right now" depends on the viewer's clock, so it's computed
+  // after mount only -- same reasoning as BusinessHoursCard below, to avoid a
+  // server/client hydration mismatch. Conditional blocks stay hidden until this
+  // resolves (a brief, one-time state, not a flicker on every render).
+  const [businessStatus, setBusinessStatus] = useState<Record<string, boolean>>({})
+  useEffect(() => {
+    const map: Record<string, boolean> = {}
+    for (const b of page.blocks) {
+      if (b.type === 'business_hours') map[b.id] = getBusinessOpenStatus(b.data.timezone, b.data.schedule).isOpen
+    }
+    setBusinessStatus(map)
+  }, [page.blocks])
+
   // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
     if (page.id.startsWith('demo')) return
@@ -74,10 +87,16 @@ export function PageView({ page }: Props) {
     }).then(() => {})
   }, [page.id, lang])
 
-  // Filter blocks by season
+  // Filter blocks by season and by their conditional visibility (if any)
   const visibleBlocks = page.blocks
     .filter(b => b.visible)
     .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
+    .filter(b => {
+      if (!b.condition) return true
+      const isOpen = businessStatus[b.condition.sourceBlockId]
+      if (isOpen === undefined) return false
+      return b.condition.when === 'open' ? isOpen : !isOpen
+    })
     .sort((a, b) => a.order - b.order)
 
   const enabledLangs = page.settings.enabledLangs || ['es']
