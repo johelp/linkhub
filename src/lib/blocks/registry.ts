@@ -7,7 +7,7 @@ export interface BlockDef {
   description: string
   icon: string
   category: 'content' | 'navigation' | 'social' | 'layout'
-  createDefault: (lang: Lang) => Block
+  createDefault: () => Block
 }
 
 const defaultLangs = (text: string, desc = '') =>
@@ -22,7 +22,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Botón de enlace con icono, título y descripción',
     icon: '🔗',
     category: 'navigation',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'link',
       order: 0,
@@ -43,7 +43,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Tarjeta hero con color de fondo llamativo',
     icon: '⭐',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'featured',
       order: 0,
@@ -68,7 +68,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Acordeón con sub-opciones y precios',
     icon: '📂',
     category: 'navigation',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'expandable',
       order: 0,
@@ -102,7 +102,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Separador con texto en mayúsculas',
     icon: '🏷️',
     category: 'layout',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'section_label',
       order: 0,
@@ -124,7 +124,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Grid de iconos de redes sociales',
     icon: '📱',
     category: 'social',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'social_grid',
       order: 0,
@@ -141,10 +141,10 @@ export const BLOCK_REGISTRY: BlockDef[] = [
   {
     type: 'contact_card',
     label: 'Contacto',
-    description: 'WhatsApp, email, dirección y horario',
+    description: 'WhatsApp, email y dirección',
     icon: '📞',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'contact_card',
       order: 0,
@@ -156,7 +156,6 @@ export const BLOCK_REGISTRY: BlockDef[] = [
         address: '',
         mapUrl: '',
         whatsapp: '',
-        showHours: false,
       },
     }),
   },
@@ -166,7 +165,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Línea o espacio separador',
     icon: '➖',
     category: 'layout',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'divider',
       order: 0,
@@ -181,7 +180,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Párrafo de texto con soporte multiidioma',
     icon: '📝',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'text',
       order: 0,
@@ -204,7 +203,7 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     description: 'Imagen con enlace opcional',
     icon: '🖼️',
     category: 'content',
-    createDefault: (lang) => ({
+    createDefault: () => ({
       id: generateId(),
       type: 'image_banner',
       order: 0,
@@ -215,6 +214,235 @@ export const BLOCK_REGISTRY: BlockDef[] = [
         altText: '',
         url: '',
         aspectRatio: '16:9' as const,
+      },
+    }),
+  },
+  {
+    type: 'video_embed',
+    label: 'Video',
+    description: 'YouTube, Vimeo o un video propio',
+    icon: '🎬',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'video_embed',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        url: '',
+        caption: '',
+        aspectRatio: '16:9' as const,
+      },
+    }),
+  },
+  {
+    type: 'email_capture',
+    label: 'Captura de email',
+    description: 'Sumá contactos a tu lista antes de que se vayan',
+    icon: '📧',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'email_capture',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { headline: 'Sumate a la lista', description: 'Enterate primero de novedades y promos', buttonLabel: 'Enviar' },
+          en: { headline: '', description: '', buttonLabel: '' },
+          pt: { headline: '', description: '', buttonLabel: '' },
+          fr: { headline: '', description: '', buttonLabel: '' },
+          de: { headline: '', description: '', buttonLabel: '' },
+          it: { headline: '', description: '', buttonLabel: '' },
+        },
+      },
+    }),
+  },
+  {
+    type: 'payment_button',
+    label: 'Cobrar (Mercado Pago)',
+    description: 'Vendé un producto o servicio con Mercado Pago',
+    icon: '💳',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'payment_button',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Mi producto', description: '' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        price: 0,
+        currency: 'ARS',
+      },
+    }),
+  },
+  {
+    type: 'event_tickets',
+    label: 'Entradas a evento',
+    description: 'Vendé 2-3 tipos de entrada con QR de validación por email',
+    icon: '🎫',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'event_tickets',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Mi evento', description: '' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        tiers: [{ id: generateId(), name: 'General', price: 0 }],
+        currency: 'ARS',
+      },
+    }),
+  },
+  {
+    type: 'business_hours',
+    label: 'Horario de atención',
+    description: 'Mostrá si estás abierto ahora, con horario por día',
+    icon: '🕒',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'business_hours',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Horario de atención' },
+          en: { title: '' },
+          pt: { title: '' },
+          fr: { title: '' },
+          de: { title: '' },
+          it: { title: '' },
+        },
+        timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'America/Argentina/Buenos_Aires',
+        schedule: [
+          { day: 0, closed: true, open: '09:00', close: '18:00' },
+          { day: 1, closed: false, open: '09:00', close: '18:00' },
+          { day: 2, closed: false, open: '09:00', close: '18:00' },
+          { day: 3, closed: false, open: '09:00', close: '18:00' },
+          { day: 4, closed: false, open: '09:00', close: '18:00' },
+          { day: 5, closed: false, open: '09:00', close: '18:00' },
+          { day: 6, closed: false, open: '10:00', close: '14:00' },
+        ],
+      },
+    }),
+  },
+  {
+    type: 'google_reviews',
+    label: 'Reseñas de Google',
+    description: 'Mostrá tu puntaje y sumá más reseñas',
+    icon: '⭐',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'google_reviews',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Nos calificaron en Google' },
+          en: { title: '' },
+          pt: { title: '' },
+          fr: { title: '' },
+          de: { title: '' },
+          it: { title: '' },
+        },
+        rating: 5,
+        reviewCount: 0,
+        mapsUrl: '',
+        placeId: '',
+      },
+    }),
+  },
+  {
+    type: 'menu',
+    label: 'Menú / Carta',
+    description: 'Categorías, productos y precios -- o un link a tu PDF si ya lo tenés armado',
+    icon: '📋',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'menu',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Nuestra carta', description: '' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        sections: [
+          {
+            id: generateId(),
+            translations: {
+              es: { name: 'Categoría' },
+              en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' },
+            },
+            items: [
+              {
+                id: generateId(),
+                translations: {
+                  es: { name: 'Producto', description: '' },
+                  en: { name: '', description: '' }, pt: { name: '', description: '' },
+                  fr: { name: '', description: '' }, de: { name: '', description: '' }, it: { name: '', description: '' },
+                },
+                price: '',
+              },
+            ],
+          },
+        ],
+        pdfUrl: '',
+      },
+    }),
+  },
+  {
+    type: 'loyalty_card',
+    label: 'Tarjeta de sellos',
+    description: 'Fidelizá clientes: sumá un sello por visita y canjeá un premio',
+    icon: '🎟️',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(),
+      type: 'loyalty_card',
+      order: 0,
+      visible: true,
+      seasonFilter: 'always',
+      data: {
+        translations: {
+          es: { title: 'Tarjeta de sellos', description: 'Sumá un sello en cada visita' },
+          en: { title: '', description: '' },
+          pt: { title: '', description: '' },
+          fr: { title: '', description: '' },
+          de: { title: '', description: '' },
+          it: { title: '', description: '' },
+        },
+        stampIcon: '☕',
+        targetStamps: 10,
+        rewardDescription: { es: 'Un producto gratis', en: '', pt: '', fr: '', de: '', it: '' } as Record<Lang, string>,
       },
     }),
   },

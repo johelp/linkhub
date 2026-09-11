@@ -1,0 +1,109 @@
+# LinkHub — Roadmap
+
+Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto está construido salvo que diga "✅ hecho".
+
+## ✅ Hecho
+
+- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews, loyalty_card, menu (17 en total, catálogo visible en la home)
+- Bloque "Menú / Carta" (`menu`, plan Pro): categorías con productos y precio (no un simple link -- un link a PDF por sí solo no aporta nada como "menú" real), con la opción de sumar además un link a un PDF completo. Abre LinkHub a bares y restós sin necesitar generación de imágenes ni ningún servicio pago nuevo — se descartó integrar QR Monster (Stable Diffusion + ControlNet) por requerir una API de inferencia externa con costo por generación, fuera de alcance de esta vuelta
+- Bloques que dependen de una URL/archivo (`image_banner`, `video_embed`, `menu`) ahora muestran un placeholder con instrucciones en el editor cuando el campo está vacío, en vez de desaparecer sin feedback -- antes el editor reusaba literalmente el mismo `PageView` que la página pública, que oculta el bloque hasta que esté configurado; ahora `PageView` recibe una prop `editing` que solo el preview del editor pasa
+- Mensaje predefinido en el link de WhatsApp del bloque de contacto
+- Preview instantáneo sin registro en el home (`LivePreview.tsx`)
+- Captura de email + export CSV por página (`/api/subscribers/export`, botón ✉️ en cada card del dashboard)
+- Stripe: checkout, portal de facturación, webhook (ver `SETUP.md` §6)
+- 2 planes (Free / Pro)
+- Mercado Pago: conexión OAuth por usuario + bloque "Cobrar" + webhook (ver `SETUP.md` §7) — falta cargar credenciales reales y probar en sandbox
+- Entradas a eventos: bloque "Entradas a evento" (2-3 tipos de precio), ticket numerado + QR de validación por email vía Resend, pantalla de validación en `/dashboard/validate/[pageId]` (ver `SETUP.md` §8) — falta cargar `RESEND_API_KEY` y probar de punta a punta con Mercado Pago real
+- Google Analytics 4 + Meta Pixel por página (plan Pro): campos en Ajustes → Integraciones, IDs validados antes de inyectar el script en la página pública (ver `SETUP.md` §12)
+- Condicionales entre bloques (plan Pro): cualquier bloque puede mostrarse solo "cuando [bloque de horario] esté abierto/cerrado" — aparece como sección "Visibilidad condicional" en el editor del bloque en cuanto hay al menos un bloque de horario de atención en la página. Ej: mostrar "Dejanos tu mensaje" (captura de email) solo si está cerrado
+- Comisión de LinkHub por venta vía Mercado Pago Split Payments (`marketplace_fee`): desactivada por defecto, se activa con `MERCADOPAGO_PLATFORM_FEE_PERCENT` (ver `SETUP.md` §7.6). No necesita nada nuevo del lado de la app de Mercado Pago porque ya está creada como "Marketplace/Checkout Pro"
+- Tarjeta de fidelidad — versión simple (plan Pro): bloque "Tarjeta de sellos". El visitante toca "Obtener mi tarjeta" en la página pública y le queda un link único guardado en su navegador (`/l/[code]`, con QR); el dueño suma sellos o canjea el premio desde `Dashboard → 🎟️/🏅 (esta página)` escaneando o tipeando ese código. Sin Apple/Google Wallet todavía — queda anotado como posible mejora futura, no es parte de esta versión
+- Páginas con plantilla: el botón "Nueva página" del dashboard (`NewPageButton.tsx`) ahora pregunta primero "Vacía / Catálogo de precios / Ficha de contacto / Media kit" (`src/lib/blocks/templates.ts`) y precarga los bloques correspondientes en vez de arrancar siempre en blanco. "Catálogo de precios" usa solo bloques gratuitos (funciona en Free); "Ficha de contacto" y "Media kit" usan bloques Pro (`featured`, `contact_card`, etc.) — a un usuario Free que las elige se lo manda directo a `/dashboard/upgrade` en vez de dejarlo chocar con el trigger de Supabase que las bloquearía igual
+
+## 🔲 Subida de imágenes optimizadas (Supabase Storage)
+
+Hoy `image_banner` (y a futuro cualquier bloque con imagen) solo acepta pegar una URL externa ya alojada -- no hay forma de subir un archivo desde el editor. Pedido explícito: poder subir la imagen directo y que quede optimizada.
+
+Plan técnico (investigado, no construido):
+1. **Bucket de Supabase Storage** (público, solo lectura pública + insert/update/delete restringido al dueño de la página) -- correspondería a una migración nueva `supabase/migrations/010_storage_images.sql` (la 009 es la última hoy) con el `create policy` correspondiente sobre `storage.objects`.
+2. **UI de upload**: en `ImageBannerEditor` (`src/app/editor/[pageId]/PropertiesPanel.tsx`), sumar un `<input type="file">` (no existe ninguno hoy en el repo) al lado del campo de URL -- el usuario elige uno de los dos caminos, no reemplaza pegar una URL externa.
+3. **Cliente a usar**: `createClient()` de `src/lib/supabase/client.ts` (el mismo cliente browser/anon que ya se usa para inserts en `PageView.tsx` y `NewPageButton.tsx`) tiene `.storage.from('bucket').upload(...)` -- RLS de Storage decide si el usuario puede escribir. **No** usar el cliente admin/service-role (`src/lib/supabase/admin.ts`) para esto: es solo para código server-only de confianza (ej. el webhook de Stripe), nunca para un upload iniciado por el usuario.
+4. **Optimización**: Supabase Storage no transforma imágenes en el plan Free (Image Transformations es feature paga de Supabase). Alternativas sin costo extra: comprimir/redimensionar en el browser antes de subir (ej. canvas API o una librería chica) para no depender de un plan pago. Definir un tamaño máximo razonable (ej. 1600px de lado más largo, calidad ~80%) antes de encarar el código.
+5. Nada de esto se puede probar en esta sesión sin acceso de red a Supabase -- ver bloqueo de red documentado en el historial de esta conversación.
+
+## 🔲 Revisar costos por uso (no por bloque)
+
+Duda planteada: ¿entradas a eventos y tarjeta de sellos consumen más que un LinkHub simple? Repuesta corta: los bloques en sí no cuestan nada (son filas en Postgres) — lo que sí escala con uso es **Resend** (emails de tickets, gratis hasta 3k/mes y después cobra por email) y cualquier futura API paga de terceros (por eso se descartó QR Monster, ver arriba). Mercado Pago/Stripe no cuestan — generan ingreso.
+
+Antes de tocar el modelo de planes, conviene:
+1. Medir cuánto está consumiendo Resend realmente una vez que haya tráfico (hoy: 0, no hay credenciales cargadas).
+2. Si hace falta, meter un límite de uso (ej. "X emails de entradas incluidos por mes en Pro, después $Y por email o hay que cargar tu propia `RESEND_API_KEY`") en vez de mover bloques entre Free/Pro — mantiene el modelo de 2 planes simple y solo mide donde el costo real vive.
+3. No es urgente mientras no haya volumen real de ventas/entradas — anotado para revisar con números concretos de Supabase/Resend/Vercel cuando el proyecto tenga tráfico.
+
+## 🔲 Repaso del editor de bloques (pedido explícito, sin lista cerrada todavía)
+
+El usuario pidió repasar el editor completo ("desde donde se colocan los bloques y configuran, aún le faltan ajustes") sin especificar una lista cerrada de cambios. Ya se resolvió el caso concreto que señaló (bloques invisibles en el editor hasta configurarlos, ver ✅ Hecho) y la subida de imágenes quedó especificada arriba. Falta: sentarse con el usuario a puntualizar qué más le resulta incómodo del editor antes de tocar nada más -- no hay que asumir cambios sin confirmar qué exactamente no le cierra.
+
+## 🔲 Media kit / páginas con plantilla — mejoras futuras
+
+La v1 (ver ✅ Hecho) cubre los 3 casos pedidos con plantillas fijas hardcodeadas. Ideas para una vuelta futura si hace falta más:
+- Más plantillas (ej. "portfolio", "restaurante", "evento" reusando el patrón de `buildEventExample` en `demoPage.ts`)
+- Dejar que el usuario edite/guarde sus propias plantillas a partir de una página existente ("Duplicar como plantilla"), no solo las 3 fijas
+- Miniatura visual de cada plantilla en el picker en vez de solo icono + texto
+
+## 🔲 Integración con n8n
+
+No hace falta build específico para lo básico: n8n tiene un nodo nativo de Supabase y un nodo HTTP genérico, así que **hoy ya es posible** conectar n8n a la tabla `email_subscribers` (o `pages`, `analytics_events`) dándole a n8n una connection string o el `service_role` key en un credential de n8n — mismo mecanismo que cualquier integración Supabase→n8n.
+
+Lo que sí falta si querés algo más "push" (que LinkHub avise a n8n apenas pasa algo, en vez de que n8n vaya a buscar):
+- Un webhook saliente configurable por el usuario (ej. "cuando alguien se suscribe, POST a esta URL") — dispararía desde el mismo lugar donde hoy se hace el insert en `email_subscribers`.
+- Requiere UI para que el usuario cargue su URL de webhook de n8n, y idealmente firma HMAC del payload para que n8n pueda verificar que viene de LinkHub.
+
+## 🔲 Sección wiki / instructivos
+
+Centro de ayuda mostrando qué se puede hacer con cada bloque, casos de uso, cómo armar filtros de temporada, etc. Es más trabajo de contenido/redacción que de código — antes de escribir nada conviene decidir: ¿Markdown estático dentro del repo (`/ayuda/[slug]`), o algo editable sin deploy (ej. Notion embebido, o una tabla en Supabase)? Te recomiendo empezar con Markdown estático simple; migrar a algo dinámico si crece.
+
+## 🔲 Repaso UX del editor (bloques, no lo que ya se hizo abajo)
+
+El caso de uso concreto de "condicionales entre bloques" ya está resuelto (ver ✅ Hecho). Queda pendiente, más abierto: repasar el editor completo con foco en que sea fácil de usar a simple vista — nombres de bloque más claros si hace falta, mejor agrupación en el modal "Añadir bloque", quizás una búsqueda si la lista de bloques sigue creciendo. No hay una lista concreta de cambios todavía, solo la intención de revisarlo con ojos frescos.
+
+## 🔲 Recorrido guiado (onboarding tour)
+
+Tour interactivo la primera vez que alguien entra al editor (ej. resaltar "acá agregás bloques", "acá lo publicás"). Técnicamente: o una librería chica tipo `driver.js`/`react-joyride`, o algo casero con un estado `hasSeenTour` en `localStorage`. Recomiendo la librería — reinventar tooltips posicionados correctamente en todos los tamaños de pantalla no vale la pena.
+
+## 🔲 Productos digitales (PDFs, etc.)
+
+Mismo bloque "Cobrar" que ya existe, pero hoy no entrega nada después de pagar — solo queda un registro en `payments`. Falta: subir un archivo (Supabase Storage ya soportado por el proyecto, solo no está usado para esto todavía) y un link de descarga que se habilite después del webhook de pago aprobado (por email, con Resend, o por un link temporal firmado).
+
+## 🔲 Creadores de contenido +18 (documentado, no recomendado por ahora)
+
+Ver `SETUP.md` §10 — no promocionar todavía: ya hay un incumbente gratis (AllMyLinks) y un jugador grande que lo permite explícitamente (Beacons), y el riesgo de que Stripe cierre la cuenta de pagos de todo LinkHub si se asocia con contenido para adultos es real. Si se retoma, iría en una marca/entidad separada.
+
+## 🔲 Tarjeta de fidelidad — Apple Wallet / Google Wallet (v2)
+
+La versión simple ya está construida (ver ✅ Hecho: bloque "Tarjeta de sellos"). Esto es la mejora que queda pendiente a propósito: que la tarjeta aparezca como un pase real en Apple Wallet / Google Wallet en vez de solo un link con QR. Mucho más atractivo pero necesita certificados de Apple Developer + Google Wallet API — proyecto aparte, no un agregado chico, así que se dejó afuera de la v1 a pedido explícito.
+- Idea sumada: que las compras de productos digitales (no solo visitas al local) también sumen sellos — encajaría bien una vez que exista la entrega de productos digitales (ver más abajo), reusando la misma tabla `payments` como disparador.
+
+## 🔲 Agenda de citas / reservas (bloque nuevo, plan Pro)
+
+Spec: el dueño define horarios disponibles por día (igual que `business_hours`) y un cliente reserva un turno desde la página pública, sin pasar por WhatsApp/llamada.
+
+Diseño propuesto para una v1 simple (reusando patrones que ya existen en el proyecto):
+- **Bloque nuevo** `booking` — similar a `business_hours` pero agrega `slotDurationMinutes` (ej. 30/60) y, a diferencia de horario de atención, sí necesita persistencia (qué turnos ya están ocupados), no solo cálculo en el cliente.
+- **2 tablas nuevas**: `booking_slots` config (o se reusa el JSON del bloque, igual que `business_hours`) y `bookings` (page_id, block_id, slot_start timestamptz, client_name, client_contact, status: `confirmed`/`cancelled`). Un índice único en `(block_id, slot_start)` evita el doble booking a nivel de base, no solo de app — mismo criterio que ya se usó para no confiar solo en el chequeo del servidor.
+- **Flujo del cliente**: en la página pública, el bloque muestra los próximos N días con horarios libres (calculados restando `bookings` confirmadas al `schedule` del bloque, con la misma lógica de zona horaria IANA que ya tiene `getBusinessOpenStatus`); el cliente elige un turno, pone nombre + contacto, y queda reservado al toque (sin pago, como pide el spec) — igual de simple que el flujo de "captura de email", no el de checkout.
+- **Confirmación**: mail al cliente con el turno (reusa Resend, ya integrado) + un link para cancelar (`/r/[code]`, mismo patrón que `/t/[code]` de las entradas).
+- **Owner**: pantalla `/dashboard/bookings/[pageId]` con la lista de próximos turnos — mismo patrón que `/dashboard/validate/[pageId]`.
+- Gateado a Pro (`limits.advancedBlocks`), como el resto de los bloques no triviales.
+
+Decisiones que quedan pendientes de definir cuando se arranque a construir (cambian el alcance):
+1. ¿Un solo servicio/duración por página, o varios servicios con duraciones distintas (ej. "corte" 30 min, "color" 90 min)? V1 de un solo servicio es sensiblemente más simple.
+2. ¿La reserva queda confirmada al instante, o el dueño la tiene que aprobar manualmente antes? Instantánea es más simple y es lo que describe el spec tal cual.
+3. ¿Reserva gratuita (como está arriba) o con seña/depósito vía Mercado Pago? Si se suma seña, reusa el mismo `createMercadoPagoPreference` que ya existe para entradas.
+
+Recomendación: arrancar con la versión más simple de las tres (1 servicio, confirmación instantánea, sin seña) — es la que describe el spec y es del tamaño de lo que ya se construyó para `event_tickets` o `business_hours`.
+
+## 🔲 Otras ideas sueltas de la comparación con la competencia
+
+- Verificación de dominio propio con UI (la tabla `custom_domains` existe en la base pero no hay pantalla)
+- Mensaje "sin comisión sobre tus ventas" en el pricing una vez que haya ventas de productos — es diferencial real vs. Linktree (12%) y Beacons (9%)

@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -21,7 +21,7 @@ interface Props { plan: Plan }
 type Tab = 'block' | 'page' | 'seo'
 
 export function PropertiesPanel({ plan }: Props) {
-  const { page, selectedBlockId, updateBlock, updateSettings, updateSeo, previewLang } = useEditorStore()
+  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang } = useEditorStore()
   const [tab, setTab] = useState<Tab>('block')
   const limits = PLAN_LIMITS[plan]
 
@@ -54,7 +54,8 @@ export function PropertiesPanel({ plan }: Props) {
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'block' && (
           selectedBlock
-            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} onUpdate={updateBlock} />
+            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
+                onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
             : <div className="text-center py-12">
                 <div className="text-3xl mb-2">👆</div>
                 <p className="text-xs" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
@@ -68,27 +69,94 @@ export function PropertiesPanel({ plan }: Props) {
 }
 
 // ─── Block Editor ────────────────────────────────────────────────
-function BlockEditor({ block, lang, plan, onUpdate }: {
-  block: Block; lang: Lang; plan: Plan
+function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, onUpdateCondition }: {
+  block: Block; lang: Lang; plan: Plan; allBlocks: Block[]
   onUpdate: (id: string, data: Partial<Block['data']>) => void
+  onUpdateSeason: (id: string, seasonFilter: SeasonMode) => void
+  onUpdateCondition: (id: string, condition: import('@/types').BlockCondition | undefined) => void
 }) {
   const limits = PLAN_LIMITS[plan]
 
+  let editor: React.ReactNode
   switch (block.type) {
-    case 'link': return <LinkEditor block={block as LinkBlock} lang={lang} limits={limits} onUpdate={onUpdate} />
-    case 'featured': return <FeaturedEditor block={block as FeaturedBlock} lang={lang} onUpdate={onUpdate} />
-    case 'expandable': return <ExpandableEditor block={block as ExpandableBlock} lang={lang} onUpdate={onUpdate} />
-    case 'section_label': return <SectionLabelEditor block={block as SectionLabelBlock} lang={lang} onUpdate={onUpdate} />
-    case 'text': return <TextEditor block={block as TextBlock} lang={lang} onUpdate={onUpdate} />
-    case 'contact_card': return <ContactCardEditor block={block as ContactCardBlock} onUpdate={onUpdate} />
-    case 'social_grid': return <SocialGridEditor block={block as SocialGridBlock} onUpdate={onUpdate} />
-    case 'divider': return <DividerEditor block={block} onUpdate={onUpdate} />
-    default: return <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
+    case 'link': editor = <LinkEditor block={block} lang={lang} limits={limits} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'featured': editor = <FeaturedEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'expandable': editor = <ExpandableEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'section_label': editor = <SectionLabelEditor block={block} lang={lang} onUpdate={onUpdate} onUpdateSeason={onUpdateSeason} />; break
+    case 'text': editor = <TextEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'contact_card': editor = <ContactCardEditor block={block} onUpdate={onUpdate} />; break
+    case 'social_grid': editor = <SocialGridEditor block={block} onUpdate={onUpdate} />; break
+    case 'divider': editor = <DividerEditor block={block} onUpdate={onUpdate} />; break
+    case 'image_banner': editor = <ImageBannerEditor block={block} onUpdate={onUpdate} />; break
+    case 'video_embed': editor = <VideoEmbedEditor block={block} onUpdate={onUpdate} />; break
+    case 'email_capture': editor = <EmailCaptureEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'payment_button': editor = <PaymentButtonEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'event_tickets': editor = <EventTicketsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
+
+  // "business_hours" itself is the only source type today, so it can't condition on another one.
+  const sources = block.type === 'business_hours'
+    ? []
+    : (allBlocks.filter(b => b.type === 'business_hours') as BusinessHoursBlock[])
+
+  return (
+    <div className="space-y-4">
+      {editor}
+      {limits.advancedBlocks && sources.length > 0 && (
+        <ConditionField block={block} sources={sources} onUpdate={onUpdateCondition} />
+      )}
+    </div>
+  )
+}
+
+// ─── Conditional visibility (based on a business_hours block elsewhere on the page) ──
+function ConditionField({ block, sources, onUpdate }: {
+  block: Block
+  sources: BusinessHoursBlock[]
+  onUpdate: (id: string, condition: import('@/types').BlockCondition | undefined) => void
+}) {
+  const c = block.condition
+  const value = c?.type === 'business_hours' ? `${c.sourceBlockId}:${c.when}` : 'always'
+
+  return (
+    <Section label="Visibilidad condicional">
+      <Field label="Mostrar este bloque...">
+        <select value={value}
+          onChange={e => {
+            if (e.target.value === 'always') { onUpdate(block.id, undefined); return }
+            const [sourceBlockId, when] = e.target.value.split(':') as [string, 'open' | 'closed']
+            onUpdate(block.id, { type: 'business_hours', sourceBlockId, when })
+          }}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          <option value="always">Siempre</option>
+          {sources.flatMap(s => {
+            const title = s.data.translations.es?.title || 'Horario de atención'
+            return [
+              <option key={`${s.id}:open`} value={`${s.id}:open`}>Cuando &quot;{title}&quot; esté abierto</option>,
+              <option key={`${s.id}:closed`} value={`${s.id}:closed`}>Cuando &quot;{title}&quot; esté cerrado</option>,
+            ]
+          })}
+        </select>
+      </Field>
+      <p className="text-xs" style={{ color: '#8B8D8F' }}>
+        Por ejemplo: mostrá &quot;Dejanos tu mensaje&quot; solo cuando estás cerrado, u ocultá la promo del día solo mientras estás abierto.
+      </p>
+    </Section>
+  )
 }
 
 // ─── Link Editor ─────────────────────────────────────────────────
-function LinkEditor({ block, lang, limits, onUpdate }: { block: LinkBlock; lang: Lang; limits: import('@/types').PlanLimits; onUpdate: (id: string, d: any) => void }) {
+function LinkEditor({ block, lang, limits, onUpdate, onUpdateSeason }: {
+  block: LinkBlock; lang: Lang; limits: import('@/types').PlanLimits
+  onUpdate: (id: string, d: Partial<LinkBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -124,13 +192,17 @@ function LinkEditor({ block, lang, limits, onUpdate }: { block: LinkBlock; lang:
           </div>
         </Field>
       </Section>
-      {limits.seasonFilter && <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />}
+      {limits.seasonFilter && <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />}
     </div>
   )
 }
 
 // ─── Featured Editor ─────────────────────────────────────────────
-function FeaturedEditor({ block, lang, onUpdate }: { block: FeaturedBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function FeaturedEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: FeaturedBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<FeaturedBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -164,13 +236,17 @@ function FeaturedEditor({ block, lang, onUpdate }: { block: FeaturedBlock; lang:
           </div>
         </Field>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Expandable Editor ───────────────────────────────────────────
-function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: ExpandableBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<ExpandableBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', subtitle: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
@@ -189,8 +265,10 @@ function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; l
     onUpdate(block.id, { children: children.map(c => c.id === childId ? { ...c, url } : c) })
   }
   function addChild() {
-    const newChild = { id: generateId(), icon: '▸', translations: { es: { label: 'Opción', price: '' }, en: { label: 'Option', price: '' }, pt: { label: 'Opção', price: '' } } as any, url: '' }
-    onUpdate(block.id, { children: [...children, newChild] })
+    const translations = Object.fromEntries(
+      ALL_LANGS.map(l => [l.code, { label: 'Opción', price: '' }])
+    ) as Record<Lang, { label: string; price?: string }>
+    onUpdate(block.id, { children: [...children, { id: generateId(), icon: '▸', translations, url: '' }] })
   }
   function removeChild(id: string) {
     onUpdate(block.id, { children: children.filter(c => c.id !== id) })
@@ -221,13 +299,17 @@ function ExpandableEditor({ block, lang, onUpdate }: { block: ExpandableBlock; l
         <button onClick={addChild} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
           style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir opción</button>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Section Label Editor ────────────────────────────────────────
-function SectionLabelEditor({ block, lang, onUpdate }: { block: SectionLabelBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function SectionLabelEditor({ block, lang, onUpdate, onUpdateSeason }: {
+  block: SectionLabelBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<SectionLabelBlock['data']>) => void
+  onUpdateSeason: (id: string, s: SeasonMode) => void
+}) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { text: '' }
   return (
     <div className="space-y-4">
@@ -238,13 +320,13 @@ function SectionLabelEditor({ block, lang, onUpdate }: { block: SectionLabelBloc
           })} placeholder="SECCIÓN" />
         </Field>
       </Section>
-      <SeasonField value={block.seasonFilter} onChange={v => onUpdate(block.id, { seasonFilter: v } as any)} />
+      <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
   )
 }
 
 // ─── Text Editor ─────────────────────────────────────────────────
-function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; onUpdate: (id: string, d: any) => void }) {
+function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; onUpdate: (id: string, d: Partial<TextBlock['data']>) => void }) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { content: '' }
   return (
     <div className="space-y-4">
@@ -283,12 +365,17 @@ function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; o
 }
 
 // ─── Contact Card Editor ─────────────────────────────────────────
-function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpdate: (id: string, d: any) => void }) {
+function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpdate: (id: string, d: Partial<ContactCardBlock['data']>) => void }) {
   const d = block.data
   return (
     <div className="space-y-4">
       <Section label="Datos de contacto">
         <Field label="WhatsApp"><Input value={d.whatsapp || ''} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+34 600 000 000" /></Field>
+        {d.whatsapp && (
+          <Field label="Mensaje predefinido de WhatsApp">
+            <Input value={d.whatsappMessage || ''} onChange={v => onUpdate(block.id, { whatsappMessage: v })} placeholder="Hola, quería consultar por..." />
+          </Field>
+        )}
         <Field label="Email"><Input value={d.email || ''} onChange={v => onUpdate(block.id, { email: v })} placeholder="hola@negocio.com" /></Field>
         <Field label="Teléfono"><Input value={d.phone || ''} onChange={v => onUpdate(block.id, { phone: v })} placeholder="+34 600 000 000" /></Field>
         <Field label="Dirección"><Input value={d.address || ''} onChange={v => onUpdate(block.id, { address: v })} placeholder="Calle, Ciudad" /></Field>
@@ -301,7 +388,7 @@ function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpd
 // ─── Social Grid Editor ──────────────────────────────────────────
 const PLATFORMS = ['instagram', 'facebook', 'tiktok', 'youtube', 'twitter', 'linkedin', 'whatsapp'] as const
 
-function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdate: (id: string, d: any) => void }) {
+function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdate: (id: string, d: Partial<SocialGridBlock['data']>) => void }) {
   const items = block.data.items
   function updateItem(id: string, key: string, val: string) {
     onUpdate(block.id, { items: items.map(i => i.id === id ? { ...i, [key]: val } : i) })
@@ -338,8 +425,7 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
 }
 
 // ─── Divider Editor ──────────────────────────────────────────────
-function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: string, d: any) => void }) {
-  const b = block as any
+function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id: string, d: Partial<DividerBlock['data']>) => void }) {
   return (
     <div className="space-y-4">
       <Section label="Estilo">
@@ -348,7 +434,7 @@ function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: strin
             {(['line', 'space'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { style: s })}
                 className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: b.data.style === s ? '#E8150A' : '#F6F6F5', color: b.data.style === s ? '#fff' : '#5A5D60' }}>
+                style={{ background: block.data.style === s ? '#E8150A' : '#F6F6F5', color: block.data.style === s ? '#fff' : '#5A5D60' }}>
                 {s === 'line' ? 'Línea' : 'Espacio'}
               </button>
             ))}
@@ -359,13 +445,461 @@ function DividerEditor({ block, onUpdate }: { block: Block; onUpdate: (id: strin
             {(['sm', 'md', 'lg'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { spacing: s })}
                 className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: b.data.spacing === s ? '#E8150A' : '#F6F6F5', color: b.data.spacing === s ? '#fff' : '#5A5D60' }}>
+                style={{ background: block.data.spacing === s ? '#E8150A' : '#F6F6F5', color: block.data.spacing === s ? '#fff' : '#5A5D60' }}>
                 {s.toUpperCase()}
               </button>
             ))}
           </div>
         </Field>
       </Section>
+    </div>
+  )
+}
+
+// ─── Image Banner Editor ─────────────────────────────────────────
+function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpdate: (id: string, d: Partial<ImageBannerBlock['data']>) => void }) {
+  return (
+    <div className="space-y-4">
+      <Section label="Imagen">
+        <Field label="URL de la imagen">
+          <Input value={block.data.imageUrl} onChange={v => onUpdate(block.id, { imageUrl: v })} placeholder="https://..." />
+        </Field>
+        <Field label="Texto alternativo">
+          <Input value={block.data.altText} onChange={v => onUpdate(block.id, { altText: v })} placeholder="Descripción para accesibilidad" />
+        </Field>
+        <Field label="Enlace (opcional)">
+          <Input value={block.data.url || ''} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://" />
+        </Field>
+      </Section>
+      <Section label="Proporción">
+        <div className="flex gap-1">
+          {(['16:9', '4:3', '1:1', '3:1'] as const).map(r => (
+            <button key={r} onClick={() => onUpdate(block.id, { aspectRatio: r })}
+              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
+              style={{ background: block.data.aspectRatio === r ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r ? '#fff' : '#5A5D60' }}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Video Embed Editor ──────────────────────────────────────────
+function VideoEmbedEditor({ block, onUpdate }: { block: VideoEmbedBlock; onUpdate: (id: string, d: Partial<VideoEmbedBlock['data']>) => void }) {
+  return (
+    <div className="space-y-4">
+      <Section label="Video">
+        <Field label="URL de YouTube, Vimeo o archivo .mp4">
+          <Input value={block.data.url} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://youtube.com/watch?v=..." />
+        </Field>
+        <Field label="Leyenda (opcional)">
+          <Input value={block.data.caption || ''} onChange={v => onUpdate(block.id, { caption: v })} placeholder="Un video corto de presentación" />
+        </Field>
+      </Section>
+      <Section label="Proporción">
+        <div className="flex gap-1">
+          {([
+            { v: '16:9' as const, label: '16:9 horizontal' },
+            { v: '9:16' as const, label: '9:16 vertical' },
+            { v: '1:1' as const, label: '1:1 cuadrado' },
+          ]).map(r => (
+            <button key={r.v} onClick={() => onUpdate(block.id, { aspectRatio: r.v })}
+              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
+              style={{ background: block.data.aspectRatio === r.v ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r.v ? '#fff' : '#5A5D60' }}>
+              {r.v}
+            </button>
+          ))}
+        </div>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Email Capture Editor ────────────────────────────────────────
+function EmailCaptureEditor({ block, lang, onUpdate }: {
+  block: EmailCaptureBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<EmailCaptureBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { headline: '', description: '', buttonLabel: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Textos">
+        <Field label="Título"><Input value={t.headline} onChange={v => setT('headline', v)} placeholder="Sumate a la lista" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+        <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
+    </div>
+  )
+}
+
+// ─── Menu / Carta Editor ────────────────────────────────────────────
+function MenuEditor({ block, lang, onUpdate }: {
+  block: MenuBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<MenuBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  const sections = block.data.sections
+
+  function updateSectionName(sectionId: string, val: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId
+        ? { ...s, translations: { ...s.translations, [lang]: { name: val } } }
+        : s)
+    })
+  }
+  function addSection() {
+    const translations = Object.fromEntries(ALL_LANGS.map(l => [l.code, { name: '' }])) as Record<Lang, { name: string }>
+    onUpdate(block.id, { sections: [...sections, { id: generateId(), translations, items: [] }] })
+  }
+  function removeSection(sectionId: string) {
+    onUpdate(block.id, { sections: sections.filter(s => s.id !== sectionId) })
+  }
+  function updateItem(sectionId: string, itemId: string, key: string, val: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => {
+        if (s.id !== sectionId) return s
+        return {
+          ...s,
+          items: s.items.map(it => {
+            if (it.id !== itemId) return it
+            if (key === 'price') return { ...it, price: val }
+            const itT = it.translations[lang] || it.translations['es'] || { name: '', description: '' }
+            return { ...it, translations: { ...it.translations, [lang]: { ...itT, [key]: val } } }
+          }),
+        }
+      })
+    })
+  }
+  function addItem(sectionId: string) {
+    const translations = Object.fromEntries(ALL_LANGS.map(l => [l.code, { name: '', description: '' }])) as Record<Lang, { name: string; description?: string }>
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId
+        ? { ...s, items: [...s.items, { id: generateId(), translations, price: '' }] }
+        : s)
+    })
+  }
+  function removeItem(sectionId: string, itemId: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId ? { ...s, items: s.items.filter(it => it.id !== itemId) } : s)
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Section label="Cabecera">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nuestra carta" /></Field>
+        <Field label="Descripción (opcional)"><Input value={t.description} onChange={v => setT('description', v)} /></Field>
+      </Section>
+      <Section label={`Categorías (${sections.length})`}>
+        {sections.map((section, si) => {
+          const st = section.translations[lang] || section.translations['es'] || { name: '' }
+          return (
+            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {si + 1}</span>
+                <button onClick={() => removeSection(section.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+              </div>
+              <Field label="Nombre de la categoría">
+                <Input value={st.name} onChange={v => updateSectionName(section.id, v)} placeholder="Entradas, Platos principales..." />
+              </Field>
+              <div className="mt-2 space-y-2">
+                {section.items.map((item, ii) => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} className="rounded-lg p-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)' }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <button onClick={() => removeItem(section.id, item.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+                      </div>
+                      <Field label="Nombre"><Input value={it.name} onChange={v => updateItem(section.id, item.id, 'name', v)} /></Field>
+                      <Field label="Descripción (opcional)"><Input value={it.description || ''} onChange={v => updateItem(section.id, item.id, 'description', v)} /></Field>
+                      <Field label="Precio"><Input value={item.price} onChange={v => updateItem(section.id, item.id, 'price', v)} placeholder="$8.500" /></Field>
+                    </div>
+                  )
+                })}
+                <button onClick={() => addItem(section.id)} className="w-full py-1.5 text-xs font-semibold rounded-lg"
+                  style={{ background: '#fff', color: '#5A5D60', border: '1px dashed rgba(26,27,28,0.15)' }}>+ Añadir producto</button>
+              </div>
+            </div>
+          )
+        })}
+        <button onClick={addSection} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
+          style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir categoría</button>
+      </Section>
+      <Section label="PDF (opcional)">
+        <Field label="Link a un PDF con la carta completa">
+          <Input value={block.data.pdfUrl || ''} onChange={v => onUpdate(block.id, { pdfUrl: v })} placeholder="https://..." />
+        </Field>
+        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>
+          Se muestra como un link &quot;Ver carta completa&quot; debajo de las categorías -- útil si además tenés un PDF ya diseñado.
+        </p>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Payment Button Editor ────────────────────────────────────────
+const MP_CURRENCIES = ['ARS', 'MXN', 'CLP', 'COP', 'PEN', 'UYU', 'BRL']
+
+function PaymentButtonEditor({ block, lang, onUpdate }: {
+  block: PaymentButtonBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<PaymentButtonBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Producto">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi producto" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+      </Section>
+      <Section label="Precio">
+        <Field label="Monto">
+          <input type="number" min="0" step="0.01" value={block.data.price}
+            onChange={e => onUpdate(block.id, { price: Number(e.target.value) || 0 })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Moneda">
+          <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a> para que este bloque cobre de verdad.
+      </p>
+    </div>
+  )
+}
+
+// ─── Event Tickets Editor ─────────────────────────────────────────
+function EventTicketsEditor({ block, lang, onUpdate }: {
+  block: EventTicketsBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<EventTicketsBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  const tiers = block.data.tiers
+
+  function updateTier(id: string, patch: Partial<{ name: string; price: number }>) {
+    onUpdate(block.id, { tiers: tiers.map(x => x.id === id ? { ...x, ...patch } : x) })
+  }
+  function addTier() {
+    if (tiers.length >= 3) return
+    onUpdate(block.id, { tiers: [...tiers, { id: generateId(), name: `Tipo ${tiers.length + 1}`, price: 0 }] })
+  }
+  function removeTier(id: string) {
+    if (tiers.length <= 1) return
+    onUpdate(block.id, { tiers: tiers.filter(x => x.id !== id) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Section label="Evento">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi evento" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
+      </Section>
+      <Section label="Moneda">
+        <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </Section>
+      <Section label={`Tipos de entrada (${tiers.length}/3)`}>
+        {tiers.map((tier, i) => (
+          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Tipo {i + 1}</span>
+              {tiers.length > 1 && (
+                <button onClick={() => removeTier(tier.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+              )}
+            </div>
+            <Field label="Nombre"><Input value={tier.name} onChange={v => updateTier(tier.id, { name: v })} placeholder="General, VIP..." /></Field>
+            <Field label="Precio">
+              <input type="number" min="0" step="0.01" value={tier.price}
+                onChange={e => updateTier(tier.id, { price: Number(e.target.value) || 0 })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+          </div>
+        ))}
+        {tiers.length < 3 && (
+          <button onClick={addTier} className="w-full py-2 text-xs font-semibold rounded-xl"
+            style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir tipo de entrada</button>
+        )}
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
+        Cada entrada vendida manda un email con QR de validación, y las podés validar en la puerta desde el ícono 🎫 del dashboard.
+      </p>
+    </div>
+  )
+}
+
+// ─── Business Hours Editor ────────────────────────────────────────
+const DAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] // display Mon..Sun
+
+function BusinessHoursEditor({ block, lang, onUpdate }: {
+  block: BusinessHoursBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<BusinessHoursBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+
+  function updateDay(day: number, patch: Partial<DaySchedule>) {
+    onUpdate(block.id, {
+      schedule: block.data.schedule.map(s => s.day === day ? { ...s, ...patch } : s),
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Section label="Título">
+        <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Horario de atención" /></Field>
+      </Section>
+      <Section label="Zona horaria">
+        <Input value={block.data.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
+        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
+      </Section>
+      <p className="text-xs rounded-xl p-2.5" style={{ color: '#5A5D60', background: '#F6F6F5' }}>
+        💡 Con este bloque en la página, cualquier otro bloque puede configurarse para mostrarse solo cuando estés abierto o cerrado (sección &quot;Visibilidad condicional&quot; en su editor).
+      </p>
+      <Section label="Horario por día">
+        {DAY_ORDER.map(day => {
+          const d = block.data.schedule.find(s => s.day === day)
+          if (!d) return null
+          return (
+            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+              <label className="flex items-center justify-between mb-2 cursor-pointer">
+                <span className="text-xs font-semibold" style={{ color: '#1A1B1C' }}>{DAY_LABELS[day]}</span>
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: '#5A5D60' }}>
+                  <input type="checkbox" checked={d.closed} onChange={e => updateDay(day, { closed: e.target.checked })} />
+                  Cerrado
+                </span>
+              </label>
+              {!d.closed && (
+                <div className="flex items-center gap-2">
+                  <input type="time" value={d.open} onChange={e => updateDay(day, { open: e.target.value })}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
+                  <span style={{ color: '#9A9D9F' }}>—</span>
+                  <input type="time" value={d.close} onChange={e => updateDay(day, { close: e.target.value })}
+                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </Section>
+    </div>
+  )
+}
+
+// ─── Google Reviews Editor ────────────────────────────────────────
+function GoogleReviewsEditor({ block, lang, onUpdate }: {
+  block: GoogleReviewsBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<GoogleReviewsBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Título">
+        <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nos calificaron en Google" /></Field>
+      </Section>
+      <Section label="Puntaje">
+        <Field label="Estrellas (0-5)">
+          <input type="number" min="0" max="5" step="0.1" value={block.data.rating}
+            onChange={e => onUpdate(block.id, { rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Cantidad de reseñas">
+          <input type="number" min="0" step="1" value={block.data.reviewCount}
+            onChange={e => onUpdate(block.id, { reviewCount: Math.max(0, Number(e.target.value) || 0) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+      </Section>
+      <Section label="Enlaces">
+        <Field label="Link a tu ficha de Google Maps">
+          <Input value={block.data.mapsUrl || ''} onChange={v => onUpdate(block.id, { mapsUrl: v })} placeholder="https://maps.google.com/?cid=..." />
+        </Field>
+        <Field label="Place ID (opcional, habilita 'Dejar reseña')">
+          <Input value={block.data.placeId || ''} onChange={v => onUpdate(block.id, { placeId: v })} placeholder="ChIJ..." />
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Google no permite incrustar reseñas reales sin una API paga, así que el puntaje lo cargás vos a mano (actualizalo cada tanto).
+        Buscá tu Place ID gratis en el{' '}
+        <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="underline">Place ID Finder de Google</a>.
+      </p>
+    </div>
+  )
+}
+
+// ─── Loyalty Card Editor ─────────────────────────────────────────
+function LoyaltyCardEditor({ block, lang, onUpdate }: {
+  block: LoyaltyCardBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<LoyaltyCardBlock['data']>) => void
+}) {
+  const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, {
+    translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
+  })
+  return (
+    <div className="space-y-4">
+      <Section label="Textos">
+        <Field label="Título">
+          <Input value={t.title} onChange={v => setT('title', v)} placeholder="Tarjeta de sellos" />
+        </Field>
+        <Field label="Descripción">
+          <Input value={t.description} onChange={v => setT('description', v)} placeholder="Sumá un sello en cada visita" />
+        </Field>
+      </Section>
+      <Section label="Sellos y premio">
+        <Field label="Icono del sello (emoji)">
+          <Input value={block.data.stampIcon} onChange={v => onUpdate(block.id, { stampIcon: v })} placeholder="☕" />
+        </Field>
+        <Field label="Sellos para ganar el premio">
+          <input type="number" min="1" step="1" value={block.data.targetStamps}
+            onChange={e => onUpdate(block.id, { targetStamps: Math.max(1, Number(e.target.value) || 1) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+        </Field>
+        <Field label="Premio">
+          <Input value={block.data.rewardDescription[lang] || block.data.rewardDescription.es || ''}
+            onChange={v => onUpdate(block.id, { rewardDescription: { ...block.data.rewardDescription, [lang]: v } })}
+            placeholder="Un producto gratis" />
+        </Field>
+      </Section>
+      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+        Cada visitante obtiene su propia tarjeta con un código único. Vos le sumás los sellos desde{' '}
+        <span className="font-semibold">Dashboard → 🎟️ (esta página)</span> escaneando o tipeando su código.
+      </p>
     </div>
   )
 }
@@ -426,7 +960,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
       <Section label="Temporada">
         {limits.seasonFilter ? (
           <Field label="Modo temporada">
-            <select value={settings.seasonMode} onChange={e => onUpdate({ seasonMode: e.target.value as any })}
+            <select value={settings.seasonMode} onChange={e => onUpdate({ seasonMode: e.target.value as SeasonMode })}
               className="w-full px-3 py-2 rounded-xl text-sm outline-none"
               style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
               <option value="always">Siempre activo</option>
@@ -437,6 +971,30 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
           </Field>
         ) : (
           <ProLock feature="Filtros de temporada" />
+        )}
+      </Section>
+
+      <Section label="Integraciones">
+        {limits.analytics !== 'basic' ? (
+          <div className="space-y-1.5">
+            <Field label="Google Analytics 4 — Measurement ID">
+              <input type="text" placeholder="G-XXXXXXXXXX" value={settings.pixels?.ga4Id ?? ''}
+                onChange={e => onUpdate({ pixels: { ...settings.pixels, ga4Id: e.target.value.trim() } })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+            <Field label="Meta Pixel — ID">
+              <input type="text" placeholder="123456789012345" value={settings.pixels?.metaPixelId ?? ''}
+                onChange={e => onUpdate({ pixels: { ...settings.pixels, metaPixelId: e.target.value.trim() } })}
+                className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            </Field>
+            <p className="text-xs" style={{ color: '#8B8D8F' }}>
+              Para medir visitas y armar públicos de remarketing en Google Ads / Meta Ads. Dejá vacío lo que no uses.
+            </p>
+          </div>
+        ) : (
+          <ProLock feature="Google Analytics 4 y Meta Pixel" />
         )}
       </Section>
 
@@ -522,11 +1080,11 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
   )
 }
 
-function SeasonField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SeasonField({ value, onChange }: { value: SeasonMode; onChange: (v: SeasonMode) => void }) {
   return (
     <Section label="Visibilidad por temporada">
       <Field label="Mostrar en">
-        <select value={value} onChange={e => onChange(e.target.value)}
+        <select value={value} onChange={e => onChange(e.target.value as SeasonMode)}
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
           style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
           <option value="always">Siempre</option>

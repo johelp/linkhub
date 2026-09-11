@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Page, Block, BlockType, Lang, PageSettings } from '@/types'
+import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode, BlockCondition } from '@/types'
 import { generateId } from '@/lib/utils'
 import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 
@@ -22,6 +22,8 @@ interface EditorState {
 
   addBlock: (type: BlockType, afterId?: string) => void
   updateBlock: (id: string, data: Partial<Block['data']>) => void
+  updateBlockSeasonFilter: (id: string, seasonFilter: SeasonMode | 'always') => void
+  updateBlockCondition: (id: string, condition: BlockCondition | undefined) => void
   removeBlock: (id: string) => void
   reorderBlocks: (blocks: Block[]) => void
   duplicateBlock: (id: string) => void
@@ -65,7 +67,7 @@ export const useEditorStore = create<EditorState>()(
       if (!state.page) return
       const def = BLOCK_BY_TYPE[type]
       if (!def) return
-      const newBlock = def.createDefault(state.previewLang)
+      const newBlock = def.createDefault()
       const blocks = state.page.blocks
       const insertIndex = afterId
         ? blocks.findIndex(b => b.id === afterId) + 1
@@ -85,10 +87,30 @@ export const useEditorStore = create<EditorState>()(
       state.isDirty = true
     }),
 
+    updateBlockSeasonFilter: (id, seasonFilter) => set(state => {
+      if (!state.page) return
+      const block = state.page.blocks.find(b => b.id === id)
+      if (!block) return
+      block.seasonFilter = seasonFilter
+      state.isDirty = true
+    }),
+
+    updateBlockCondition: (id, condition) => set(state => {
+      if (!state.page) return
+      const block = state.page.blocks.find(b => b.id === id)
+      if (!block) return
+      block.condition = condition
+      state.isDirty = true
+    }),
+
     removeBlock: (id) => set(state => {
       if (!state.page) return
       state.page.blocks = state.page.blocks.filter(b => b.id !== id)
-      state.page.blocks.forEach((b, i) => { b.order = i })
+      state.page.blocks.forEach((b, i) => {
+        b.order = i
+        // A block conditioned on the one just deleted would otherwise point nowhere.
+        if (b.condition?.sourceBlockId === id) b.condition = undefined
+      })
       if (state.selectedBlockId === id) state.selectedBlockId = null
       state.isDirty = true
       pushHistory(state)

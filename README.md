@@ -1,29 +1,32 @@
 # 🔗 LinkHub — SaaS de páginas de enlaces
 
-Stack: **Next.js 16 · Supabase · Vercel · Tailwind v4 · Zustand · @dnd-kit**
+Stack: **Next.js 16 · Supabase · Stripe · Vercel/Railway · Tailwind v4 · Zustand · @dnd-kit**
+
+Guía completa de cuentas, variables de entorno, deploy y Stripe: ver [`SETUP.md`](./SETUP.md).
+Ideas y features planeadas (no construidas): ver [`ROADMAP.md`](./ROADMAP.md).
 
 ## Planes (por tipo de bloque)
 
-| Bloque / Feature | Free | Pro (€19) | Agency (€49) |
-|---|---|---|---|
-| Link, Label, Divider | ✅ | ✅ | ✅ |
-| Featured, Expandable, Social, Contact, Text, Image | ❌ | ✅ | ✅ |
-| Multiidioma | ❌ | ✅ | ✅ |
-| Filtros de temporada | ❌ | ✅ | ✅ |
-| QR personalizado | básico | ✅ | ✅ |
-| Dominio propio | ❌ | ❌ | ✅ |
-| Páginas | 1 | ∞ | ∞ |
+| Bloque / Feature | Free | Pro (€19/mes) |
+|---|---|---|
+| Link, Label, Divider | ✅ | ✅ |
+| Featured, Expandable, Social, Contact, Text, Image | ❌ | ✅ |
+| Multiidioma | ❌ | ✅ |
+| Filtros de temporada | ❌ | ✅ |
+| QR personalizado | básico | ✅ |
+| Dominio propio | ❌ | ✅ |
+| Páginas | 1 | ∞ |
 
 ## Setup local
 
 ```bash
 git clone https://github.com/johelp/linkhub.git && cd linkhub
 npm install
-cp .env.local.example .env.local   # completar con Supabase keys
+cp .env.local.example .env.local   # completar con Supabase (y Stripe si vas a probar pagos)
 npm run dev
 ```
 
-**Supabase:** Ejecutar `supabase/migrations/001_initial_schema.sql` en el SQL Editor.
+**Supabase:** correr en orden todo lo que hay en `supabase/migrations/` en el SQL Editor.
 **Auth redirect:** `http://localhost:3000/auth/callback`
 
 ## Deploy Vercel

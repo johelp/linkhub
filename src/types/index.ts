@@ -1,5 +1,5 @@
 // ─── Plans ──────────────────────────────────────────────────────
-export type Plan = 'free' | 'pro' | 'agency'
+export type Plan = 'free' | 'pro'
 
 export type BlockType =
   | 'link'
@@ -10,7 +10,15 @@ export type BlockType =
   | 'contact_card'
   | 'divider'
   | 'image_banner'
+  | 'video_embed'
+  | 'email_capture'
+  | 'payment_button'
+  | 'event_tickets'
+  | 'business_hours'
+  | 'google_reviews'
+  | 'loyalty_card'
   | 'text'
+  | 'menu'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -40,15 +48,6 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     analytics: 'basic',
   },
   pro: {
-    pages: 999,
-    advancedBlocks: true,
-    multiLanguage: true,
-    seasonFilter: true,
-    customQR: true,
-    customDomain: false,
-    analytics: 'full',
-  },
-  agency: {
     pages: 999,
     advancedBlocks: true,
     multiLanguage: true,
@@ -87,6 +86,10 @@ export interface PageSettings {
     description: string
     ogImage: string | null
   }
+  pixels?: {
+    ga4Id?: string        // "G-XXXXXXXXXX"
+    metaPixelId?: string  // numeric Meta/Facebook Pixel ID
+  }
 }
 
 export interface Page {
@@ -105,12 +108,22 @@ export interface Page {
 }
 
 // ─── Blocks ─────────────────────────────────────────────────────
+// Show/hide a block based on the live state of a business_hours block
+// elsewhere on the same page. Absent = always visible (default, and the
+// only option before this field existed, so old rows need no migration).
+export type BlockCondition = {
+  type: 'business_hours'
+  sourceBlockId: string
+  when: 'open' | 'closed'
+}
+
 export interface BlockBase {
   id: string
   type: BlockType
   order: number
   visible: boolean
   seasonFilter: SeasonMode | 'always'
+  condition?: BlockCondition
 }
 
 export interface LinkBlock extends BlockBase {
@@ -181,11 +194,45 @@ export interface ContactCardBlock extends BlockBase {
     address?: string
     mapUrl?: string
     whatsapp?: string
-    showHours: boolean
-    hours?: {
-      timezone: string
-      schedule: Array<{ days: string[]; open: string; close: string }>
-    }
+    whatsappMessage?: string
+  }
+}
+
+// 0 = Sunday ... 6 = Saturday, matching Date#getDay().
+export interface DaySchedule {
+  day: number
+  closed: boolean
+  open: string   // "HH:MM", 24h
+  close: string  // "HH:MM", 24h
+}
+
+export interface BusinessHoursBlock extends BlockBase {
+  type: 'business_hours'
+  data: {
+    translations: Record<Lang, { title: string }>
+    timezone: string   // IANA tz, e.g. "America/Argentina/Buenos_Aires"
+    schedule: DaySchedule[]
+  }
+}
+
+export interface GoogleReviewsBlock extends BlockBase {
+  type: 'google_reviews'
+  data: {
+    translations: Record<Lang, { title: string }>
+    rating: number         // 0-5, entered by the owner (no live API — see SETUP.md)
+    reviewCount: number
+    mapsUrl?: string        // link to the Google Maps listing, to view all reviews
+    placeId?: string        // enables the "leave a review" deep link (Google's own writereview URL)
+  }
+}
+
+export interface LoyaltyCardBlock extends BlockBase {
+  type: 'loyalty_card'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    stampIcon: string                    // emoji shown for each stamp, e.g. "☕"
+    targetStamps: number                 // stamps needed to earn the reward
+    rewardDescription: Record<Lang, string>  // e.g. "Café gratis"
   }
 }
 
@@ -213,10 +260,72 @@ export interface DividerBlock extends BlockBase {
   data: { style: 'line' | 'dots' | 'space'; spacing: 'sm' | 'md' | 'lg' }
 }
 
+export interface VideoEmbedBlock extends BlockBase {
+  type: 'video_embed'
+  data: {
+    url: string          // YouTube, Vimeo, or a direct .mp4/.webm/.mov link
+    caption?: string
+    aspectRatio: '16:9' | '9:16' | '1:1'
+  }
+}
+
+export interface EmailCaptureBlock extends BlockBase {
+  type: 'email_capture'
+  data: {
+    translations: Record<Lang, { headline: string; description: string; buttonLabel: string }>
+  }
+}
+
+export interface PaymentButtonBlock extends BlockBase {
+  type: 'payment_button'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    price: number
+    currency: string   // ISO currency code Mercado Pago accepts, e.g. 'ARS', 'MXN', 'CLP'
+  }
+}
+
+export interface TicketTier {
+  id: string
+  name: string
+  price: number
+}
+
+export interface EventTicketsBlock extends BlockBase {
+  type: 'event_tickets'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    tiers: TicketTier[]
+    currency: string
+  }
+}
+
+export interface MenuItem {
+  id: string
+  translations: Record<Lang, { name: string; description?: string }>
+  price: string   // free-form so any currency/format works, e.g. "$8.500", "€12"
+}
+
+export interface MenuSection {
+  id: string
+  translations: Record<Lang, { name: string }>
+  items: MenuItem[]
+}
+
+export interface MenuBlock extends BlockBase {
+  type: 'menu'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    sections: MenuSection[]
+    pdfUrl?: string   // optional link to a full PDF menu, shown below the sections
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
-  | ImageBannerBlock | TextBlock | DividerBlock
+  | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

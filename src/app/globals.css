@@ -21,14 +21,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Editor layout */
-.editor-grid {
-  display: grid;
-  grid-template-columns: 270px 1fr 310px;
-  height: 100%;
-  overflow: hidden;
-}
-
 /* Drag handle */
 .drag-handle { cursor: grab; }
 .drag-handle:active { cursor: grabbing; }
@@ -37,3 +29,64 @@ body {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(26,27,28,0.12); border-radius: 3px; }
+
+/* ─── Hero entrance + ambient motion ──────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes gradientDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-3%, 2%) scale(1.08); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.hero-fade-up {
+  opacity: 0;
+  animation: fadeInUp 0.7s cubic-bezier(.16,.84,.44,1) forwards;
+}
+.hero-scale-in {
+  opacity: 0;
+  animation: scaleIn 0.8s cubic-bezier(.16,.84,.44,1) forwards;
+}
+.hero-float {
+  animation: floatSlow 6s ease-in-out infinite;
+}
+.hero-glow {
+  animation: gradientDrift 14s ease-in-out infinite;
+}
+.hero-cta {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(232,21,10,0.28);
+}
+.hero-phone-tilt {
+  transform: rotate(-5deg) rotateY(-10deg);
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+}
+.hero-phone-tilt:hover {
+  transform: rotate(-1deg) rotateY(-2deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-phone-tilt { transition: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-up, .hero-scale-in, .hero-float, .hero-glow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
