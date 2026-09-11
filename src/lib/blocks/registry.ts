@@ -375,27 +375,47 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
-    type: 'menu_pdf',
-    label: 'Carta / Menú',
-    description: 'Link a tu carta o menú en PDF, con botón para verla o descargarla',
+    type: 'menu',
+    label: 'Menú / Carta',
+    description: 'Categorías, productos y precios -- o un link a tu PDF si ya lo tenés armado',
     icon: '📋',
     category: 'content',
     createDefault: () => ({
       id: generateId(),
-      type: 'menu_pdf',
+      type: 'menu',
       order: 0,
       visible: true,
       seasonFilter: 'always',
       data: {
         translations: {
-          es: { title: 'Nuestra carta', description: 'Ver menú completo' },
+          es: { title: 'Nuestra carta', description: '' },
           en: { title: '', description: '' },
           pt: { title: '', description: '' },
           fr: { title: '', description: '' },
           de: { title: '', description: '' },
           it: { title: '', description: '' },
         },
-        url: '',
+        sections: [
+          {
+            id: generateId(),
+            translations: {
+              es: { name: 'Categoría' },
+              en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' },
+            },
+            items: [
+              {
+                id: generateId(),
+                translations: {
+                  es: { name: 'Producto', description: '' },
+                  en: { name: '', description: '' }, pt: { name: '', description: '' },
+                  fr: { name: '', description: '' }, de: { name: '', description: '' }, it: { name: '', description: '' },
+                },
+                price: '',
+              },
+            ],
+          },
+        ],
+        pdfUrl: '',
       },
     }),
   },

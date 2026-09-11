@@ -4,8 +4,9 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 
 ## ✅ Hecho
 
-- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews, loyalty_card, menu_pdf (17 en total, catálogo visible en la home)
-- Bloque "Carta / Menú" (`menu_pdf`, plan Pro): link a un PDF (o cualquier archivo alojado externamente — Drive, Dropbox, etc.) con la carta/menú del local, con botón para verla o descargarla en la página pública. Abre LinkHub a bares y restós sin necesitar generación de imágenes ni ningún servicio pago nuevo — se descartó integrar QR Monster (Stable Diffusion + ControlNet) por requerir una API de inferencia externa con costo por generación, fuera de alcance de esta vuelta
+- Bloques: link, featured, expandable, section_label, social_grid, contact_card, text, divider, image_banner, video_embed, email_capture, payment_button, event_tickets, business_hours, google_reviews, loyalty_card, menu (17 en total, catálogo visible en la home)
+- Bloque "Menú / Carta" (`menu`, plan Pro): categorías con productos y precio (no un simple link -- un link a PDF por sí solo no aporta nada como "menú" real), con la opción de sumar además un link a un PDF completo. Abre LinkHub a bares y restós sin necesitar generación de imágenes ni ningún servicio pago nuevo — se descartó integrar QR Monster (Stable Diffusion + ControlNet) por requerir una API de inferencia externa con costo por generación, fuera de alcance de esta vuelta
+- Bloques que dependen de una URL/archivo (`image_banner`, `video_embed`, `menu`) ahora muestran un placeholder con instrucciones en el editor cuando el campo está vacío, en vez de desaparecer sin feedback -- antes el editor reusaba literalmente el mismo `PageView` que la página pública, que oculta el bloque hasta que esté configurado; ahora `PageView` recibe una prop `editing` que solo el preview del editor pasa
 - Mensaje predefinido en el link de WhatsApp del bloque de contacto
 - Preview instantáneo sin registro en el home (`LivePreview.tsx`)
 - Captura de email + export CSV por página (`/api/subscribers/export`, botón ✉️ en cada card del dashboard)
@@ -19,6 +20,17 @@ Todo lo que se fue planteando en conversación, para no perderlo. Nada de esto e
 - Tarjeta de fidelidad — versión simple (plan Pro): bloque "Tarjeta de sellos". El visitante toca "Obtener mi tarjeta" en la página pública y le queda un link único guardado en su navegador (`/l/[code]`, con QR); el dueño suma sellos o canjea el premio desde `Dashboard → 🎟️/🏅 (esta página)` escaneando o tipeando ese código. Sin Apple/Google Wallet todavía — queda anotado como posible mejora futura, no es parte de esta versión
 - Páginas con plantilla: el botón "Nueva página" del dashboard (`NewPageButton.tsx`) ahora pregunta primero "Vacía / Catálogo de precios / Ficha de contacto / Media kit" (`src/lib/blocks/templates.ts`) y precarga los bloques correspondientes en vez de arrancar siempre en blanco. "Catálogo de precios" usa solo bloques gratuitos (funciona en Free); "Ficha de contacto" y "Media kit" usan bloques Pro (`featured`, `contact_card`, etc.) — a un usuario Free que las elige se lo manda directo a `/dashboard/upgrade` en vez de dejarlo chocar con el trigger de Supabase que las bloquearía igual
 
+## 🔲 Subida de imágenes optimizadas (Supabase Storage)
+
+Hoy `image_banner` (y a futuro cualquier bloque con imagen) solo acepta pegar una URL externa ya alojada -- no hay forma de subir un archivo desde el editor. Pedido explícito: poder subir la imagen directo y que quede optimizada.
+
+Plan técnico (investigado, no construido):
+1. **Bucket de Supabase Storage** (público, solo lectura pública + insert/update/delete restringido al dueño de la página) -- correspondería a una migración nueva `supabase/migrations/010_storage_images.sql` (la 009 es la última hoy) con el `create policy` correspondiente sobre `storage.objects`.
+2. **UI de upload**: en `ImageBannerEditor` (`src/app/editor/[pageId]/PropertiesPanel.tsx`), sumar un `<input type="file">` (no existe ninguno hoy en el repo) al lado del campo de URL -- el usuario elige uno de los dos caminos, no reemplaza pegar una URL externa.
+3. **Cliente a usar**: `createClient()` de `src/lib/supabase/client.ts` (el mismo cliente browser/anon que ya se usa para inserts en `PageView.tsx` y `NewPageButton.tsx`) tiene `.storage.from('bucket').upload(...)` -- RLS de Storage decide si el usuario puede escribir. **No** usar el cliente admin/service-role (`src/lib/supabase/admin.ts`) para esto: es solo para código server-only de confianza (ej. el webhook de Stripe), nunca para un upload iniciado por el usuario.
+4. **Optimización**: Supabase Storage no transforma imágenes en el plan Free (Image Transformations es feature paga de Supabase). Alternativas sin costo extra: comprimir/redimensionar en el browser antes de subir (ej. canvas API o una librería chica) para no depender de un plan pago. Definir un tamaño máximo razonable (ej. 1600px de lado más largo, calidad ~80%) antes de encarar el código.
+5. Nada de esto se puede probar en esta sesión sin acceso de red a Supabase -- ver bloqueo de red documentado en el historial de esta conversación.
+
 ## 🔲 Revisar costos por uso (no por bloque)
 
 Duda planteada: ¿entradas a eventos y tarjeta de sellos consumen más que un LinkHub simple? Repuesta corta: los bloques en sí no cuestan nada (son filas en Postgres) — lo que sí escala con uso es **Resend** (emails de tickets, gratis hasta 3k/mes y después cobra por email) y cualquier futura API paga de terceros (por eso se descartó QR Monster, ver arriba). Mercado Pago/Stripe no cuestan — generan ingreso.
@@ -27,6 +39,10 @@ Antes de tocar el modelo de planes, conviene:
 1. Medir cuánto está consumiendo Resend realmente una vez que haya tráfico (hoy: 0, no hay credenciales cargadas).
 2. Si hace falta, meter un límite de uso (ej. "X emails de entradas incluidos por mes en Pro, después $Y por email o hay que cargar tu propia `RESEND_API_KEY`") en vez de mover bloques entre Free/Pro — mantiene el modelo de 2 planes simple y solo mide donde el costo real vive.
 3. No es urgente mientras no haya volumen real de ventas/entradas — anotado para revisar con números concretos de Supabase/Resend/Vercel cuando el proyecto tenga tráfico.
+
+## 🔲 Repaso del editor de bloques (pedido explícito, sin lista cerrada todavía)
+
+El usuario pidió repasar el editor completo ("desde donde se colocan los bloques y configuran, aún le faltan ajustes") sin especificar una lista cerrada de cambios. Ya se resolvió el caso concreto que señaló (bloques invisibles en el editor hasta configurarlos, ver ✅ Hecho) y la subida de imágenes quedó especificada arriba. Falta: sentarse con el usuario a puntualizar qué más le resulta incómodo del editor antes de tocar nada más -- no hay que asumir cambios sin confirmar qué exactamente no le cierra.
 
 ## 🔲 Media kit / páginas con plantilla — mejoras futuras
 

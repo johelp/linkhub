@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuPdfBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -95,7 +95,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
-    case 'menu_pdf': editor = <MenuPdfEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
 
@@ -538,29 +538,111 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
   )
 }
 
-// ─── Menu / Carta PDF Editor ───────────────────────────────────────
-function MenuPdfEditor({ block, lang, onUpdate }: {
-  block: MenuPdfBlock; lang: Lang
-  onUpdate: (id: string, d: Partial<MenuPdfBlock['data']>) => void
+// ─── Menu / Carta Editor ────────────────────────────────────────────
+function MenuEditor({ block, lang, onUpdate }: {
+  block: MenuBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<MenuBlock['data']>) => void
 }) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { title: '', description: '' }
   const setT = (key: string, val: string) => onUpdate(block.id, {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
+  const sections = block.data.sections
+
+  function updateSectionName(sectionId: string, val: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId
+        ? { ...s, translations: { ...s.translations, [lang]: { name: val } } }
+        : s)
+    })
+  }
+  function addSection() {
+    const translations = Object.fromEntries(ALL_LANGS.map(l => [l.code, { name: '' }])) as Record<Lang, { name: string }>
+    onUpdate(block.id, { sections: [...sections, { id: generateId(), translations, items: [] }] })
+  }
+  function removeSection(sectionId: string) {
+    onUpdate(block.id, { sections: sections.filter(s => s.id !== sectionId) })
+  }
+  function updateItem(sectionId: string, itemId: string, key: string, val: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => {
+        if (s.id !== sectionId) return s
+        return {
+          ...s,
+          items: s.items.map(it => {
+            if (it.id !== itemId) return it
+            if (key === 'price') return { ...it, price: val }
+            const itT = it.translations[lang] || it.translations['es'] || { name: '', description: '' }
+            return { ...it, translations: { ...it.translations, [lang]: { ...itT, [key]: val } } }
+          }),
+        }
+      })
+    })
+  }
+  function addItem(sectionId: string) {
+    const translations = Object.fromEntries(ALL_LANGS.map(l => [l.code, { name: '', description: '' }])) as Record<Lang, { name: string; description?: string }>
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId
+        ? { ...s, items: [...s.items, { id: generateId(), translations, price: '' }] }
+        : s)
+    })
+  }
+  function removeItem(sectionId: string, itemId: string) {
+    onUpdate(block.id, {
+      sections: sections.map(s => s.id === sectionId ? { ...s, items: s.items.filter(it => it.id !== itemId) } : s)
+    })
+  }
+
   return (
     <div className="space-y-4">
-      <Section label="Textos">
+      <Section label="Cabecera">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nuestra carta" /></Field>
-        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Ver menú completo" /></Field>
+        <Field label="Descripción (opcional)"><Input value={t.description} onChange={v => setT('description', v)} /></Field>
       </Section>
-      <Section label="Archivo">
-        <Field label="Link al PDF de la carta/menú">
-          <Input value={block.data.url} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://..." />
+      <Section label={`Categorías (${sections.length})`}>
+        {sections.map((section, si) => {
+          const st = section.translations[lang] || section.translations['es'] || { name: '' }
+          return (
+            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {si + 1}</span>
+                <button onClick={() => removeSection(section.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+              </div>
+              <Field label="Nombre de la categoría">
+                <Input value={st.name} onChange={v => updateSectionName(section.id, v)} placeholder="Entradas, Platos principales..." />
+              </Field>
+              <div className="mt-2 space-y-2">
+                {section.items.map((item, ii) => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} className="rounded-lg p-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)' }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <button onClick={() => removeItem(section.id, item.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+                      </div>
+                      <Field label="Nombre"><Input value={it.name} onChange={v => updateItem(section.id, item.id, 'name', v)} /></Field>
+                      <Field label="Descripción (opcional)"><Input value={it.description || ''} onChange={v => updateItem(section.id, item.id, 'description', v)} /></Field>
+                      <Field label="Precio"><Input value={item.price} onChange={v => updateItem(section.id, item.id, 'price', v)} placeholder="$8.500" /></Field>
+                    </div>
+                  )
+                })}
+                <button onClick={() => addItem(section.id)} className="w-full py-1.5 text-xs font-semibold rounded-lg"
+                  style={{ background: '#fff', color: '#5A5D60', border: '1px dashed rgba(26,27,28,0.15)' }}>+ Añadir producto</button>
+              </div>
+            </div>
+          )
+        })}
+        <button onClick={addSection} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
+          style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir categoría</button>
+      </Section>
+      <Section label="PDF (opcional)">
+        <Field label="Link a un PDF con la carta completa">
+          <Input value={block.data.pdfUrl || ''} onChange={v => onUpdate(block.id, { pdfUrl: v })} placeholder="https://..." />
         </Field>
+        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>
+          Se muestra como un link &quot;Ver carta completa&quot; debajo de las categorías -- útil si además tenés un PDF ya diseñado.
+        </p>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
-        Subí tu carta a Google Drive, Dropbox o donde ya la tengas alojada y pegá acá el link público de descarga/visualización.
-      </p>
     </div>
   )
 }

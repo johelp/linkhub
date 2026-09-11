@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuPdfBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 
@@ -25,7 +25,7 @@ function buildWhatsAppUrl(phone: string, message?: string): string {
     : `https://wa.me/${digits}`
 }
 
-interface Props { page: Page }
+interface Props { page: Page; editing?: boolean }
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: '📷', facebook: '👥', tiktok: '🎵',
@@ -40,7 +40,7 @@ const SOCIAL_COLORS: Record<string, string> = {
   whatsapp: '#25d366',
 }
 
-export function PageView({ page }: Props) {
+export function PageView({ page, editing = false }: Props) {
   const [lang, setLang] = useState<Lang>(page.settings.defaultLang)
   const [season, setSeason] = useState<SeasonMode>(page.settings.seasonMode)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -155,6 +155,7 @@ export function PageView({ page }: Props) {
               expandedId={expandedId}
               setExpandedId={setExpandedId}
               onTrackClick={trackClick}
+              editing={editing}
             />
           ))}
         </div>
@@ -173,11 +174,28 @@ export function PageView({ page }: Props) {
   )
 }
 
+// Shown in the editor preview instead of rendering nothing, for blocks that
+// need a field filled in (image/video/PDF url) before they have anything to
+// show on the real public page.
+function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 6, padding: '28px 14px', marginBottom: 8, borderRadius: 14,
+      border: '1.5px dashed rgba(26,27,28,0.15)', background: '#F6F6F5',
+    }}>
+      <span style={{ fontSize: 22 }}>{icon}</span>
+      <span style={{ fontSize: 12, color: '#9A9D9F', textAlign: 'center' }}>{label}</span>
+    </div>
+  )
+}
+
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick }: {
+function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick, editing }: {
   block: Block; lang: Lang; pc: string; pageId: string
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
+  editing: boolean
 }) {
   const card: React.CSSProperties = {
     background: '#fff', border: '1px solid rgba(26,27,28,0.09)',
@@ -228,23 +246,53 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       )
     }
 
-    case 'menu_pdf': {
-      const b = block as MenuPdfBlock
+    case 'menu': {
+      const b = block as MenuBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
-      if (!b.data.url) return null
+      const sections = b.data.sections.filter(s => s.items.length > 0)
+      if (sections.length === 0 && !b.data.pdfUrl) {
+        return editing ? <EmptyBlockPlaceholder icon="📋" label="Agregá categorías y productos, o un link a tu PDF" /> : null
+      }
       return (
-        <a href={b.data.url} target="_blank" rel="noopener noreferrer"
-          onClick={() => onTrackClick(b.id, 'menu_pdf', b.data.url)}
-          style={card}>
-          <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: '#FEF0EF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
-            📋
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
-            {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
-          </div>
-          <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
-        </a>
+        <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          {(t.title || t.description) && (
+            <div style={{ marginBottom: 10 }}>
+              {t.title && <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            </div>
+          )}
+          {sections.map(section => {
+            const st = section.translations[lang] || section.translations['es'] || { name: '' }
+            return (
+              <div key={section.id} style={{ marginBottom: 10 }}>
+                {st.name && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
+                    {st.name}
+                  </div>
+                )}
+                {section.items.map(item => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid rgba(26,27,28,0.06)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1B1C' }}>{it.name}</div>
+                        {it.description && <div style={{ fontSize: 11, color: '#9A9D9F', marginTop: 2 }}>{it.description}</div>}
+                      </div>
+                      {item.price && <div style={{ fontSize: 13, fontWeight: 700, color: pc, flexShrink: 0 }}>{item.price}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+          {b.data.pdfUrl && (
+            <a href={b.data.pdfUrl} target="_blank" rel="noopener noreferrer"
+              onClick={() => onTrackClick(b.id, 'menu', b.data.pdfUrl!)}
+              style={{ display: 'block', textAlign: 'center', fontSize: 12, fontWeight: 600, color: pc, marginTop: sections.length > 0 ? 8 : 0, textDecoration: 'none' }}>
+              Ver carta completa (PDF) →
+            </a>
+          )}
+        </div>
       )
     }
 
@@ -361,7 +409,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
     case 'image_banner': {
       const b = block as ImageBannerBlock
       const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
-      if (!b.data.imageUrl) return null
+      if (!b.data.imageUrl) return editing ? <EmptyBlockPlaceholder icon="🖼️" label="Subí o pegá el link de una imagen" /> : null
       const frame = (
         <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', marginBottom: 8, background: '#F2F3F4' }}>
           <Image src={b.data.imageUrl} alt={b.data.altText || ''} fill unoptimized style={{ objectFit: 'cover' }} />
@@ -380,7 +428,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       const b = block as VideoEmbedBlock
       const embed = parseVideoEmbed(b.data.url)
       const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
-      if (!embed.embedUrl) return null
+      if (!embed.embedUrl) return editing ? <EmptyBlockPlaceholder icon="🎬" label="Pegá un link de YouTube, Vimeo o un video .mp4" /> : null
       return (
         <div style={{ marginBottom: 8 }}>
           <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', background: '#000' }}>

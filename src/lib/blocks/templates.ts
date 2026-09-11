@@ -92,8 +92,17 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         },
       },
       {
-        id: generateId(), type: 'menu_pdf', order: 2, visible: true, seasonFilter: 'always',
-        data: { translations: esOnly({ title: 'Nuestra carta', description: 'Ver menú completo' }), url: '' },
+        id: generateId(), type: 'menu', order: 2, visible: true, seasonFilter: 'always',
+        data: {
+          translations: esOnly({ title: 'Nuestra carta', description: '' }),
+          sections: [
+            {
+              id: generateId(), translations: esOnly({ name: 'Categoría' }),
+              items: [{ id: generateId(), translations: esOnly({ name: 'Producto', description: '' }), price: '' }],
+            },
+          ],
+          pdfUrl: '',
+        },
       },
       {
         id: generateId(), type: 'contact_card', order: 3, visible: true, seasonFilter: 'always',
