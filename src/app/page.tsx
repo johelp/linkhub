@@ -5,6 +5,7 @@ import { HeroShowcase } from './HeroShowcase'
 import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
 import { blockRequiresPro } from '@/types'
 import { QR_TOOLS } from '@/lib/qrTools'
+import { VERTICALS } from '@/lib/verticals'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Crea tu página de enlaces profesional',
@@ -157,6 +158,23 @@ export default function LandingPage() {
               <p style={{ fontSize: 14, fontWeight: 600, color: INK, marginBottom: 6 }}>{u.title}</p>
               <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55 }}>{u.desc}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* VERTICALS */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>LinkHub para tu rubro</h2>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
+          Mirá qué bloques te sirven y cómo queda tu página, según el tipo de negocio.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          {VERTICALS.map(v => (
+            <Link key={v.slug} href={`/para/${v.slug}`}
+              style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{v.label}</p>
+              <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{v.intro}</p>
+            </Link>
           ))}
         </div>
       </section>

@@ -86,7 +86,7 @@ export function buildDemoPage(businessName?: string, generic = false): Page {
 // LinkHub is pre-launch and has none yet. Swap these out for real,
 // permissioned customer pages once they exist; don't dress up fictional
 // ones as if they were real.
-function buildSalonExample(): Page {
+export function buildSalonExample(): Page {
   return {
     id: 'demo-salon', user_id: 'demo', slug: 'bella-estetica',
     name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
@@ -137,7 +137,7 @@ function buildSalonExample(): Page {
   }
 }
 
-function buildEventExample(): Page {
+export function buildEventExample(): Page {
   return {
     id: 'demo-event', user_id: 'demo', slug: 'fest-verano',
     name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
@@ -179,7 +179,7 @@ function buildEventExample(): Page {
   }
 }
 
-function buildCafeExample(): Page {
+export function buildCafeExample(): Page {
   return {
     id: 'demo-cafe', user_id: 'demo', slug: 'cafe-de-la-esquina',
     name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
@@ -220,6 +220,79 @@ function buildCafeExample(): Page {
       {
         id: '4', type: 'social_grid', order: 3, visible: true, seasonFilter: 'always',
         data: { items: [{ id: 's1', platform: 'instagram', url: '#', label: 'Instagram' }] },
+      },
+    ],
+  }
+}
+
+// Restaurant example -- built for the "restaurantes" vertical landing page
+// (/para/restaurantes), to show off the `menu` block specifically (its own
+// differentiator vs. the cafe example above, which leans on `loyalty_card`).
+export function buildRestaurantExample(): Page {
+  return {
+    id: 'demo-restaurant', user_id: 'demo', slug: 'la-parrilla-del-barrio',
+    name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
+    created_at: '', updated_at: '',
+    settings: {
+      defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',
+      primaryColor: '#B91C1C', backgroundColor: '#FFFFFF', fontFamily: 'DM Sans', showPoweredBy: false,
+      seo: { title: '', description: '', ogImage: null },
+    },
+    blocks: [
+      {
+        id: '1', type: 'featured', order: 0, visible: true, seasonFilter: 'always',
+        data: {
+          icon: '🥩', colorScheme: 'dark',
+          badge: { es: '', en: '', pt: '', fr: '', de: '', it: '' },
+          translations: {
+            es: { title: 'La Parrilla del Barrio', description: 'Cocina de barrio, todos los días' },
+            ...emptyTranslations,
+          },
+          url: '#',
+        },
+      },
+      {
+        id: '2', type: 'menu', order: 1, visible: true, seasonFilter: 'always',
+        data: {
+          translations: { es: { title: 'Nuestra carta', description: '' }, ...emptyTranslations },
+          sections: [
+            {
+              id: 'sec1',
+              translations: { es: { name: 'Entradas' }, en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' } },
+              items: [
+                { id: 'i1', translations: { es: { name: 'Empanadas (x3)' }, en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' } }, price: '$3.900' },
+                { id: 'i2', translations: { es: { name: 'Provoleta' }, en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' } }, price: '$5.200' },
+              ],
+            },
+            {
+              id: 'sec2',
+              translations: { es: { name: 'Principales' }, en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' } },
+              items: [
+                { id: 'i3', translations: { es: { name: 'Bife de chorizo' }, en: { name: '' }, pt: { name: '' }, fr: { name: '' }, de: { name: '' }, it: { name: '' } }, price: '$12.500' },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        id: '3', type: 'business_hours', order: 2, visible: true, seasonFilter: 'always',
+        data: {
+          translations: { es: { title: 'Horario' }, en: { title: '' }, pt: { title: '' }, fr: { title: '' }, de: { title: '' }, it: { title: '' } },
+          timezone: 'America/Argentina/Buenos_Aires',
+          schedule: [
+            { day: 0, closed: false, open: '12:00', close: '00:00' },
+            { day: 1, closed: true, open: '12:00', close: '00:00' },
+            { day: 2, closed: false, open: '12:00', close: '00:00' },
+            { day: 3, closed: false, open: '12:00', close: '00:00' },
+            { day: 4, closed: false, open: '12:00', close: '00:00' },
+            { day: 5, closed: false, open: '12:00', close: '01:00' },
+            { day: 6, closed: false, open: '12:00', close: '01:00' },
+          ],
+        },
+      },
+      {
+        id: '4', type: 'contact_card', order: 3, visible: true, seasonFilter: 'always',
+        data: { whatsapp: '5491100000000', whatsappMessage: 'Hola! Quería hacer una reserva', address: 'Av. Corrientes 3400' },
       },
     ],
   }
