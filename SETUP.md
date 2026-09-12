@@ -188,3 +188,22 @@ No requiere ninguna cuenta ni variable de entorno del lado de LinkHub — es una
 3. Pegar cada uno en el campo correspondiente del editor. Se valida el formato antes de inyectar nada en la página pública (si no matchea el patrón esperado, no se carga el script — no hay forma de meter código propio ahí).
 4. Sirve para armar públicos de remarketing y medir conversión de campañas pagas (Meta/Google Ads) sobre visitas y clics de la página pública — es aparte del analytics interno que ya trae LinkHub (vistas/clics en el dashboard).
 5. Gateado al plan Pro (mismo límite que el resto de analítica avanzada, `PLAN_LIMITS.analytics`).
+
+## 13. Programa de afiliados (Rewardful)
+
+El código ya está: un script gateado por `NEXT_PUBLIC_REWARDFUL_API_KEY` (sin esa env var, no se carga nada y todo se comporta exactamente igual que hoy), y `/api/checkout` adjunta el ID de referido a la metadata del customer de Stripe cuando Rewardful está activo. Lo que falta es la cuenta — es una herramienta externa, no algo que se programe a mano:
+
+1. **Crear cuenta en [rewardful.com](https://www.rewardful.com/)** (o [firstpromoter.com](https://firstpromoter.com/), mismo patrón) y conectar tu cuenta de Stripe en un clic — Rewardful lee las suscripciones de Stripe directo, no hace falta tocar código para eso.
+2. **Definir la regla de recompensa**: comisión recurrente (no de un solo pago), de por vida (sin límite de meses), sin techo de ganancias. Es una opción de configuración en el panel de Rewardful, no algo que haya que construir.
+3. **Copiar tu API key pública** (Rewardful → Settings → API) → `NEXT_PUBLIC_REWARDFUL_API_KEY` en Vercel.
+4. **Pago a afiliados**: Rewardful paga por PayPal directo desde su plataforma — cada afiliado carga su email de PayPal en su propio panel de afiliado, vos no tenés que hacer nada por transferencia individual.
+5. Probar: abrí el sitio con `?via=test` (o el link de afiliado de prueba que te da Rewardful), fijate que `window.Rewardful.referral` tenga un valor en la consola del navegador, registrate, hacé "Empezar Pro" con una tarjeta de prueba de Stripe, y confirmá en Rewardful → Referrals que apareció el referido.
+
+Notas:
+- No reemplaza nada de la integración de Stripe que ya existe (§6) — se apoya en ella.
+- El script se inyecta en todo el sitio (no solo el home) porque un afiliado puede compartir el link de cualquier página pública, y Rewardful necesita ver esa visita para dejar la cookie de referido antes de que la persona se registre.
+- Costo: desde ~49 $/mes el plan más chico de Rewardful (tarifas de terceros, pueden cambiar) — 0% de comisión propia sobre lo que le pagás a tus afiliados, aparte de esa suscripción.
+
+## 14. Páginas SEO (`/herramientas`)
+
+Generadores de QR gratis y sin registro (WiFi, Instagram, tarjeta de contacto/vCard) en `/herramientas/[slug]`, pensados para atraer tráfico de búsqueda con utilidad real por página (no una landing genérica repetida) — ver `src/lib/qrTools.ts`. Para sumar una nueva variante: agregar una entrada a `QR_TOOLS` con su propio `kind` de payload en `qrTools.ts`, y el caso correspondiente en `QrToolClient.tsx` si el formato de QR es nuevo. Antes de publicar una nueva variante, chequeá que resuelva una necesidad real y distinta — páginas que solo cambian el título sin aportar nada propio son exactamente lo que Google trata como spam.

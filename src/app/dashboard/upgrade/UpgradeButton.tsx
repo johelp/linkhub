@@ -2,6 +2,13 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
+// Set by Rewardful's tracking script (see layout.tsx) when it's configured
+// and this visitor arrived through an affiliate link. Undefined the rest of
+// the time, in which case referralId below is just omitted from the request.
+declare global {
+  interface Window { Rewardful?: { referral?: string } }
+}
+
 interface Props {
   isPro: boolean
   paymentsConfigured: boolean
@@ -13,7 +20,12 @@ export function UpgradeButton({ isPro, paymentsConfigured }: Props) {
   async function go(endpoint: '/api/checkout' | '/api/billing-portal') {
     setLoading(true)
     try {
-      const res = await fetch(endpoint, { method: 'POST' })
+      const referralId = endpoint === '/api/checkout' ? window.Rewardful?.referral : undefined
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralId }),
+      })
       const data = await res.json()
       if (!res.ok || !data.url) throw new Error(data.error || 'Error')
       window.location.href = data.url
