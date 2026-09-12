@@ -179,8 +179,55 @@ function buildEventExample(): Page {
   }
 }
 
+function buildCafeExample(): Page {
+  return {
+    id: 'demo-cafe', user_id: 'demo', slug: 'cafe-de-la-esquina',
+    name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
+    created_at: '', updated_at: '',
+    settings: {
+      defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',
+      primaryColor: '#B45309', backgroundColor: '#FFFFFF', fontFamily: 'DM Sans', showPoweredBy: false,
+      seo: { title: '', description: '', ogImage: null },
+    },
+    blocks: [
+      {
+        id: '1', type: 'featured', order: 0, visible: true, seasonFilter: 'always',
+        data: {
+          icon: '☕', colorScheme: 'orange',
+          badge: { es: '', en: '', pt: '', fr: '', de: '', it: '' },
+          translations: {
+            es: { title: 'Café de la Esquina', description: 'Especialidad, medialunas y algo más' },
+            ...emptyTranslations,
+          },
+          url: '#',
+        },
+      },
+      {
+        id: '2', type: 'loyalty_card', order: 1, visible: true, seasonFilter: 'always',
+        data: {
+          translations: {
+            es: { title: 'Tu tarjeta de sellos', description: 'Sumá un sello por cada café' },
+            ...emptyTranslations,
+          },
+          stampIcon: '☕', targetStamps: 8,
+          rewardDescription: { es: 'Un café gratis', en: '', pt: '', fr: '', de: '', it: '' },
+        },
+      },
+      {
+        id: '3', type: 'contact_card', order: 2, visible: true, seasonFilter: 'always',
+        data: { whatsapp: '5491100000000', address: 'Corrientes 1234' },
+      },
+      {
+        id: '4', type: 'social_grid', order: 3, visible: true, seasonFilter: 'always',
+        data: { items: [{ id: 's1', platform: 'instagram', url: '#', label: 'Instagram' }] },
+      },
+    ],
+  }
+}
+
 export const HERO_EXAMPLES: { label: string; page: Page }[] = [
   { label: 'Esquí', page: buildDemoPage() },
   { label: 'Estética', page: buildSalonExample() },
   { label: 'Evento', page: buildEventExample() },
+  { label: 'Tarjeta de sellos', page: buildCafeExample() },
 ]

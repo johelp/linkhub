@@ -12,21 +12,43 @@ import type { Page, PaymentButtonBlock, EventTicketsBlock } from '@/types'
 // aren't LinkHub users. Price and title always come from the page's own
 // stored blocks (authored by the page owner), never from query params, so
 // a visitor can't manipulate what they're charged.
+//
+// This route is reached via a plain <a href> on the public page (a full
+// page navigation, not a fetch call) -- so any error response is rendered
+// as-is in the visitor's browser. Once the page is resolved, every error
+// redirects back to it with a `payment_error` query param that PageView
+// renders as a friendly banner, instead of leaving a raw JSON error on
+// screen. Only the two cases where the page itself can't be resolved yet
+// (missing params, unknown/unpublished page) fall back to a minimal HTML
+// error page.
+function htmlError(message: string, status: number) {
+  return new NextResponse(
+    `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>` +
+    `<body style="font-family:-apple-system,sans-serif;text-align:center;padding:80px 24px;color:#1A1B1C;background:#F6F6F5">` +
+    `<p style="font-size:15px">${message}</p></body></html>`,
+    { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+  )
+}
+
+function errorRedirect(slug: string, reason: string) {
+  return NextResponse.redirect(absoluteUrl(`/p/${slug}?payment_error=${reason}`))
+}
+
 export async function GET(request: NextRequest) {
   const pageId = request.nextUrl.searchParams.get('pageId')
   const blockId = request.nextUrl.searchParams.get('blockId')
   const tierId = request.nextUrl.searchParams.get('tierId')
   if (!pageId || !blockId) {
-    return NextResponse.json({ error: 'pageId and blockId required' }, { status: 400 })
+    return htmlError('Falta información para iniciar el pago. Volvé a la página e intentá de nuevo.', 400)
   }
 
   const supabase = await createClient()
   const { data: page } = await supabase.from('pages').select('*').eq('id', pageId).eq('published', true).single()
-  if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!page) return htmlError('Esta página no existe o ya no está publicada.', 404)
 
   const typedPage = page as unknown as Page
   const block = typedPage.blocks.find(b => b.id === blockId && (b.type === 'payment_button' || b.type === 'event_tickets'))
-  if (!block) return NextResponse.json({ error: 'Block not found' }, { status: 404 })
+  if (!block) return errorRedirect(typedPage.slug, 'not_found')
 
   let title: string
   let price: number
@@ -42,7 +64,7 @@ export async function GET(request: NextRequest) {
   } else {
     const b = block as EventTicketsBlock
     const found = b.data.tiers.find(x => x.id === tierId)
-    if (!found) return NextResponse.json({ error: 'tierId required' }, { status: 400 })
+    if (!found) return errorRedirect(typedPage.slug, 'not_found')
     const t = b.data.translations[typedPage.settings.defaultLang] || b.data.translations['es']
     title = `${t?.title || typedPage.name} — ${found.name}`
     price = found.price
@@ -59,7 +81,7 @@ export async function GET(request: NextRequest) {
     .single()
 
   if (!connection) {
-    return NextResponse.json({ error: 'Este negocio todavía no conectó Mercado Pago' }, { status: 503 })
+    return errorRedirect(typedPage.slug, 'not_configured')
   }
 
   const { data: paymentRow, error: insertError } = await admin.from('payments').insert({
@@ -74,7 +96,7 @@ export async function GET(request: NextRequest) {
   }).select('id').single()
 
   if (insertError || !paymentRow) {
-    return NextResponse.json({ error: 'No se pudo iniciar el pago' }, { status: 500 })
+    return errorRedirect(typedPage.slug, 'failed')
   }
 
   // Optional platform commission, off by default -- see SETUP.md § Mercado Pago.
@@ -101,6 +123,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(preference.init_point)
   } catch (err) {
     console.error('Mercado Pago preference creation error', err)
-    return NextResponse.json({ error: 'No se pudo iniciar el pago' }, { status: 500 })
+    return errorRedirect(typedPage.slug, 'failed')
   }
 }
