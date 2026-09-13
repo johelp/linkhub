@@ -245,3 +245,33 @@ Notas:
 - El layout usa tablas y estilos inline a propósito — es lo único que Gmail/Outlook renderizan bien; un `<link>` a una fuente externa o un `<style>` en el `<head>` se ignora en buena parte de los clientes de email.
 - Para tocar el diseño más adelante, editá el `.html` del repo (queda como referencia versionada) y pegalo de nuevo en el dashboard — Supabase no lee el archivo del repo automáticamente, es copiar/pegar cada vez.
 - Probar en al menos Gmail y el cliente de mail del celular antes de darlo por bueno — el renderizado de emails varía más que el de una página web.
+
+## 17. Panel de administrador (`/admin`)
+
+Panel para vos como operador de LinkHub — ver y gestionar **todos** los usuarios y páginas de la plataforma, algo distinto del `/dashboard` de cada usuario (que solo ve lo suyo). Antes no existía; se construyó en esta sesión.
+
+### 17.1 — Cómo acceder
+
+1. En Vercel → Settings → Environment Variables, agregar:
+   ```
+   ADMIN_EMAILS=tu-email@ejemplo.com
+   ```
+   Podés poner más de un email separado por coma (`admin1@x.com,admin2@x.com`) si más adelante alguien más del equipo necesita entrar. **Sin esta variable, `/admin` no es accesible para nadie** — es la única llave, no hay ningún otro usuario con acceso por defecto.
+2. Redeploy (o esperá al próximo deploy) para que la env var tome efecto.
+3. Iniciá sesión normal en LinkHub con ese email (el mismo login de siempre, magic link). Si tu email está en `ADMIN_EMAILS`, te va a aparecer un ítem **"Admin"** en el menú lateral de `/dashboard`. También podés ir directo a `linkhub-pi.vercel.app/admin`.
+4. Cualquier otro usuario logueado que intente entrar a `/admin` recibe un 404 liso, sin pistas de que la sección existe.
+
+### 17.2 — Qué se puede hacer ahí
+
+| Sección | Qué muestra | Qué se puede gestionar |
+|---|---|---|
+| **Resumen** (`/admin`) | Usuarios totales, altas de la semana, cuántos en Pro vs Free, MRR estimado, páginas totales/publicadas, vistas acumuladas, últimas altas | Solo lectura |
+| **Usuarios** (`/admin/users`) | Todos los usuarios: nombre/email, plan, cantidad de páginas, fecha de alta. Buscador por email/nombre | Cambiar el plan de cualquier usuario (Free ↔ Pro) con un selector — reemplaza la query SQL manual de § 9, aplica al toque, sin pasar por Stripe |
+| **Páginas** (`/admin/pages`) | Todas las páginas de todos los usuarios: nombre, dueño, vistas, fecha, estado | Publicar/despublicar cualquier página — moderación básica (ej. bajar algo reportado) sin depender del dueño ni entrar a Supabase |
+
+### 17.3 — Cómo está protegido (por si lo tocás)
+
+- `ADMIN_EMAILS` es una lista en una variable de entorno, no una columna en la base — a propósito: una columna `is_admin` necesitaría la misma defensa contra auto-escalación que ya tiene `plan` (migración 005), mientras que una env var no la toca ningún usuario ni por accidente.
+- El acceso se revisa en el servidor en cada request (`src/lib/admin.ts` + `src/app/admin/layout.tsx`), no solo se oculta un link en el menú.
+- Las dos acciones de gestión (`/api/admin/set-plan`, `/api/admin/toggle-page`) vuelven a chequear que quien llama es admin, server-side, cada vez — nunca confían en que si alguien "llegó hasta ahí" ya está autorizado.
+- Ambas rutas escriben con el cliente de service role (`src/lib/supabase/admin.ts`), porque actúan sobre filas que no son del usuario logueado — RLS no lo permitiría con el cliente normal.
