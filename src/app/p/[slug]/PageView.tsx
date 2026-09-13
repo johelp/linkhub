@@ -1,9 +1,31 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, DividerBlock, TextBlock } from '@/types'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
+import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 
-interface Props { page: Page }
+const ASPECT_RATIO: Record<string, number> = {
+  '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
+}
+
+function formatMoney(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(amount)
+  } catch {
+    return `${amount} ${currency}`
+  }
+}
+
+function buildWhatsAppUrl(phone: string, message?: string): string {
+  const digits = phone.replace(/\D/g, '')
+  return message?.trim()
+    ? `https://wa.me/${digits}?text=${encodeURIComponent(message.trim())}`
+    : `https://wa.me/${digits}`
+}
+
+interface Props { page: Page; editing?: boolean }
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: '📷', facebook: '👥', tiktok: '🎵',
@@ -18,7 +40,7 @@ const SOCIAL_COLORS: Record<string, string> = {
   whatsapp: '#25d366',
 }
 
-export function PageView({ page }: Props) {
+export function PageView({ page, editing = false }: Props) {
   const [lang, setLang] = useState<Lang>(page.settings.defaultLang)
   const [season, setSeason] = useState<SeasonMode>(page.settings.seasonMode)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -26,8 +48,22 @@ export function PageView({ page }: Props) {
   const pc = page.settings.primaryColor || '#E8150A'
   const bg = page.settings.backgroundColor || '#F6F6F5'
 
-  // Track page view
+  // "Is business X open right now" depends on the viewer's clock, so it's computed
+  // after mount only -- same reasoning as BusinessHoursCard below, to avoid a
+  // server/client hydration mismatch. Conditional blocks stay hidden until this
+  // resolves (a brief, one-time state, not a flicker on every render).
+  const [businessStatus, setBusinessStatus] = useState<Record<string, boolean>>({})
   useEffect(() => {
+    const map: Record<string, boolean> = {}
+    for (const b of page.blocks) {
+      if (b.type === 'business_hours') map[b.id] = getBusinessOpenStatus(b.data.timezone, b.data.schedule).isOpen
+    }
+    setBusinessStatus(map)
+  }, [page.blocks])
+
+  // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
+  useEffect(() => {
+    if (page.id.startsWith('demo')) return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -40,6 +76,7 @@ export function PageView({ page }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
+    if (page.id.startsWith('demo')) return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,
@@ -51,19 +88,23 @@ export function PageView({ page }: Props) {
     }).then(() => {})
   }, [page.id, lang])
 
-  // Filter blocks by season
+  // Filter blocks by season and by their conditional visibility (if any)
   const visibleBlocks = page.blocks
     .filter(b => b.visible)
     .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
+    .filter(b => {
+      if (!b.condition) return true
+      const isOpen = businessStatus[b.condition.sourceBlockId]
+      if (isOpen === undefined) return false
+      return b.condition.when === 'open' ? isOpen : !isOpen
+    })
     .sort((a, b) => a.order - b.order)
 
   const enabledLangs = page.settings.enabledLangs || ['es']
   const showLangBar = enabledLangs.length > 1
 
   return (
-    <div style={{ background: bg, minHeight: '100vh', fontFamily: `'DM Sans', sans-serif` }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-
+    <div style={{ background: bg, minHeight: '100vh' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
 
         {/* Lang bar */}
@@ -110,9 +151,11 @@ export function PageView({ page }: Props) {
               block={block}
               lang={lang}
               pc={pc}
+              pageId={page.id}
               expandedId={expandedId}
               setExpandedId={setExpandedId}
               onTrackClick={trackClick}
+              editing={editing}
             />
           ))}
         </div>
@@ -131,11 +174,28 @@ export function PageView({ page }: Props) {
   )
 }
 
+// Shown in the editor preview instead of rendering nothing, for blocks that
+// need a field filled in (image/video/PDF url) before they have anything to
+// show on the real public page.
+function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 6, padding: '28px 14px', marginBottom: 8, borderRadius: 14,
+      border: '1.5px dashed rgba(26,27,28,0.15)', background: '#F6F6F5',
+    }}>
+      <span style={{ fontSize: 22 }}>{icon}</span>
+      <span style={{ fontSize: 12, color: '#9A9D9F', textAlign: 'center' }}>{label}</span>
+    </div>
+  )
+}
+
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClick }: {
-  block: Block; lang: Lang; pc: string
+function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick, editing }: {
+  block: Block; lang: Lang; pc: string; pageId: string
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
+  editing: boolean
 }) {
   const card: React.CSSProperties = {
     background: '#fff', border: '1px solid rgba(26,27,28,0.09)',
@@ -183,6 +243,56 @@ function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClic
           </div>
           <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
         </a>
+      )
+    }
+
+    case 'menu': {
+      const b = block as MenuBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      const sections = b.data.sections.filter(s => s.items.length > 0)
+      if (sections.length === 0 && !b.data.pdfUrl) {
+        return editing ? <EmptyBlockPlaceholder icon="📋" label="Agregá categorías y productos, o un link a tu PDF" /> : null
+      }
+      return (
+        <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          {(t.title || t.description) && (
+            <div style={{ marginBottom: 10 }}>
+              {t.title && <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            </div>
+          )}
+          {sections.map(section => {
+            const st = section.translations[lang] || section.translations['es'] || { name: '' }
+            return (
+              <div key={section.id} style={{ marginBottom: 10 }}>
+                {st.name && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
+                    {st.name}
+                  </div>
+                )}
+                {section.items.map(item => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid rgba(26,27,28,0.06)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1B1C' }}>{it.name}</div>
+                        {it.description && <div style={{ fontSize: 11, color: '#9A9D9F', marginTop: 2 }}>{it.description}</div>}
+                      </div>
+                      {item.price && <div style={{ fontSize: 13, fontWeight: 700, color: pc, flexShrink: 0 }}>{item.price}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+          {b.data.pdfUrl && (
+            <a href={b.data.pdfUrl} target="_blank" rel="noopener noreferrer"
+              onClick={() => onTrackClick(b.id, 'menu', b.data.pdfUrl!)}
+              style={{ display: 'block', textAlign: 'center', fontSize: 12, fontWeight: 600, color: pc, marginTop: sections.length > 0 ? 8 : 0, textDecoration: 'none' }}>
+              Ver carta completa (PDF) →
+            </a>
+          )}
+        </div>
       )
     }
 
@@ -264,7 +374,7 @@ function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClic
     case 'contact_card': {
       const b = block as ContactCardBlock
       const items = [
-        b.data.whatsapp && { icon: '💬', label: 'WhatsApp', href: `https://wa.me/${b.data.whatsapp.replace(/\D/g, '')}` },
+        b.data.whatsapp && { icon: '💬', label: 'WhatsApp', href: buildWhatsAppUrl(b.data.whatsapp, b.data.whatsappMessage) },
         b.data.email && { icon: '✉️', label: b.data.email, href: `mailto:${b.data.email}` },
         b.data.phone && { icon: '📞', label: b.data.phone, href: `tel:${b.data.phone}` },
         b.data.address && { icon: '📍', label: b.data.address, href: b.data.mapUrl || '#' },
@@ -296,7 +406,296 @@ function BlockRenderer({ block, lang, pc, expandedId, setExpandedId, onTrackClic
       )
     }
 
+    case 'image_banner': {
+      const b = block as ImageBannerBlock
+      const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
+      if (!b.data.imageUrl) return editing ? <EmptyBlockPlaceholder icon="🖼️" label="Subí o pegá el link de una imagen" /> : null
+      const frame = (
+        <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', marginBottom: 8, background: '#F2F3F4' }}>
+          <Image src={b.data.imageUrl} alt={b.data.altText || ''} fill unoptimized style={{ objectFit: 'cover' }} />
+        </div>
+      )
+      if (!b.data.url) return frame
+      return (
+        <a href={b.data.url} target="_blank" rel="noopener noreferrer"
+          onClick={() => onTrackClick(b.id, 'image_banner', b.data.url!)} style={{ display: 'block' }}>
+          {frame}
+        </a>
+      )
+    }
+
+    case 'video_embed': {
+      const b = block as VideoEmbedBlock
+      const embed = parseVideoEmbed(b.data.url)
+      const ratio = ASPECT_RATIO[b.data.aspectRatio] || 16 / 9
+      if (!embed.embedUrl) return editing ? <EmptyBlockPlaceholder icon="🎬" label="Pegá un link de YouTube, Vimeo o un video .mp4" /> : null
+      return (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ position: 'relative', width: '100%', aspectRatio: ratio, borderRadius: 14, overflow: 'hidden', background: '#000' }}>
+            {embed.kind === 'file' ? (
+              <video src={embed.embedUrl} controls style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <iframe src={embed.embedUrl} title={b.data.caption || 'Video'}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+            )}
+          </div>
+          {b.data.caption && <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
+        </div>
+      )
+    }
+
+    case 'email_capture': {
+      const b = block as EmailCaptureBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { headline: '', description: '', buttonLabel: '' }
+      return <EmailCaptureForm pageId={pageId} lang={lang} pc={pc} headline={t.headline} description={t.description} buttonLabel={t.buttonLabel || 'Enviar'} />
+    }
+
+    case 'payment_button': {
+      const b = block as PaymentButtonBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      return (
+        <a href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}`}
+          style={{ ...card, background: pc, border: 'none', color: '#fff' }}>
+          <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
+            💳
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{t.title}</div>
+            {t.description && <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t.description}</div>}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(b.data.price, b.data.currency)}</div>
+        </a>
+      )
+    }
+
+    case 'event_tickets': {
+      const b = block as EventTicketsBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      return (
+        <div style={{ marginBottom: 8 }}>
+          {(t.title || t.description) && (
+            <div style={{ marginBottom: 8 }}>
+              {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            </div>
+          )}
+          {b.data.tiers.map(tier => (
+            <a key={tier.id} href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
+              style={{ ...card, background: pc, border: 'none', color: '#fff', marginBottom: 6 }}>
+              <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
+                🎫
+              </div>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600 }}>{tier.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(tier.price, b.data.currency)}</div>
+            </a>
+          ))}
+        </div>
+      )
+    }
+
+    case 'business_hours': {
+      const b = block as BusinessHoursBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '' }
+      return <BusinessHoursCard title={t.title} timezone={b.data.timezone} schedule={b.data.schedule} pc={pc} />
+    }
+
+    case 'google_reviews': {
+      const b = block as GoogleReviewsBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '' }
+      const fullStars = Math.round(b.data.rating)
+      const writeReviewUrl = b.data.placeId
+        ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(b.data.placeId)}`
+        : null
+      return (
+        <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 8 }}>{t.title}</div>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 16, letterSpacing: 1 }}>
+              {'★'.repeat(fullStars)}<span style={{ color: '#E5E7EB' }}>{'★'.repeat(5 - fullStars)}</span>
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1B1C' }}>{b.data.rating.toFixed(1)}</span>
+            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#9A9D9F' }}>({b.data.reviewCount} reseñas)</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {b.data.mapsUrl && (
+              <a href={b.data.mapsUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => onTrackClick(b.id, 'google_reviews', b.data.mapsUrl!)}
+                style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '9px 0', borderRadius: 10, background: '#F6F6F5', color: '#1A1B1C', textDecoration: 'none' }}>
+                Ver en Google
+              </a>
+            )}
+            {writeReviewUrl && (
+              <a href={writeReviewUrl} target="_blank" rel="noopener noreferrer"
+                onClick={() => onTrackClick(b.id, 'google_reviews', writeReviewUrl)}
+                style={{ flex: 1, textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '9px 0', borderRadius: 10, background: pc, color: '#fff', textDecoration: 'none' }}>
+                Dejar reseña
+              </a>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    case 'loyalty_card': {
+      const b = block as LoyaltyCardBlock
+      const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
+      return (
+        <LoyaltyCardWidget pageId={pageId} blockId={b.id} pc={pc}
+          title={t.title} description={t.description}
+          stampIcon={b.data.stampIcon} targetStamps={b.data.targetStamps}
+          rewardDescription={b.data.rewardDescription[lang] || b.data.rewardDescription.es || ''} />
+      )
+    }
+
     default:
       return null
   }
+}
+
+// ─── Email Capture Form ───────────────────────────────────────────
+function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel }: {
+  pageId: string; lang: Lang; pc: string; headline: string; description: string; buttonLabel: string
+}) {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim() || status === 'loading') return
+    if (pageId === 'demo') { setStatus('done'); return }
+    setStatus('loading')
+    const supabase = createClient()
+    const { error } = await supabase.from('email_subscribers').insert({ page_id: pageId, email: email.trim(), lang })
+    setStatus(error ? 'error' : 'done')
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
+      {status === 'done' ? (
+        <p style={{ fontSize: 13, fontWeight: 600, color: pc }}>✓ ¡Gracias! Ya estás en la lista.</p>
+      ) : (
+        <form onSubmit={submit}>
+          {headline && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{headline}</p>}
+          {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 12 }}>{description}</p>}
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="email" required value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              style={{ flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 10, border: '1.5px solid rgba(26,27,28,0.12)', fontSize: 13, color: '#1A1B1C', outline: 'none', fontFamily: 'inherit' }}
+            />
+            <button type="submit" disabled={status === 'loading'}
+              style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 10, border: 'none', background: pc, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: status === 'loading' ? 0.6 : 1 }}>
+              {buttonLabel}
+            </button>
+          </div>
+          {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
+        </form>
+      )}
+    </div>
+  )
+}
+
+// ─── Loyalty Card Widget ───────────────────────────────────────────
+function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon, targetStamps, rewardDescription }: {
+  pageId: string; blockId: string; pc: string
+  title: string; description: string; stampIcon: string; targetStamps: number; rewardDescription: string
+}) {
+  const isDemo = pageId.startsWith('demo')
+  const storageKey = `linkhub_loyalty_${pageId}_${blockId}`
+  const router = useRouter()
+  const [code, setCode] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    try {
+      setCode(localStorage.getItem(storageKey))
+    } catch {
+      // Private browsing / blocked storage -- just can't remember the card, no big deal.
+    }
+  }, [storageKey])
+
+  async function getCard() {
+    if (loading || isDemo) return
+    setLoading(true)
+    const newCode = generateId()
+    const supabase = createClient()
+    const { error } = await supabase.from('loyalty_cards').insert({ page_id: pageId, block_id: blockId, code: newCode })
+    if (error) { setLoading(false); return }
+    try { localStorage.setItem(storageKey, newCode) } catch { /* see above */ }
+    router.push(`/l/${newCode}`)
+  }
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
+      <div style={{ fontSize: 28, marginBottom: 6 }}>{stampIcon}</div>
+      {title && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{title}</p>}
+      {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 4 }}>{description}</p>}
+      <p style={{ fontSize: 11, color: '#9A9D9F', marginBottom: 12 }}>
+        {targetStamps} sellos = {rewardDescription || 'un premio'}
+      </p>
+      {code ? (
+        <a href={`/l/${code}`}
+          style={{ display: 'inline-block', padding: '10px 20px', borderRadius: 10, background: pc, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          Ver mi tarjeta →
+        </a>
+      ) : (
+        <button onClick={getCard} disabled={loading}
+          style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: pc, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+          {loading ? 'Un momento...' : 'Obtener mi tarjeta'}
+        </button>
+      )}
+      {isDemo && <p style={{ fontSize: 10, color: '#9A9D9F', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
+    </div>
+  )
+}
+
+// ─── Business Hours Card ──────────────────────────────────────────
+const DAY_LABELS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] // display Mon..Sun
+
+function BusinessHoursCard({ title, timezone, schedule, pc }: {
+  title: string; timezone: string; schedule: DaySchedule[]; pc: string
+}) {
+  // Computed after mount only -- "now" depends on the viewer's clock, so
+  // rendering it during SSR would create a server/client mismatch.
+  const [status, setStatus] = useState<{ isOpen: boolean; today: DaySchedule | null } | null>(null)
+
+  useEffect(() => {
+    setStatus(getBusinessOpenStatus(timezone, schedule))
+  }, [timezone, schedule])
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{title}</div>
+        {status && (
+          <span style={{
+            fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
+            background: status.isOpen ? '#ECFDF5' : '#FEF0EF',
+            color: status.isOpen ? '#16A34A' : '#E8150A',
+          }}>
+            {status.isOpen ? '● Abierto ahora' : '○ Cerrado ahora'}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {DAY_ORDER.map(day => {
+          const d = schedule.find(s => s.day === day)
+          if (!d) return null
+          const isToday = status?.today?.day === day
+          return (
+            <div key={day} style={{
+              display: 'flex', justifyContent: 'space-between', fontSize: 12,
+              color: isToday ? pc : '#5A5D60', fontWeight: isToday ? 700 : 400,
+            }}>
+              <span>{DAY_LABELS_SHORT[day]}</span>
+              <span>{d.closed ? 'Cerrado' : `${d.open} – ${d.close}`}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }

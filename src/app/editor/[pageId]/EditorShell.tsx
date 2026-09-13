@@ -1,9 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { Layers, Eye, Settings2 } from 'lucide-react'
 import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Page, Plan, BlockType } from '@/types'
 import { PLAN_LIMITS, blockRequiresPro } from '@/types'
-import { BLOCK_REGISTRY, BLOCK_CATEGORIES } from '@/lib/blocks/registry'
+import { BLOCK_CATEGORIES } from '@/lib/blocks/registry'
 import { BlockListPanel } from './BlockListPanel'
 import { PropertiesPanel } from './PropertiesPanel'
 import { EditorPreview } from './EditorPreview'
@@ -12,12 +13,31 @@ import toast from 'react-hot-toast'
 
 interface Props { page: Page; plan: Plan }
 
+type MobileTab = 'blocks' | 'preview' | 'properties'
+
 export function EditorShell({ page, plan }: Props) {
   const { setPage, page: editorPage, addBlock, isDirty, isSaving, setSaving, markSaved, selectedBlockId } = useEditorStore()
   const [addBlockOpen, setAddBlockOpen] = useState(false)
+  const [mobileTab, setMobileTab] = useState<MobileTab>('blocks')
   const limits = PLAN_LIMITS[plan]
 
-  useEffect(() => { setPage(page) }, [])
+  useEffect(() => { setPage(page) }, [page, setPage])
+
+  // On small screens, jump to the properties tab as soon as a block is selected
+  // so tapping a block in the list actually shows its editor.
+  useEffect(() => {
+    if (selectedBlockId) setMobileTab('properties')
+  }, [selectedBlockId])
+
+  // Warn before closing the tab / navigating away with unsaved changes.
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (!isDirty) return
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
 
   async function savePage() {
     if (!editorPage || isSaving) return
@@ -90,21 +110,40 @@ export function EditorShell({ page, plan }: Props) {
         isSaving={isSaving}
         onSave={savePage}
         onPublish={togglePublish}
-        plan={plan}
       />
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '270px 1fr 310px', overflow: 'hidden' }}>
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[270px_1fr_310px] overflow-hidden min-h-0">
         {/* LEFT: Block list + add */}
-        <BlockListPanel
-          plan={plan}
-          onAddBlock={() => setAddBlockOpen(true)}
-        />
+        <div className={`${mobileTab === 'blocks' ? 'flex' : 'hidden'} lg:flex min-h-0 flex-col`}>
+          <BlockListPanel
+            onAddBlock={() => setAddBlockOpen(true)}
+          />
+        </div>
 
         {/* CENTER: Preview */}
-        <EditorPreview />
+        <div className={`${mobileTab === 'preview' ? 'flex' : 'hidden'} lg:flex min-h-0 flex-col`}>
+          <EditorPreview />
+        </div>
 
         {/* RIGHT: Properties */}
-        <PropertiesPanel plan={plan} />
+        <div className={`${mobileTab === 'properties' ? 'flex' : 'hidden'} lg:flex min-h-0 flex-col`}>
+          <PropertiesPanel plan={plan} />
+        </div>
+      </div>
+
+      {/* Mobile/tablet tab bar — the 3-column layout only works on large screens */}
+      <div className="flex lg:hidden border-t flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
+        {([
+          { id: 'blocks' as const, icon: <Layers size={15} />, label: 'Bloques' },
+          { id: 'preview' as const, icon: <Eye size={15} />, label: 'Vista previa' },
+          { id: 'properties' as const, icon: <Settings2 size={15} />, label: 'Editar' },
+        ]).map(t => (
+          <button key={t.id} onClick={() => setMobileTab(t.id)}
+            className="flex-1 flex flex-col items-center gap-1 py-2.5 text-xs font-medium"
+            style={{ color: mobileTab === t.id ? '#E8150A' : '#9A9D9F' }}>
+            {t.icon}{t.label}
+          </button>
+        ))}
       </div>
 
       {/* Add Block Modal */}

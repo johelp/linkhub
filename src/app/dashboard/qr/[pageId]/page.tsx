@@ -4,16 +4,16 @@ import { createClient } from '@/lib/supabase/client'
 import { Download, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function QRPage({ params }: { params: Promise<{ pageId: string }> }) {
   const { pageId } = use(params)
   const [slug, setSlug] = useState<string | null>(null)
   const [pageName, setPageName] = useState('')
   const [copied, setCopied] = useState(false)
-  const [origin, setOrigin] = useState('')
+  const [origin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
 
   useEffect(() => {
-    setOrigin(window.location.origin)
     const supabase = createClient()
     supabase.from('pages').select('slug, name').eq('id', pageId).single()
       .then(({ data }) => {
@@ -41,7 +41,7 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
 
       <div style={{ background: '#fff', borderRadius: 16, padding: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12, border: '1px solid rgba(26,27,28,0.09)' }}>
         {qrSvgUrl ? (
-          <img src={qrSvgUrl} alt="QR Code" width={220} height={220} style={{ borderRadius: 12 }} />
+          <Image src={qrSvgUrl} alt="QR Code" width={220} height={220} unoptimized style={{ borderRadius: 12 }} />
         ) : (
           <div style={{ width: 220, height: 220, borderRadius: 12, background: '#F6F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A9D9F', fontSize: 13 }}>Cargando...</div>
         )}

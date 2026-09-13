@@ -1,10 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Globe, Edit2, QrCode } from 'lucide-react'
-import { PLAN_LIMITS } from '@/types'
+import { Globe, Edit2, QrCode, Mail, Ticket, Award } from 'lucide-react'
+import { PLAN_LIMITS, type Plan } from '@/types'
+import type { Views } from '@/lib/supabase/database.types'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { NewPageButton } from './NewPageButton'
+
+type PageSummary = Views<'pages_summary'>
 
 export const metadata = { title: 'Mis páginas | LinkHub' }
 
@@ -34,7 +37,7 @@ export default async function DashboardPage() {
     supabase.from('pages_summary').select('*').eq('user_id', user.id).order('updated_at', { ascending: false }),
   ])
 
-  const plan = (profile?.plan || 'free') as 'free' | 'pro' | 'agency'
+  const plan = (profile?.plan || 'free') as Plan
   const limits = PLAN_LIMITS[plan]
   const pageList = pages || []
   const canCreate = pageList.length < limits.pages
@@ -63,10 +66,10 @@ export default async function DashboardPage() {
       )}
 
       {pageList.length === 0
-        ? <EmptyState canCreate={canCreate} />
+        ? <EmptyState canCreate={canCreate} plan={plan} />
         : (
           <div style={S.grid}>
-            {pageList.map((p: any) => <PageCard key={p.id} page={p} />)}
+            {pageList.map((p) => <PageCard key={p.id} page={p} />)}
             {canCreate && <NewPageButton canCreate={true} plan={plan} asCard />}
           </div>
         )
@@ -75,7 +78,7 @@ export default async function DashboardPage() {
   )
 }
 
-function PageCard({ page }: { page: any }) {
+function PageCard({ page }: { page: PageSummary }) {
   const accent = page.primary_color || '#E8150A'
   return (
     <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(26,27,28,0.09)' }}>
@@ -112,19 +115,31 @@ function PageCard({ page }: { page: any }) {
             style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <QrCode size={13} />
           </Link>
+          <a href={`/api/subscribers/export?pageId=${page.id}`} title="Descargar suscriptores (CSV)"
+            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Mail size={13} />
+          </a>
+          <Link href={`/dashboard/validate/${page.id}`} title="Validar entradas"
+            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Ticket size={13} />
+          </Link>
+          <Link href={`/dashboard/loyalty/${page.id}`} title="Tarjeta de sellos"
+            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Award size={13} />
+          </Link>
         </div>
       </div>
     </div>
   )
 }
 
-function EmptyState({ canCreate }: { canCreate: boolean }) {
+function EmptyState({ canCreate, plan }: { canCreate: boolean; plan: Plan }) {
   return (
     <div style={S.empty}>
       <div style={S.emptyIcon}>🔗</div>
       <h2 style={S.emptyTitle}>Todavía no tenés páginas</h2>
       <p style={S.emptySub}>Creá tu primera página de enlaces en menos de 2 minutos</p>
-      {canCreate && <NewPageButton canCreate={true} plan="free" />}
+      {canCreate && <NewPageButton canCreate={true} plan={plan} />}
     </div>
   )
 }

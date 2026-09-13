@@ -1,6 +1,6 @@
 'use client'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Block, Plan } from '@/types'
+import type { Block } from '@/types'
 import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
@@ -8,11 +8,10 @@ import { CSS } from '@dnd-kit/utilities'
 import { Plus, GripVertical, Eye, EyeOff, Trash2, Copy } from 'lucide-react'
 
 interface Props {
-  plan: Plan
   onAddBlock: () => void
 }
 
-export function BlockListPanel({ plan, onAddBlock }: Props) {
+export function BlockListPanel({ onAddBlock }: Props) {
   const { page, selectedBlockId, selectBlock, removeBlock, duplicateBlock, toggleBlockVisibility, reorderBlocks } = useEditorStore()
 
   const sensors = useSensors(

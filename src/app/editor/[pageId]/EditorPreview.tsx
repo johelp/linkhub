@@ -36,7 +36,7 @@ export function EditorPreview() {
           transition: 'width 0.3s ease, border-radius 0.3s ease',
         }}
       >
-        <PageView page={{ ...page, settings: { ...page.settings, defaultLang: previewLang } }} />
+        <PageView page={{ ...page, settings: { ...page.settings, defaultLang: previewLang } }} editing />
       </div>
 
       <div className="py-4 text-xs" style={{ color: '#9A9D9F' }}>

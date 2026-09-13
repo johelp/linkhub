@@ -9,8 +9,11 @@ export type Database = {
           email: string
           full_name: string | null
           avatar_url: string | null
-          plan: 'free' | 'pro' | 'agency'
+          plan: 'free' | 'pro'
           plan_expires_at: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          stripe_subscription_status: string | null
           created_at: string
           updated_at: string
         }
@@ -19,15 +22,21 @@ export type Database = {
           email: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'pro' | 'agency'
+          plan?: 'free' | 'pro'
           plan_expires_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
         }
         Update: {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
-          plan?: 'free' | 'pro' | 'agency'
+          plan?: 'free' | 'pro'
           plan_expires_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          stripe_subscription_status?: string | null
         }
         Relationships: []
       }
@@ -109,6 +118,106 @@ export type Database = {
         Insert: { id?: string; page_id: string; domain: string; verified?: boolean; txt_record?: string | null }
         Update: { verified?: boolean; txt_record?: string | null }
         Relationships: []
+      }
+      email_subscribers: {
+        Row: {
+          id: string
+          page_id: string
+          email: string
+          lang: string
+          created_at: string
+        }
+        Insert: { id?: string; page_id: string; email: string; lang?: string }
+        Update: never
+        Relationships: [{ foreignKeyName: 'email_subscribers_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
+      }
+      payment_connections: {
+        Row: {
+          id: string
+          user_id: string
+          provider: string
+          provider_user_id: string
+          access_token: string
+          refresh_token: string
+          public_key: string | null
+          live_mode: boolean
+          connected_at: string
+        }
+        Insert: {
+          id?: string; user_id: string; provider?: string; provider_user_id: string
+          access_token: string; refresh_token: string; public_key?: string | null; live_mode?: boolean
+        }
+        Update: { access_token?: string; refresh_token?: string; public_key?: string | null; live_mode?: boolean }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          id: string
+          page_id: string
+          block_id: string
+          provider: string
+          status: 'pending' | 'approved' | 'rejected' | 'refunded'
+          amount: number
+          currency: string
+          provider_payment_id: string | null
+          provider_preference_id: string | null
+          payer_email: string | null
+          tier_id: string | null
+          tier_name: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string; page_id: string; block_id: string; provider?: string
+          status?: 'pending' | 'approved' | 'rejected' | 'refunded'
+          amount: number; currency: string
+          provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null
+          tier_id?: string | null; tier_name?: string | null
+        }
+        Update: {
+          status?: 'pending' | 'approved' | 'rejected' | 'refunded'
+          provider_payment_id?: string | null; provider_preference_id?: string | null; payer_email?: string | null
+        }
+        Relationships: [{ foreignKeyName: 'payments_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] }]
+      }
+      tickets: {
+        Row: {
+          id: string
+          payment_id: string
+          page_id: string
+          tier_id: string
+          tier_name: string
+          code: string
+          buyer_email: string | null
+          status: 'issued' | 'used' | 'cancelled'
+          used_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string; payment_id: string; page_id: string; tier_id: string; tier_name: string
+          code: string; buyer_email?: string | null; status?: 'issued' | 'used' | 'cancelled'
+        }
+        Update: { status?: 'issued' | 'used' | 'cancelled'; used_at?: string | null }
+        Relationships: [
+          { foreignKeyName: 'tickets_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] },
+          { foreignKeyName: 'tickets_payment_id_fkey'; columns: ['payment_id']; referencedRelation: 'payments'; referencedColumns: ['id'] },
+        ]
+      }
+      loyalty_cards: {
+        Row: {
+          id: string
+          page_id: string
+          block_id: string
+          code: string
+          stamps_count: number
+          last_redeemed_at: string | null
+          created_at: string
+        }
+        Insert: { id?: string; page_id: string; block_id: string; code: string; stamps_count?: number; last_redeemed_at?: string | null }
+        Update: { stamps_count?: number; last_redeemed_at?: string | null }
+        Relationships: [
+          { foreignKeyName: 'loyalty_cards_page_id_fkey'; columns: ['page_id']; referencedRelation: 'pages'; referencedColumns: ['id'] },
+        ]
       }
     }
     Views: {
