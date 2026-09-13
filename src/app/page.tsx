@@ -4,6 +4,8 @@ import { LivePreview } from './LivePreview'
 import { HeroShowcase } from './HeroShowcase'
 import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
 import { blockRequiresPro } from '@/types'
+import { QR_TOOLS } from '@/lib/qrTools'
+import { VERTICALS } from '@/lib/verticals'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Crea tu página de enlaces profesional',
@@ -160,6 +162,23 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* VERTICALS */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>LinkHub para tu rubro</h2>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
+          Mirá qué bloques te sirven y cómo queda tu página, según el tipo de negocio.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+          {VERTICALS.map(v => (
+            <Link key={v.slug} href={`/para/${v.slug}`}
+              style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{v.label}</p>
+              <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{v.intro}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* HOW IT WORKS */}
       <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
         <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 36 }}>Cómo funciona</h2>
@@ -210,6 +229,23 @@ export default function LandingPage() {
               <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{b.label}</p>
               <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{b.description}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FREE TOOLS TEASER */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>Herramientas gratis</h2>
+        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
+          Generadores de QR sin registro — no hace falta cuenta para probarlos.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          {QR_TOOLS.map(t => (
+            <Link key={t.slug} href={`/herramientas/${t.slug}`}
+              style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 22 }}>{t.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: INK }}>{t.label}</span>
+            </Link>
           ))}
         </div>
       </section>

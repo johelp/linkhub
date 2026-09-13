@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans } from 'next/font/google'
+import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
@@ -24,10 +25,22 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
+// Endorsely (programa de afiliados) -- ver SETUP.md § Programa de afiliados.
+// Sin esta env var, el script nunca se carga: `window.endorsely_referral`
+// nunca existe, UpgradeButton nunca manda un referralId, y /api/checkout se
+// comporta exactamente igual que hoy. Site-wide (no solo en el home) porque
+// un afiliado puede compartir el link de cualquier página pública, no solo
+// la landing -- Endorsely necesita ver la visita para asociar el referido
+// antes de que esa persona se registre.
+const endorselyOrgId = process.env.NEXT_PUBLIC_ENDORSELY_ORG_ID
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={dmSans.variable}>
       <body style={{ fontFamily: "var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif" }}>
+        {endorselyOrgId && (
+          <Script async src="https://assets.endorsely.com/endorsely.js" data-endorsely={endorselyOrgId} strategy="afterInteractive" />
+        )}
         {children}
         <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
       </body>

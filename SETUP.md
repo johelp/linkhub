@@ -188,3 +188,31 @@ No requiere ninguna cuenta ni variable de entorno del lado de LinkHub — es una
 3. Pegar cada uno en el campo correspondiente del editor. Se valida el formato antes de inyectar nada en la página pública (si no matchea el patrón esperado, no se carga el script — no hay forma de meter código propio ahí).
 4. Sirve para armar públicos de remarketing y medir conversión de campañas pagas (Meta/Google Ads) sobre visitas y clics de la página pública — es aparte del analytics interno que ya trae LinkHub (vistas/clics en el dashboard).
 5. Gateado al plan Pro (mismo límite que el resto de analítica avanzada, `PLAN_LIMITS.analytics`).
+
+## 13. Programa de afiliados (Endorsely)
+
+Se evaluaron alternativas (Rewardful, Tapfiliate, sistema propio) — se eligió **Endorsely** porque es gratis mientras el volumen generado por afiliados sea bajo (confirmar el umbral vigente en [endorsely.com/pricing](https://www.endorsely.com/pricing) antes de decidir, las fuentes consultadas no coincidían en el número exacto), se conecta a Stripe con la misma facilidad, y paga a los afiliados por PayPal en lote automático.
+
+**Estado del código**: solo la mitad está armada.
+- ✅ El script de tracking (`src/app/layout.tsx`, gateado por `NEXT_PUBLIC_ENDORSELY_ORG_ID` — sin esa env var, cero cambio de comportamiento) y la captura del referral del lado del cliente (`UpgradeButton.tsx` lee `window.endorsely_referral` y lo manda a `/api/checkout`).
+- 🔲 **Falta el último paso**: reportarle ese referral a Endorsely para que quede asociado a la suscripción. Endorsely usa una llamada de servidor a servidor con un API secret propio (no la metadata del customer de Stripe, que es el patrón de otras herramientas como Rewardful) — no se implementó a ciegas para no arriesgar una integración que falla en silencio y nunca le paga comisión a nadie. `/api/checkout/route.ts` tiene un comentario `TODO(afiliados/Endorsely)` marcando exactamente dónde va.
+
+Pasos para terminarlo:
+1. **Crear cuenta en [endorsely.com](https://www.endorsely.com/)** y conectar tu cuenta de Stripe en un clic.
+2. **Definir la regla de recompensa**: comisión recurrente, de por vida, sin techo de ganancias — opción de configuración en el panel, no algo que haya que construir.
+3. **Copiar tu Organization ID** (lo que pide `data-endorsely` en el script) → `NEXT_PUBLIC_ENDORSELY_ORG_ID` en Vercel.
+4. Endorsely, al conectar Stripe, te muestra el snippet exacto para el paso del checkout server-side (con tu API secret real) — **pegame ese snippet en la próxima sesión** y termino de cablear el `TODO` de `/api/checkout/route.ts` con los datos reales en vez de adivinarlos.
+5. **Pago a afiliados**: por PayPal, en lote, directo desde Endorsely — cada afiliado carga su email de PayPal en su propio panel.
+6. Probar una vez completo el paso 4: abrí el sitio con el link de afiliado de prueba que te da Endorsely, confirmá en la consola del navegador que `window.endorsely_referral` tiene un valor, registrate, hacé "Empezar Pro" con una tarjeta de prueba de Stripe, y confirmá en el panel de Endorsely que apareció el referido.
+
+Notas:
+- No reemplaza nada de la integración de Stripe que ya existe (§6) — se apoya en ella.
+- El script se inyecta en todo el sitio (no solo el home) porque un afiliado puede compartir el link de cualquier página pública, y Endorsely necesita ver esa visita para asociar el referido antes de que la persona se registre.
+
+## 14. Páginas SEO (`/herramientas`)
+
+Generadores de QR gratis y sin registro (WiFi, Instagram, tarjeta de contacto/vCard) en `/herramientas/[slug]`, pensados para atraer tráfico de búsqueda con utilidad real por página (no una landing genérica repetida) — ver `src/lib/qrTools.ts`. Para sumar una nueva variante: agregar una entrada a `QR_TOOLS` con su propio `kind` de payload en `qrTools.ts`, y el caso correspondiente en `QrToolClient.tsx` si el formato de QR es nuevo. Antes de publicar una nueva variante, chequeá que resuelva una necesidad real y distinta — páginas que solo cambian el título sin aportar nada propio son exactamente lo que Google trata como spam.
+
+## 15. Páginas SEO por rubro (`/para`)
+
+Tableros de enlaces posicionados por tipo de comercio (peluquerías, bares y cafeterías, restaurantes, eventos, turismo) en `/para/[slug]`, cada una con la demo real de ese rubro (el mismo `PageView` que la página pública, no una captura) — ver `src/lib/verticals.ts`. Para sumar un rubro nuevo: una entrada en `VERTICALS` con su propia página de ejemplo en `src/app/demoPage.ts` (reusar el patrón `buildXExample()`) y highlights atados a bloques que existan de verdad — no vale duplicar copy genérico entre rubros.

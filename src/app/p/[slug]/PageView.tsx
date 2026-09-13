@@ -40,10 +40,32 @@ const SOCIAL_COLORS: Record<string, string> = {
   whatsapp: '#25d366',
 }
 
+const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
+  not_configured: 'Este negocio todavía no configuró los pagos. Contactalo directamente para completar tu compra.',
+  not_found: 'Ese producto o entrada ya no está disponible.',
+  failed: 'No se pudo iniciar el pago. Intentá de nuevo en un momento.',
+}
+
 export function PageView({ page, editing = false }: Props) {
   const [lang, setLang] = useState<Lang>(page.settings.defaultLang)
   const [season, setSeason] = useState<SeasonMode>(page.settings.seasonMode)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  // Read on mount from window.location rather than useSearchParams(): this
+  // component renders inside a statically generated (ISR) page, and
+  // useSearchParams() would force it into a Suspense-wrapped client-only
+  // subtree just to show a one-off banner after a failed payment redirect.
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+  useEffect(() => {
+    const err = new URLSearchParams(window.location.search).get('payment_error')
+    if (err) {
+      setPaymentError(err)
+      // Drop it from the URL so reloading/sharing the link doesn't re-show it.
+      const url = new URL(window.location.href)
+      url.searchParams.delete('payment_error')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
 
   const pc = page.settings.primaryColor || '#E8150A'
   const bg = page.settings.backgroundColor || '#F6F6F5'
@@ -106,6 +128,17 @@ export function PageView({ page, editing = false }: Props) {
   return (
     <div style={{ background: bg, minHeight: '100vh' }}>
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
+
+        {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
+        {paymentError && (
+          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <p style={{ fontSize: 12.5, color: '#1A1B1C', lineHeight: 1.5, flex: 1 }}>
+              {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
+            </p>
+            <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
+              style={{ border: 'none', background: 'none', color: '#9A9D9F', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+          </div>
+        )}
 
         {/* Lang bar */}
         {showLangBar && (
@@ -607,6 +640,7 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
   const router = useRouter()
   const [code, setCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -619,10 +653,20 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
   async function getCard() {
     if (loading || isDemo) return
     setLoading(true)
+    setError(null)
     const newCode = generateId()
     const supabase = createClient()
-    const { error } = await supabase.from('loyalty_cards').insert({ page_id: pageId, block_id: blockId, code: newCode })
-    if (error) { setLoading(false); return }
+    const { error: insertError } = await supabase.from('loyalty_cards').insert({ page_id: pageId, block_id: blockId, code: newCode })
+    if (insertError) {
+      // Most likely cause in practice: the `loyalty_cards` table/policies
+      // from migration 009 haven't been run yet against this Supabase
+      // project -- surface *something* instead of the button silently
+      // resetting, which looks exactly like "no pasa nada" to a visitor.
+      console.error('loyalty_cards insert failed', insertError)
+      setLoading(false)
+      setError('No se pudo crear tu tarjeta. Probá de nuevo en un momento.')
+      return
+    }
     try { localStorage.setItem(storageKey, newCode) } catch { /* see above */ }
     router.push(`/l/${newCode}`)
   }
@@ -646,6 +690,7 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
           {loading ? 'Un momento...' : 'Obtener mi tarjeta'}
         </button>
       )}
+      {error && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 8 }}>{error}</p>}
       {isDemo && <p style={{ fontSize: 10, color: '#9A9D9F', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
     </div>
   )
