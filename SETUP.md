@@ -11,7 +11,7 @@ Checklist de todo lo que hace falta para tener el proyecto corriendo en producci
 | Dominio propio (ej. `linkhub.app`) | URL final del producto | — | Recomendado antes de lanzar |
 | [Stripe](https://stripe.com) | Cobro del plan Pro | — | Sí, para activar pagos reales (ver §6) |
 
-No hace falta cuenta de email transaccional aparte: Supabase Auth manda el magic link con su propio servicio (límite bajo en el plan Free — si mandás muchos emails de login, conviene configurar un SMTP propio en Supabase → Authentication → Email Templates → SMTP Settings).
+No hace falta cuenta de email transaccional aparte para el resto del proyecto — **pero el magic link sí necesita SMTP propio antes de tener tráfico real, no es opcional**: el servicio de email incluido de Supabase manda como máximo **2 emails por hora, en total, para todo el proyecto** (no por usuario), pensado por Supabase solo para pruebas. Con más de un par de personas iniciando sesión en la misma hora, el resto se queda sin poder entrar. Ver §16.
 
 ## 2. Variables de entorno
 
@@ -216,3 +216,32 @@ Generadores de QR gratis y sin registro (WiFi, Instagram, tarjeta de contacto/vC
 ## 15. Páginas SEO por rubro (`/para`)
 
 Tableros de enlaces posicionados por tipo de comercio (peluquerías, bares y cafeterías, restaurantes, eventos, turismo) en `/para/[slug]`, cada una con la demo real de ese rubro (el mismo `PageView` que la página pública, no una captura) — ver `src/lib/verticals.ts`. Para sumar un rubro nuevo: una entrada en `VERTICALS` con su propia página de ejemplo en `src/app/demoPage.ts` (reusar el patrón `buildXExample()`) y highlights atados a bloques que existan de verdad — no vale duplicar copy genérico entre rubros.
+
+## 16. Email de magic link (acceso sin contraseña)
+
+El login (`AuthForm.tsx` → `supabase.auth.signInWithOtp`) lo manda **Supabase Auth directamente**, no el código de LinkHub — ni pasa por Resend ni por `src/lib/email.ts` (eso solo manda los emails de entradas a eventos). Por eso este template y este SMTP se configuran en el Dashboard de Supabase, no en Vercel ni en el repo.
+
+### 16.1 — Por qué esto es urgente, no cosmético
+
+El servicio de email incluido de Supabase está limitado a **2 emails por hora, en total, para todo el proyecto** (no 2 por usuario) — está pensado por Supabase solo para probar templates, no para producción. Ni bien un puñado de personas pruebe LinkHub en la misma hora, la mayoría no va a poder entrar y no vas a ver ningún error claro del lado de la app, el login simplemente "no llega". Antes de invitar testers, hace falta SMTP propio.
+
+### 16.2 — Configurar SMTP con Resend (ya lo tenés dado de alta para las entradas, § 8)
+
+1. Supabase Dashboard → **Authentication → Sign In / Providers → SMTP Settings** (o **Authentication → Settings**, el nombre exacto varía un poco entre versiones del dashboard) → activar **Enable Custom SMTP**.
+2. Cargar:
+   - **Host**: `smtp.resend.com`
+   - **Port**: `465`
+   - **Username**: `resend` (literal, en minúscula)
+   - **Password**: tu `RESEND_API_KEY` completa (con el prefijo `re_`)
+   - **Sender email**: mientras no verifiques un dominio propio en Resend, tiene que ser `onboarding@resend.dev` (mismo límite que ya vale para las entradas, ver § 8) — con dominio propio verificado en Resend, poné algo como `LinkHub <acceso@tudominio.com>`.
+   - **Sender name**: `LinkHub`
+3. Guardar y mandar un login de prueba — con SMTP propio activo, el límite sube a 30 emails/hora por defecto (ajustable en Auth → Rate Limits).
+
+### 16.3 — Reemplazar el template del email
+
+Supabase → **Authentication → Email Templates → Magic Link**. Reemplazar el HTML por el de [`supabase/email-templates/magic-link.html`](../supabase/email-templates/magic-link.html) (en este repo) — con la identidad visual de LinkHub en vez del template genérico de Supabase, usando las variables reales del proyecto (`{{ .Email }}`, `{{ .ConfirmationURL }}`). Subject sugerido: `Tu link de acceso a LinkHub`.
+
+Notas:
+- El layout usa tablas y estilos inline a propósito — es lo único que Gmail/Outlook renderizan bien; un `<link>` a una fuente externa o un `<style>` en el `<head>` se ignora en buena parte de los clientes de email.
+- Para tocar el diseño más adelante, editá el `.html` del repo (queda como referencia versionada) y pegalo de nuevo en el dashboard — Supabase no lee el archivo del repo automáticamente, es copiar/pegar cada vez.
+- Probar en al menos Gmail y el cliente de mail del celular antes de darlo por bueno — el renderizado de emails varía más que el de una página web.
