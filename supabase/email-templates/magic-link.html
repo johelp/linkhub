@@ -1,0 +1,85 @@
+<!--
+  Template de Supabase Auth para el email de "Magic Link" (login sin
+  contraseña). NO se envía desde el código de la app -- se pega tal cual en
+  Supabase Dashboard → Authentication → Email Templates → Magic Link. Ver
+  SETUP.md § 16 para el paso a paso completo (incluye por qué hace falta
+  configurar SMTP propio antes de tener tráfico real).
+
+  Variables que reconoce Supabase acá: {{ .ConfirmationURL }}, {{ .Email }},
+  {{ .Token }}, {{ .TokenHash }}, {{ .SiteURL }}. Layout con tablas e
+  inline styles a propósito -- es lo único que Gmail/Outlook renderizan de
+  forma consistente en un email, un <link> a Google Fonts o CSS externo se
+  ignora en la mayoría de los clientes.
+-->
+<!doctype html>
+<html>
+<body style="margin:0; padding:0; background:#F6F6F5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F6F6F5; padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="440" cellpadding="0" cellspacing="0" style="max-width:440px; width:100%; background:#FFFFFF; border-radius:20px; border:1px solid #EAEAEA; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="padding:36px 32px 8px; text-align:center;">
+              <span style="font-size:22px; font-weight:700; color:#1A1B1C;">Link<span style="color:#E8150A;">Hub</span></span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 0; text-align:center;">
+              <span style="font-size:34px; line-height:1;">🔑</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 0; text-align:center;">
+              <h1 style="margin:0; font-size:20px; font-weight:700; color:#1A1B1C;">Tu link de acceso</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 32px 0; text-align:center;">
+              <p style="margin:0; font-size:14px; line-height:1.6; color:#5A5D60;">
+                Pediste entrar a LinkHub con <strong style="color:#1A1B1C;">{{ .Email }}</strong>.
+                Tocá el botón para acceder — no hace falta contraseña.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 0; text-align:center;">
+              <a href="{{ .ConfirmationURL }}"
+                 style="display:inline-block; background:#E8150A; color:#FFFFFF; font-size:15px; font-weight:600; text-decoration:none; padding:14px 36px; border-radius:14px;">
+                Acceder a LinkHub →
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 0; text-align:center;">
+              <p style="margin:0; font-size:12px; color:#9A9D9F;">Este link vence pronto y sirve una sola vez.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 32px 0;">
+              <hr style="border:none; border-top:1px solid #EAEAEA; margin:0;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 32px 0; text-align:center;">
+              <p style="margin:0; font-size:11px; color:#9A9D9F; line-height:1.6;">
+                ¿El botón no funciona? Pegá este link en tu navegador:<br>
+                <a href="{{ .ConfirmationURL }}" style="color:#E8150A; word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 32px 32px; text-align:center;">
+              <p style="margin:0; font-size:11px; color:#9A9D9F; line-height:1.6;">
+                Si no pediste este link, ignorá este email — nadie puede acceder a tu cuenta sin él.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:20px 0 0; font-size:11px; color:#9A9D9F; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+          LinkHub · Tu página de enlaces profesional
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

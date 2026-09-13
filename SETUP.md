@@ -11,7 +11,7 @@ Checklist de todo lo que hace falta para tener el proyecto corriendo en producci
 | Dominio propio (ej. `linkhub.app`) | URL final del producto | — | Recomendado antes de lanzar |
 | [Stripe](https://stripe.com) | Cobro del plan Pro | — | Sí, para activar pagos reales (ver §6) |
 
-No hace falta cuenta de email transaccional aparte: Supabase Auth manda el magic link con su propio servicio (límite bajo en el plan Free — si mandás muchos emails de login, conviene configurar un SMTP propio en Supabase → Authentication → Email Templates → SMTP Settings).
+No hace falta cuenta de email transaccional aparte para el resto del proyecto — **pero el magic link sí necesita SMTP propio antes de tener tráfico real, no es opcional**: el servicio de email incluido de Supabase manda como máximo **2 emails por hora, en total, para todo el proyecto** (no por usuario), pensado por Supabase solo para pruebas. Con más de un par de personas iniciando sesión en la misma hora, el resto se queda sin poder entrar. Ver §16.
 
 ## 2. Variables de entorno
 
@@ -216,3 +216,62 @@ Generadores de QR gratis y sin registro (WiFi, Instagram, tarjeta de contacto/vC
 ## 15. Páginas SEO por rubro (`/para`)
 
 Tableros de enlaces posicionados por tipo de comercio (peluquerías, bares y cafeterías, restaurantes, eventos, turismo) en `/para/[slug]`, cada una con la demo real de ese rubro (el mismo `PageView` que la página pública, no una captura) — ver `src/lib/verticals.ts`. Para sumar un rubro nuevo: una entrada en `VERTICALS` con su propia página de ejemplo en `src/app/demoPage.ts` (reusar el patrón `buildXExample()`) y highlights atados a bloques que existan de verdad — no vale duplicar copy genérico entre rubros.
+
+## 16. Email de magic link (acceso sin contraseña)
+
+El login (`AuthForm.tsx` → `supabase.auth.signInWithOtp`) lo manda **Supabase Auth directamente**, no el código de LinkHub — ni pasa por Resend ni por `src/lib/email.ts` (eso solo manda los emails de entradas a eventos). Por eso este template y este SMTP se configuran en el Dashboard de Supabase, no en Vercel ni en el repo.
+
+### 16.1 — Por qué esto es urgente, no cosmético
+
+El servicio de email incluido de Supabase está limitado a **2 emails por hora, en total, para todo el proyecto** (no 2 por usuario) — está pensado por Supabase solo para probar templates, no para producción. Ni bien un puñado de personas pruebe LinkHub en la misma hora, la mayoría no va a poder entrar y no vas a ver ningún error claro del lado de la app, el login simplemente "no llega". Antes de invitar testers, hace falta SMTP propio.
+
+### 16.2 — Configurar SMTP con Resend (ya lo tenés dado de alta para las entradas, § 8)
+
+1. Supabase Dashboard → **Authentication → Sign In / Providers → SMTP Settings** (o **Authentication → Settings**, el nombre exacto varía un poco entre versiones del dashboard) → activar **Enable Custom SMTP**.
+2. Cargar:
+   - **Host**: `smtp.resend.com`
+   - **Port**: `465`
+   - **Username**: `resend` (literal, en minúscula)
+   - **Password**: tu `RESEND_API_KEY` completa (con el prefijo `re_`)
+   - **Sender email**: mientras no verifiques un dominio propio en Resend, tiene que ser `onboarding@resend.dev` (mismo límite que ya vale para las entradas, ver § 8) — con dominio propio verificado en Resend, poné algo como `LinkHub <acceso@tudominio.com>`.
+   - **Sender name**: `LinkHub`
+3. Guardar y mandar un login de prueba — con SMTP propio activo, el límite sube a 30 emails/hora por defecto (ajustable en Auth → Rate Limits).
+
+### 16.3 — Reemplazar el template del email
+
+Supabase → **Authentication → Email Templates → Magic Link**. Reemplazar el HTML por el de [`supabase/email-templates/magic-link.html`](../supabase/email-templates/magic-link.html) (en este repo) — con la identidad visual de LinkHub en vez del template genérico de Supabase, usando las variables reales del proyecto (`{{ .Email }}`, `{{ .ConfirmationURL }}`). Subject sugerido: `Tu link de acceso a LinkHub`.
+
+Notas:
+- El layout usa tablas y estilos inline a propósito — es lo único que Gmail/Outlook renderizan bien; un `<link>` a una fuente externa o un `<style>` en el `<head>` se ignora en buena parte de los clientes de email.
+- Para tocar el diseño más adelante, editá el `.html` del repo (queda como referencia versionada) y pegalo de nuevo en el dashboard — Supabase no lee el archivo del repo automáticamente, es copiar/pegar cada vez.
+- Probar en al menos Gmail y el cliente de mail del celular antes de darlo por bueno — el renderizado de emails varía más que el de una página web.
+
+## 17. Panel de administrador (`/admin`)
+
+Panel para vos como operador de LinkHub — ver y gestionar **todos** los usuarios y páginas de la plataforma, algo distinto del `/dashboard` de cada usuario (que solo ve lo suyo). Antes no existía; se construyó en esta sesión.
+
+### 17.1 — Cómo acceder
+
+1. En Vercel → Settings → Environment Variables, agregar:
+   ```
+   ADMIN_EMAILS=tu-email@ejemplo.com
+   ```
+   Podés poner más de un email separado por coma (`admin1@x.com,admin2@x.com`) si más adelante alguien más del equipo necesita entrar. **Sin esta variable, `/admin` no es accesible para nadie** — es la única llave, no hay ningún otro usuario con acceso por defecto.
+2. Redeploy (o esperá al próximo deploy) para que la env var tome efecto.
+3. Iniciá sesión normal en LinkHub con ese email (el mismo login de siempre, magic link). Si tu email está en `ADMIN_EMAILS`, te va a aparecer un ítem **"Admin"** en el menú lateral de `/dashboard`. También podés ir directo a `linkhub-pi.vercel.app/admin`.
+4. Cualquier otro usuario logueado que intente entrar a `/admin` recibe un 404 liso, sin pistas de que la sección existe.
+
+### 17.2 — Qué se puede hacer ahí
+
+| Sección | Qué muestra | Qué se puede gestionar |
+|---|---|---|
+| **Resumen** (`/admin`) | Usuarios totales, altas de la semana, cuántos en Pro vs Free, MRR estimado, páginas totales/publicadas, vistas acumuladas, últimas altas | Solo lectura |
+| **Usuarios** (`/admin/users`) | Todos los usuarios: nombre/email, plan, cantidad de páginas, fecha de alta. Buscador por email/nombre | Cambiar el plan de cualquier usuario (Free ↔ Pro) con un selector — reemplaza la query SQL manual de § 9, aplica al toque, sin pasar por Stripe |
+| **Páginas** (`/admin/pages`) | Todas las páginas de todos los usuarios: nombre, dueño, vistas, fecha, estado | Publicar/despublicar cualquier página — moderación básica (ej. bajar algo reportado) sin depender del dueño ni entrar a Supabase |
+
+### 17.3 — Cómo está protegido (por si lo tocás)
+
+- `ADMIN_EMAILS` es una lista en una variable de entorno, no una columna en la base — a propósito: una columna `is_admin` necesitaría la misma defensa contra auto-escalación que ya tiene `plan` (migración 005), mientras que una env var no la toca ningún usuario ni por accidente.
+- El acceso se revisa en el servidor en cada request (`src/lib/admin.ts` + `src/app/admin/layout.tsx`), no solo se oculta un link en el menú.
+- Las dos acciones de gestión (`/api/admin/set-plan`, `/api/admin/toggle-page`) vuelven a chequear que quien llama es admin, server-side, cada vez — nunca confían en que si alguien "llegó hasta ahí" ya está autorizado.
+- Ambas rutas escriben con el cliente de service role (`src/lib/supabase/admin.ts`), porque actúan sobre filas que no son del usuario logueado — RLS no lo permitiría con el cliente normal.

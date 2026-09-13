@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, TrendingUp, Settings } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, Settings, ShieldCheck } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
+import { isAdminEmail } from '@/lib/admin'
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
@@ -39,6 +40,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <SideLink href="/dashboard" icon={<LayoutDashboard size={15} />} label="Mis páginas" />
           <SideLink href="/dashboard/upgrade" icon={<TrendingUp size={15} />} label="Planes" />
           <SideLink href="/dashboard/settings" icon={<Settings size={15} />} label="Ajustes" />
+          {isAdminEmail(user.email) && (
+            <SideLink href="/admin" icon={<ShieldCheck size={15} />} label="Admin" />
+          )}
         </nav>
 
         <div style={{ paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
