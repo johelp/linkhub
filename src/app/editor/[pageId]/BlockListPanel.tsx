@@ -1,7 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Block } from '@/types'
-import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
+import { BLOCK_BY_TYPE, CATEGORY_META } from '@/lib/blocks/registry'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -40,8 +41,10 @@ export function BlockListPanel({ onAddBlock }: Props) {
           Bloques ({page.blocks.length})
         </span>
         <button onClick={onAddBlock}
-          className="flex items-center gap-1.5 text-[13px] font-semibold px-3 py-2 rounded-lg"
-          style={{background:'#FEF0EF',color:'#E8150A'}}>
+          className="flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-2 rounded-lg transition-colors"
+          style={{background:'#FEF0EF',color:'#E8150A'}}
+          onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>
           <Plus size={14}/> Añadir
         </button>
       </div>
@@ -83,7 +86,9 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
   onToggleVisibility: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id })
+  const [hover, setHover] = useState(false)
   const def = BLOCK_BY_TYPE[block.type]
+  const tint = def ? (CATEGORY_META[def.category]?.tint ?? '#F2F3F4') : '#F2F3F4'
 
   return (
     <div ref={setNodeRef}
@@ -91,12 +96,13 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        marginBottom: 4,
+        marginBottom: 6,
       }}>
       <div onClick={onSelect}
-        className="flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer group"
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer group transition-all"
         style={{
-          background: isSelected ? '#FEF0EF' : 'transparent',
+          background: isSelected ? '#FEF0EF' : (hover ? '#FAFAFA' : 'transparent'),
           border: `1.5px solid ${isSelected ? '#E8150A' : 'transparent'}`,
         }}>
         {/* Drag handle — hover-reveal only on devices that actually have
@@ -106,11 +112,15 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
         <div {...attributes} {...listeners}
           className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
           style={{color:'#9A9D9F'}}>
-          <GripVertical size={17}/>
+          <GripVertical size={16}/>
         </div>
 
-        {/* Icon */}
-        <span className="text-lg flex-shrink-0">{def?.icon || '📦'}</span>
+        {/* Icon tile — same tinted-square language as the "Añadir bloque"
+            modal, so a block reads as the same thing in both places. */}
+        <div className="flex items-center justify-center rounded-lg flex-shrink-0"
+          style={{ width: 32, height: 32, fontSize: 15, background: block.visible ? tint : '#F2F3F4', opacity: block.visible ? 1 : 0.6 }}>
+          {def?.icon || '📦'}
+        </div>
 
         {/* Label */}
         <div className="flex-1 min-w-0">
@@ -145,7 +155,9 @@ function ActionBtn({ onClick, title, danger, children }: {
   return (
     <button onClick={onClick} title={title}
       className="p-1.5 rounded-md transition-colors"
-      style={{color: danger ? '#E8150A' : '#9A9D9F'}}>
+      style={{color: danger ? '#E8150A' : '#9A9D9F'}}
+      onMouseEnter={e => (e.currentTarget.style.background = danger ? '#FEF0EF' : '#F2F3F4')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
       {children}
     </button>
   )

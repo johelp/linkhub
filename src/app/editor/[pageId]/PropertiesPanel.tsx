@@ -135,7 +135,7 @@ function ConditionField({ block, sources, onUpdate }: {
             onUpdate(block.id, { type: 'business_hours', sourceBlockId, when })
           }}
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
           <option value="always">Siempre</option>
           {sources.flatMap(s => {
             const title = s.data.translations.es?.title || 'Horario de atención'
@@ -287,7 +287,7 @@ function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
         {children.map((child, i) => {
           const ct = child.translations[lang] || child.translations['es'] || { label: '', price: '' }
           return (
-            <div key={child.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+            <div key={child.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Opción {i + 1}</span>
                 <button onClick={() => removeChild(child.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
@@ -298,8 +298,10 @@ function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
             </div>
           )
         })}
-        <button onClick={addChild} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
-          style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir opción</button>
+        <button onClick={addChild} className="w-full py-2.5 text-xs font-semibold rounded-xl mt-1 transition-colors"
+          style={{ background: '#FEF0EF', color: '#E8150A' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir opción</button>
       </Section>
       <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
@@ -337,14 +339,14 @@ function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; o
           <textarea value={t.content} rows={5}
             onChange={e => onUpdate(block.id, { translations: { ...block.data.translations, [lang]: { content: e.target.value } } })}
             className="w-full px-3 py-2 rounded-xl text-sm resize-none outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
         </Field>
         <Field label="Alineación">
           <div className="flex gap-1">
             {(['left', 'center', 'right'] as const).map(a => (
               <button key={a} onClick={() => onUpdate(block.id, { align: a })}
-                className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: block.data.align === a ? '#E8150A' : '#F6F6F5', color: block.data.align === a ? '#fff' : '#5A5D60' }}>
+                className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+                style={{ background: block.data.align === a ? '#E8150A' : '#fff', color: block.data.align === a ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
                 {a === 'left' ? '⬅' : a === 'center' ? '↔' : '➡'}
               </button>
             ))}
@@ -354,8 +356,8 @@ function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; o
           <div className="flex gap-1">
             {(['sm', 'md', 'lg'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { size: s })}
-                className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: block.data.size === s ? '#E8150A' : '#F6F6F5', color: block.data.size === s ? '#fff' : '#5A5D60' }}>
+                className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+                style={{ background: block.data.size === s ? '#E8150A' : '#fff', color: block.data.size === s ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
                 {s.toUpperCase()}
               </button>
             ))}
@@ -404,7 +406,7 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
   return (
     <div className="space-y-3">
       {items.map(item => (
-        <div key={item.id} className="rounded-xl p-3" style={{ background: '#F6F6F5' }}>
+        <div key={item.id} className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
           <div className="flex justify-between mb-2">
             <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>{item.platform}</span>
             <button onClick={() => removeItem(item.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
@@ -420,8 +422,10 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
           <Field label="Etiqueta"><Input value={item.label} onChange={v => updateItem(item.id, 'label', v)} /></Field>
         </div>
       ))}
-      <button onClick={addItem} className="w-full py-2 text-xs font-semibold rounded-xl"
-        style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir red social</button>
+      <button onClick={addItem} className="w-full py-2.5 text-xs font-semibold rounded-xl transition-colors"
+        style={{ background: '#FEF0EF', color: '#E8150A' }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir red social</button>
     </div>
   )
 }
@@ -435,8 +439,8 @@ function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id
           <div className="flex gap-1">
             {(['line', 'space'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { style: s })}
-                className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: block.data.style === s ? '#E8150A' : '#F6F6F5', color: block.data.style === s ? '#fff' : '#5A5D60' }}>
+                className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+                style={{ background: block.data.style === s ? '#E8150A' : '#fff', color: block.data.style === s ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
                 {s === 'line' ? 'Línea' : 'Espacio'}
               </button>
             ))}
@@ -446,8 +450,8 @@ function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id
           <div className="flex gap-1">
             {(['sm', 'md', 'lg'] as const).map(s => (
               <button key={s} onClick={() => onUpdate(block.id, { spacing: s })}
-                className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-                style={{ background: block.data.spacing === s ? '#E8150A' : '#F6F6F5', color: block.data.spacing === s ? '#fff' : '#5A5D60' }}>
+                className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+                style={{ background: block.data.spacing === s ? '#E8150A' : '#fff', color: block.data.spacing === s ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
                 {s.toUpperCase()}
               </button>
             ))}
@@ -480,8 +484,8 @@ function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpd
         <div className="flex gap-1">
           {(['16:9', '4:3', '1:1', '3:1'] as const).map(r => (
             <button key={r} onClick={() => onUpdate(block.id, { aspectRatio: r })}
-              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-              style={{ background: block.data.aspectRatio === r ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r ? '#fff' : '#5A5D60' }}>
+              className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+              style={{ background: block.data.aspectRatio === r ? '#E8150A' : '#fff', color: block.data.aspectRatio === r ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
               {r}
             </button>
           ))}
@@ -511,8 +515,8 @@ function VideoEmbedEditor({ block, onUpdate }: { block: VideoEmbedBlock; onUpdat
             { v: '1:1' as const, label: '1:1 cuadrado' },
           ]).map(r => (
             <button key={r.v} onClick={() => onUpdate(block.id, { aspectRatio: r.v })}
-              className="flex-1 py-1.5 text-xs rounded-lg font-medium"
-              style={{ background: block.data.aspectRatio === r.v ? '#E8150A' : '#F6F6F5', color: block.data.aspectRatio === r.v ? '#fff' : '#5A5D60' }}>
+              className="flex-1 py-2.5 text-xs rounded-lg font-semibold transition-colors"
+              style={{ background: block.data.aspectRatio === r.v ? '#E8150A' : '#fff', color: block.data.aspectRatio === r.v ? '#fff' : '#5A5D60', border: '1.5px solid rgba(26,27,28,0.12)' }}>
               {r.v}
             </button>
           ))}
@@ -608,7 +612,7 @@ function MenuEditor({ block, lang, onUpdate }: {
         {sections.map((section, si) => {
           const st = section.translations[lang] || section.translations['es'] || { name: '' }
           return (
-            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {si + 1}</span>
                 <button onClick={() => removeSection(section.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
@@ -631,14 +635,18 @@ function MenuEditor({ block, lang, onUpdate }: {
                     </div>
                   )
                 })}
-                <button onClick={() => addItem(section.id)} className="w-full py-1.5 text-xs font-semibold rounded-lg"
-                  style={{ background: '#fff', color: '#5A5D60', border: '1px dashed rgba(26,27,28,0.15)' }}>+ Añadir producto</button>
+                <button onClick={() => addItem(section.id)} className="w-full py-2.5 text-xs font-semibold rounded-lg transition-colors"
+                  style={{ background: '#fff', color: '#5A5D60', border: '1px dashed rgba(26,27,28,0.22)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#FAFAFA'; e.currentTarget.style.borderColor = 'rgba(26,27,28,0.35)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'rgba(26,27,28,0.22)' }}>+ Añadir producto</button>
               </div>
             </div>
           )
         })}
-        <button onClick={addSection} className="w-full py-2 text-xs font-semibold rounded-xl mt-1"
-          style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir categoría</button>
+        <button onClick={addSection} className="w-full py-2.5 text-xs font-semibold rounded-xl mt-1 transition-colors"
+          style={{ background: '#FEF0EF', color: '#E8150A' }}
+          onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir categoría</button>
       </Section>
       <Section label="PDF (opcional)">
         <Field label="Link a un PDF con la carta completa">
@@ -674,12 +682,12 @@ function PaymentButtonEditor({ block, lang, onUpdate }: {
           <input type="number" min="0" step="0.01" value={block.data.price}
             onChange={e => onUpdate(block.id, { price: Number(e.target.value) || 0 })}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
         </Field>
         <Field label="Moneda">
           <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
             {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </Field>
@@ -723,13 +731,13 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
       <Section label="Moneda">
         <select value={block.data.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
           {MP_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </Section>
       <Section label={`Tipos de entrada (${tiers.length}/3)`}>
         {tiers.map((tier, i) => (
-          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Tipo {i + 1}</span>
               {tiers.length > 1 && (
@@ -746,8 +754,10 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
           </div>
         ))}
         {tiers.length < 3 && (
-          <button onClick={addTier} className="w-full py-2 text-xs font-semibold rounded-xl"
-            style={{ background: '#FEF0EF', color: '#E8150A' }}>+ Añadir tipo de entrada</button>
+          <button onClick={addTier} className="w-full py-2.5 text-xs font-semibold rounded-xl transition-colors"
+            style={{ background: '#FEF0EF', color: '#E8150A' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir tipo de entrada</button>
         )}
       </Section>
       <p className="text-xs" style={{ color: '#9A9D9F' }}>
@@ -794,7 +804,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
           const d = block.data.schedule.find(s => s.day === day)
           if (!d) return null
           return (
-            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#F6F6F5' }}>
+            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
               <label className="flex items-center justify-between mb-2 cursor-pointer">
                 <span className="text-xs font-semibold" style={{ color: '#1A1B1C' }}>{DAY_LABELS[day]}</span>
                 <span className="flex items-center gap-1.5 text-xs" style={{ color: '#5A5D60' }}>
@@ -805,11 +815,11 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
               {!d.closed && (
                 <div className="flex items-center gap-2">
                   <input type="time" value={d.open} onChange={e => updateDay(day, { open: e.target.value })}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
                   <span style={{ color: '#9A9D9F' }}>—</span>
                   <input type="time" value={d.close} onChange={e => updateDay(day, { close: e.target.value })}
-                    className="flex-1 px-2 py-1.5 rounded-lg text-sm outline-none"
+                    className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
                 </div>
               )}
@@ -840,13 +850,13 @@ function GoogleReviewsEditor({ block, lang, onUpdate }: {
           <input type="number" min="0" max="5" step="0.1" value={block.data.rating}
             onChange={e => onUpdate(block.id, { rating: Math.min(5, Math.max(0, Number(e.target.value) || 0)) })}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
         </Field>
         <Field label="Cantidad de reseñas">
           <input type="number" min="0" step="1" value={block.data.reviewCount}
             onChange={e => onUpdate(block.id, { reviewCount: Math.max(0, Number(e.target.value) || 0) })}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
         </Field>
       </Section>
       <Section label="Enlaces">
@@ -893,7 +903,7 @@ function LoyaltyCardEditor({ block, lang, onUpdate }: {
           <input type="number" min="1" step="1" value={block.data.targetStamps}
             onChange={e => onUpdate(block.id, { targetStamps: Math.max(1, Number(e.target.value) || 1) })}
             className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
         </Field>
         <Field label="Premio">
           <Input value={block.data.rewardDescription[lang] || block.data.rewardDescription.es || ''}
@@ -938,7 +948,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
             <Field label="Idioma por defecto">
               <select value={settings.defaultLang} onChange={e => onUpdate({ defaultLang: e.target.value as Lang })}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+                style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
                 {ALL_LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
               </select>
             </Field>
@@ -967,7 +977,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
           <Field label="Modo temporada">
             <select value={settings.seasonMode} onChange={e => onUpdate({ seasonMode: e.target.value as SeasonMode })}
               className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-              style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+              style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
               <option value="always">Siempre activo</option>
               <option value="winter">❄️ Invierno</option>
               <option value="summer">☀️ Verano</option>
@@ -986,13 +996,13 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
               <input type="text" placeholder="G-XXXXXXXXXX" value={settings.pixels?.ga4Id ?? ''}
                 onChange={e => onUpdate({ pixels: { ...settings.pixels, ga4Id: e.target.value.trim() } })}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+                style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
             </Field>
             <Field label="Meta Pixel — ID">
               <input type="text" placeholder="123456789012345" value={settings.pixels?.metaPixelId ?? ''}
                 onChange={e => onUpdate({ pixels: { ...settings.pixels, metaPixelId: e.target.value.trim() } })}
                 className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-                style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+                style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
             </Field>
             <p className="text-xs" style={{ color: '#8B8D8F' }}>
               Para medir visitas y armar públicos de remarketing en Google Ads / Meta Ads. Dejá vacío lo que no uses.
@@ -1025,14 +1035,14 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
             onChange={e => onUpdate({ description: e.target.value })}
             placeholder="Breve descripción de tu negocio o página..."
             className="w-full px-3 py-2 rounded-xl text-sm resize-none outline-none"
-            style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }} />
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
           <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>{seo.description.length}/160 caracteres</p>
         </Field>
         <Field label="Imagen OG (URL)">
           <Input value={seo.ogImage || ''} onChange={v => onUpdate({ ogImage: v || null })} placeholder="https://..." />
         </Field>
       </Section>
-      <div className="rounded-xl p-3" style={{ background: '#F6F6F5' }}>
+      <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
         <p className="text-xs font-semibold mb-1" style={{ color: '#5A5D60' }}>Vista previa Google</p>
         <p className="text-sm font-medium" style={{ color: '#1a0dab' }}>{seo.title || 'Título de tu página'}</p>
         <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/tu-slug</p>
@@ -1043,9 +1053,13 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
 }
 
 // ─── Shared sub-components ───────────────────────────────────────
+// Every distinct group of fields (Imagen, Proporción, Visibilidad
+// condicional...) gets its own light card instead of just a label and
+// vertical spacing -- with a dozen fields stacked in one panel, a caps
+// label alone doesn't read as a boundary at a glance; a contained card does.
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
+    <div className="rounded-2xl p-4" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.06)' }}>
       <p className="text-xs font-bold uppercase tracking-wider mb-3.5" style={{ color: '#9A9D9F' }}>{label}</p>
       <div className="space-y-4">{children}</div>
     </div>
@@ -1065,9 +1079,9 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
   return (
     <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
-      style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}
+      style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}
       onFocus={e => (e.target.style.borderColor = '#E8150A')}
-      onBlur={e => (e.target.style.borderColor = 'rgba(26,27,28,0.09)')} />
+      onBlur={e => (e.target.style.borderColor = 'rgba(26,27,28,0.12)')} />
   )
 }
 
@@ -1124,7 +1138,7 @@ function SeasonField({ value, onChange }: { value: SeasonMode; onChange: (v: Sea
       <Field label="Mostrar en">
         <select value={value} onChange={e => onChange(e.target.value as SeasonMode)}
           className="w-full px-3 py-2 rounded-xl text-sm outline-none"
-          style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
           <option value="always">Siempre</option>
           <option value="winter">❄️ Solo en invierno</option>
           <option value="summer">☀️ Solo en verano</option>
