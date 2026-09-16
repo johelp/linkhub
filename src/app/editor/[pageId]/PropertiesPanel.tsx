@@ -7,7 +7,7 @@ import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
 import { uploadPageImage } from '@/lib/imageUpload'
-import { Settings, Layout, Globe, Upload, Loader2 } from 'lucide-react'
+import { Settings, Layout, Globe, Upload, Loader2, Plus, X } from 'lucide-react'
 
 const ALL_LANGS: { code: Lang; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -287,10 +287,10 @@ function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
         {children.map((child, i) => {
           const ct = child.translations[lang] || child.translations['es'] || { label: '', price: '' }
           return (
-            <div key={child.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+            <div key={child.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Opción {i + 1}</span>
-                <button onClick={() => removeChild(child.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+                <RemoveButton onClick={() => removeChild(child.id)} />
               </div>
               <Field label="Etiqueta"><Input value={ct.label || ''} onChange={v => updateChild(child.id, 'label', v)} /></Field>
               <Field label="Precio"><Input value={ct.price || ''} onChange={v => updateChild(child.id, 'price', v)} placeholder="desde 50 €" /></Field>
@@ -298,10 +298,7 @@ function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
             </div>
           )
         })}
-        <button onClick={addChild} className="w-full py-2.5 text-xs font-semibold rounded-xl mt-1 transition-colors"
-          style={{ background: '#FEF0EF', color: '#E8150A' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir opción</button>
+        <AddButton onClick={addChild} label="Añadir opción" />
       </Section>
       <SeasonField value={block.seasonFilter} onChange={v => onUpdateSeason(block.id, v)} />
     </div>
@@ -406,10 +403,10 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
   return (
     <div className="space-y-3">
       {items.map(item => (
-        <div key={item.id} className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+        <div key={item.id} className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
           <div className="flex justify-between mb-2">
             <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>{item.platform}</span>
-            <button onClick={() => removeItem(item.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+            <RemoveButton onClick={() => removeItem(item.id)} />
           </div>
           <Field label="Red">
             <select value={item.platform} onChange={e => updateItem(item.id, 'platform', e.target.value)}
@@ -422,10 +419,7 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
           <Field label="Etiqueta"><Input value={item.label} onChange={v => updateItem(item.id, 'label', v)} /></Field>
         </div>
       ))}
-      <button onClick={addItem} className="w-full py-2.5 text-xs font-semibold rounded-xl transition-colors"
-        style={{ background: '#FEF0EF', color: '#E8150A' }}
-        onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
-        onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir red social</button>
+      <AddButton onClick={addItem} label="Añadir red social" />
     </div>
   )
 }
@@ -612,22 +606,26 @@ function MenuEditor({ block, lang, onUpdate }: {
         {sections.map((section, si) => {
           const st = section.translations[lang] || section.translations['es'] || { name: '' }
           return (
-            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {si + 1}</span>
-                <button onClick={() => removeSection(section.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+            <div key={section.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
+                  <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
+                    style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{si + 1}</span>
+                  Categoría
+                </span>
+                <RemoveButton onClick={() => removeSection(section.id)} />
               </div>
               <Field label="Nombre de la categoría">
                 <Input value={st.name} onChange={v => updateSectionName(section.id, v)} placeholder="Entradas, Platos principales..." />
               </Field>
-              <div className="mt-2 space-y-2">
+              <div className="mt-2.5 space-y-2">
                 {section.items.map((item, ii) => {
                   const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
                   return (
-                    <div key={item.id} className="rounded-lg p-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)' }}>
-                      <div className="flex items-center justify-between mb-1">
+                    <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
+                      <div className="flex items-center justify-between mb-1.5">
                         <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
-                        <button onClick={() => removeItem(section.id, item.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
+                        <RemoveButton onClick={() => removeItem(section.id, item.id)} />
                       </div>
                       <Field label="Nombre"><Input value={it.name} onChange={v => updateItem(section.id, item.id, 'name', v)} /></Field>
                       <Field label="Descripción (opcional)"><Input value={it.description || ''} onChange={v => updateItem(section.id, item.id, 'description', v)} /></Field>
@@ -635,18 +633,12 @@ function MenuEditor({ block, lang, onUpdate }: {
                     </div>
                   )
                 })}
-                <button onClick={() => addItem(section.id)} className="w-full py-2.5 text-xs font-semibold rounded-lg transition-colors"
-                  style={{ background: '#fff', color: '#5A5D60', border: '1px dashed rgba(26,27,28,0.22)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#FAFAFA'; e.currentTarget.style.borderColor = 'rgba(26,27,28,0.35)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = 'rgba(26,27,28,0.22)' }}>+ Añadir producto</button>
+                <AddButton onClick={() => addItem(section.id)} label="Añadir producto" dashed />
               </div>
             </div>
           )
         })}
-        <button onClick={addSection} className="w-full py-2.5 text-xs font-semibold rounded-xl mt-1 transition-colors"
-          style={{ background: '#FEF0EF', color: '#E8150A' }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir categoría</button>
+        <AddButton onClick={addSection} label="Añadir categoría" />
       </Section>
       <Section label="PDF (opcional)">
         <Field label="Link a un PDF con la carta completa">
@@ -737,12 +729,14 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
       </Section>
       <Section label={`Tipos de entrada (${tiers.length}/3)`}>
         {tiers.map((tier, i) => (
-          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Tipo {i + 1}</span>
-              {tiers.length > 1 && (
-                <button onClick={() => removeTier(tier.id)} className="text-xs" style={{ color: '#E8150A' }}>✕</button>
-              )}
+          <div key={tier.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
+                <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
+                  style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{i + 1}</span>
+                Tipo
+              </span>
+              {tiers.length > 1 && <RemoveButton onClick={() => removeTier(tier.id)} />}
             </div>
             <Field label="Nombre"><Input value={tier.name} onChange={v => updateTier(tier.id, { name: v })} placeholder="General, VIP..." /></Field>
             <Field label="Precio">
@@ -753,12 +747,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
             </Field>
           </div>
         ))}
-        {tiers.length < 3 && (
-          <button onClick={addTier} className="w-full py-2.5 text-xs font-semibold rounded-xl transition-colors"
-            style={{ background: '#FEF0EF', color: '#E8150A' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>+ Añadir tipo de entrada</button>
-        )}
+        {tiers.length < 3 && <AddButton onClick={addTier} label="Añadir tipo de entrada" />}
       </Section>
       <p className="text-xs" style={{ color: '#9A9D9F' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
@@ -804,7 +793,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
           const d = block.data.schedule.find(s => s.day === day)
           if (!d) return null
           return (
-            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+            <div key={day} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
               <label className="flex items-center justify-between mb-2 cursor-pointer">
                 <span className="text-xs font-semibold" style={{ color: '#1A1B1C' }}>{DAY_LABELS[day]}</span>
                 <span className="flex items-center gap-1.5 text-xs" style={{ color: '#5A5D60' }}>
@@ -1042,7 +1031,7 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
           <Input value={seo.ogImage || ''} onChange={v => onUpdate({ ogImage: v || null })} placeholder="https://..." />
         </Field>
       </Section>
-      <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+      <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
         <p className="text-xs font-semibold mb-1" style={{ color: '#5A5D60' }}>Vista previa Google</p>
         <p className="text-sm font-medium" style={{ color: '#1a0dab' }}>{seo.title || 'Título de tu página'}</p>
         <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/tu-slug</p>
@@ -1059,10 +1048,41 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
 // label alone doesn't read as a boundary at a glance; a contained card does.
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl p-4" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.06)' }}>
-      <p className="text-xs font-bold uppercase tracking-wider mb-3.5" style={{ color: '#9A9D9F' }}>{label}</p>
+    <div className="rounded-2xl p-4"
+      style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)', boxShadow: '0 1px 2px rgba(26,27,28,0.03), 0 1px 10px rgba(26,27,28,0.03)' }}>
+      <p className="text-xs font-bold uppercase tracking-wider mb-3.5 pb-3" style={{ color: '#9A9D9F', borderBottom: '1px solid rgba(26,27,28,0.07)' }}>{label}</p>
       <div className="space-y-4">{children}</div>
     </div>
+  )
+}
+
+// Shared row primitives for the repeated "list of things" pattern (menu
+// categories/products, social links, event tiers, business hours...): a
+// pill "+ Añadir X" action and a small circular remove button, replacing
+// a bare "✕" glyph that read as an unstyled leftover rather than a button.
+function AddButton({ label, onClick, dashed }: { label: string; onClick: () => void; dashed?: boolean }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button onClick={onClick}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[13px] font-semibold rounded-xl transition-all"
+      style={dashed
+        ? { background: hover ? '#FAFAFA' : '#fff', color: '#5A5D60', border: `1.5px dashed ${hover ? 'rgba(26,27,28,0.35)' : 'rgba(26,27,28,0.22)'}` }
+        : { background: hover ? '#FCE0DE' : '#FEF0EF', color: '#E8150A', boxShadow: hover ? '0 3px 10px rgba(232,21,10,0.16)' : 'none' }}>
+      <Plus size={15} /> {label}
+    </button>
+  )
+}
+
+function RemoveButton({ onClick, title = 'Eliminar' }: { onClick: () => void; title?: string }) {
+  const [hover, setHover] = useState(false)
+  return (
+    <button onClick={onClick} title={title}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      className="flex items-center justify-center rounded-lg flex-shrink-0 transition-colors"
+      style={{ width: 24, height: 24, color: '#E8150A', background: hover ? '#FEF0EF' : 'transparent' }}>
+      <X size={13} />
+    </button>
   )
 }
 
