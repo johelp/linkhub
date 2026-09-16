@@ -1,11 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
-import { Settings, Layout, Globe } from 'lucide-react'
+import { uploadPageImage } from '@/lib/imageUpload'
+import { Settings, Layout, Globe, Upload, Loader2 } from 'lucide-react'
 
 const ALL_LANGS: { code: Lang; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -461,7 +463,10 @@ function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpd
   return (
     <div className="space-y-4">
       <Section label="Imagen">
-        <Field label="URL de la imagen">
+        <Field label="Subir desde tu dispositivo">
+          <ImageUploadButton onUploaded={url => onUpdate(block.id, { imageUrl: url })} />
+        </Field>
+        <Field label="…o pegar una URL">
           <Input value={block.data.imageUrl} onChange={v => onUpdate(block.id, { imageUrl: v })} placeholder="https://..." />
         </Field>
         <Field label="Texto alternativo">
@@ -1063,6 +1068,39 @@ function Input({ value, onChange, placeholder }: { value: string; onChange: (v: 
       style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}
       onFocus={e => (e.target.style.borderColor = '#E8150A')}
       onBlur={e => (e.target.style.borderColor = 'rgba(26,27,28,0.09)')} />
+  )
+}
+
+function ImageUploadButton({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow picking the same file again after an error
+    if (!file || uploading) return
+    setUploading(true)
+    try {
+      const url = await uploadPageImage(file)
+      onUploaded(url)
+      toast.success('Imagen subida ✓')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo subir la imagen')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
+        style={{ background: '#F6F6F5', border: '1.5px dashed rgba(26,27,28,0.18)', color: uploading ? '#9A9D9F' : '#1A1B1C', cursor: uploading ? 'wait' : 'pointer' }}>
+        {uploading ? <><Loader2 size={14} className="animate-spin" /> Subiendo...</> : <><Upload size={14} /> Elegir imagen</>}
+      </button>
+      <p className="text-xs mt-1.5" style={{ color: '#9A9D9F' }}>Se optimiza sola al subir — hasta 15 MB, JPG/PNG/WebP.</p>
+    </div>
   )
 }
 
