@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
+import { normalizeBlock } from '@/lib/blocks/registry'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -110,8 +111,12 @@ export function PageView({ page, editing = false }: Props) {
     }).then(() => {})
   }, [page.id, lang])
 
-  // Filter blocks by season and by their conditional visibility (if any)
+  // Filter blocks by season and by their conditional visibility (if any).
+  // normalizeBlock upgrades any block left over from a retired type (e.g.
+  // `menu_pdf`, renamed to `menu`) so an old page doesn't just silently
+  // drop that block on the public page -- see registry.ts.
   const visibleBlocks = page.blocks
+    .map(normalizeBlock)
     .filter(b => b.visible)
     .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
     .filter(b => {

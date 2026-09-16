@@ -34,23 +34,23 @@ export function BlockListPanel({ onAddBlock }: Props) {
     <div className="flex flex-col h-full border-r overflow-hidden bg-white"
       style={{borderColor:'rgba(26,27,28,0.09)'}}>
 
-      <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+      <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0"
         style={{borderColor:'rgba(26,27,28,0.09)'}}>
         <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#9A9D9F'}}>
           Bloques ({page.blocks.length})
         </span>
         <button onClick={onAddBlock}
-          className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+          className="flex items-center gap-1.5 text-[13px] font-semibold px-3 py-2 rounded-lg"
           style={{background:'#FEF0EF',color:'#E8150A'}}>
-          <Plus size={13}/> Añadir
+          <Plus size={14}/> Añadir
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2.5">
         {page.blocks.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-3xl mb-2">📭</div>
-            <p className="text-xs" style={{color:'#9A9D9F'}}>Añadí tu primer bloque</p>
+          <div className="text-center py-14">
+            <div className="text-4xl mb-3">📭</div>
+            <p className="text-sm" style={{color:'#9A9D9F'}}>Añadí tu primer bloque</p>
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -91,10 +91,10 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        marginBottom: 2,
+        marginBottom: 4,
       }}>
       <div onClick={onSelect}
-        className="flex items-center gap-2 px-2 py-2 rounded-xl cursor-pointer group"
+        className="flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer group"
         style={{
           background: isSelected ? '#FEF0EF' : 'transparent',
           border: `1.5px solid ${isSelected ? '#E8150A' : 'transparent'}`,
@@ -106,29 +106,29 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
         <div {...attributes} {...listeners}
           className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
           style={{color:'#9A9D9F'}}>
-          <GripVertical size={14}/>
+          <GripVertical size={17}/>
         </div>
 
         {/* Icon */}
-        <span className="text-base flex-shrink-0">{def?.icon || '📦'}</span>
+        <span className="text-lg flex-shrink-0">{def?.icon || '📦'}</span>
 
         {/* Label */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#9A9D9F'}}>
+          <p className="text-sm font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#9A9D9F'}}>
             {def?.label || block.type}
           </p>
         </div>
 
         {/* Actions — same hover-reveal-on-desktop-only reasoning as the drag handle */}
-        <div className="flex gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
           <ActionBtn onClick={e => { e.stopPropagation(); onToggleVisibility() }} title={block.visible ? 'Ocultar' : 'Mostrar'}>
-            {block.visible ? <Eye size={11}/> : <EyeOff size={11}/>}
+            {block.visible ? <Eye size={14}/> : <EyeOff size={14}/>}
           </ActionBtn>
           <ActionBtn onClick={e => { e.stopPropagation(); onDuplicate() }} title="Duplicar">
-            <Copy size={11}/>
+            <Copy size={14}/>
           </ActionBtn>
           <ActionBtn onClick={e => { e.stopPropagation(); onDelete() }} title="Eliminar" danger>
-            <Trash2 size={11}/>
+            <Trash2 size={14}/>
           </ActionBtn>
         </div>
       </div>
@@ -144,7 +144,7 @@ function ActionBtn({ onClick, title, danger, children }: {
 }) {
   return (
     <button onClick={onClick} title={title}
-      className="p-1 rounded-md transition-colors"
+      className="p-1.5 rounded-md transition-colors"
       style={{color: danger ? '#E8150A' : '#9A9D9F'}}>
       {children}
     </button>

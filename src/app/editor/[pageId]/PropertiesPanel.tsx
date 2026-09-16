@@ -38,12 +38,12 @@ export function PropertiesPanel({ plan }: Props) {
       {/* Tabs */}
       <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
         {([
-          { id: 'block', icon: <Layout size={13} />, label: 'Bloque' },
-          { id: 'page', icon: <Settings size={13} />, label: 'Página' },
-          { id: 'seo', icon: <Globe size={13} />, label: 'SEO' },
+          { id: 'block', icon: <Layout size={14} />, label: 'Bloque' },
+          { id: 'page', icon: <Settings size={14} />, label: 'Página' },
+          { id: 'seo', icon: <Globe size={14} />, label: 'SEO' },
         ] as { id: Tab; icon: React.ReactNode; label: string }[]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-semibold transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[13px] font-semibold transition-colors"
             style={{
               borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
               color: tab === t.id ? '#E8150A' : '#9A9D9F',
@@ -53,14 +53,14 @@ export function PropertiesPanel({ plan }: Props) {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-5">
         {tab === 'block' && (
           selectedBlock
             ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
                 onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
-            : <div className="text-center py-12">
-                <div className="text-3xl mb-2">👆</div>
-                <p className="text-xs" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
+            : <div className="text-center py-14">
+                <div className="text-4xl mb-3">👆</div>
+                <p className="text-sm" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
               </div>
         )}
         {tab === 'page' && <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />}
@@ -107,7 +107,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     : (allBlocks.filter(b => b.type === 'business_hours') as BusinessHoursBlock[])
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {editor}
       {limits.advancedBlocks && sources.length > 0 && (
         <ConditionField block={block} sources={sources} onUpdate={onUpdateCondition} />
@@ -164,7 +164,7 @@ function LinkEditor({ block, lang, limits, onUpdate, onUpdateSeason }: {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Textos">
         <Field label="Título">
           <Input value={t.title} onChange={v => setT('title', v)} />
@@ -211,7 +211,7 @@ function FeaturedEditor({ block, lang, onUpdate, onUpdateSeason }: {
   })
   const badge = block.data.badge[lang] || ''
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Textos">
         <Field label="Badge">
           <Input value={badge} onChange={v => onUpdate(block.id, { badge: { ...block.data.badge, [lang]: v } })} placeholder="Novedad" />
@@ -277,7 +277,7 @@ function ExpandableEditor({ block, lang, onUpdate, onUpdateSeason }: {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Cabecera">
         <Field label="Icono"><Input value={block.data.icon} onChange={v => onUpdate(block.id, { icon: v })} /></Field>
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} /></Field>
@@ -314,7 +314,7 @@ function SectionLabelEditor({ block, lang, onUpdate, onUpdateSeason }: {
 }) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { text: '' }
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Texto">
         <Field label="Etiqueta">
           <Input value={t.text} onChange={v => onUpdate(block.id, {
@@ -331,7 +331,7 @@ function SectionLabelEditor({ block, lang, onUpdate, onUpdateSeason }: {
 function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; onUpdate: (id: string, d: Partial<TextBlock['data']>) => void }) {
   const t = block.data.translations[lang] || block.data.translations['es'] || { content: '' }
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Contenido">
         <Field label="Texto">
           <textarea value={t.content} rows={5}
@@ -370,7 +370,7 @@ function TextEditor({ block, lang, onUpdate }: { block: TextBlock; lang: Lang; o
 function ContactCardEditor({ block, onUpdate }: { block: ContactCardBlock; onUpdate: (id: string, d: Partial<ContactCardBlock['data']>) => void }) {
   const d = block.data
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Datos de contacto">
         <Field label="WhatsApp"><Input value={d.whatsapp || ''} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+34 600 000 000" /></Field>
         {d.whatsapp && (
@@ -429,7 +429,7 @@ function SocialGridEditor({ block, onUpdate }: { block: SocialGridBlock; onUpdat
 // ─── Divider Editor ──────────────────────────────────────────────
 function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id: string, d: Partial<DividerBlock['data']>) => void }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Estilo">
         <Field label="Tipo">
           <div className="flex gap-1">
@@ -461,7 +461,7 @@ function DividerEditor({ block, onUpdate }: { block: DividerBlock; onUpdate: (id
 // ─── Image Banner Editor ─────────────────────────────────────────
 function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpdate: (id: string, d: Partial<ImageBannerBlock['data']>) => void }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Imagen">
         <Field label="Subir desde tu dispositivo">
           <ImageUploadButton onUploaded={url => onUpdate(block.id, { imageUrl: url })} />
@@ -494,7 +494,7 @@ function ImageBannerEditor({ block, onUpdate }: { block: ImageBannerBlock; onUpd
 // ─── Video Embed Editor ──────────────────────────────────────────
 function VideoEmbedEditor({ block, onUpdate }: { block: VideoEmbedBlock; onUpdate: (id: string, d: Partial<VideoEmbedBlock['data']>) => void }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Video">
         <Field label="URL de YouTube, Vimeo o archivo .mp4">
           <Input value={block.data.url} onChange={v => onUpdate(block.id, { url: v })} placeholder="https://youtube.com/watch?v=..." />
@@ -532,7 +532,7 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Textos">
         <Field label="Título"><Input value={t.headline} onChange={v => setT('headline', v)} placeholder="Sumate a la lista" /></Field>
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
@@ -599,7 +599,7 @@ function MenuEditor({ block, lang, onUpdate }: {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Cabecera">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nuestra carta" /></Field>
         <Field label="Descripción (opcional)"><Input value={t.description} onChange={v => setT('description', v)} /></Field>
@@ -664,7 +664,7 @@ function PaymentButtonEditor({ block, lang, onUpdate }: {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Producto">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi producto" /></Field>
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
@@ -715,7 +715,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Evento">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Mi evento" /></Field>
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
@@ -778,7 +778,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Título">
         <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Horario de atención" /></Field>
       </Section>
@@ -831,7 +831,7 @@ function GoogleReviewsEditor({ block, lang, onUpdate }: {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Título">
         <Field label="Texto"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Nos calificaron en Google" /></Field>
       </Section>
@@ -876,7 +876,7 @@ function LoyaltyCardEditor({ block, lang, onUpdate }: {
     translations: { ...block.data.translations, [lang]: { ...t, [key]: val } }
   })
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Textos">
         <Field label="Título">
           <Input value={t.title} onChange={v => setT('title', v)} placeholder="Tarjeta de sellos" />
@@ -916,7 +916,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
   onUpdate: (s: Partial<PageSettings>) => void
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="Color principal">
         <div className="flex flex-wrap gap-2">
           {['#E8150A', '#FF8C00', '#185FA5', '#16A34A', '#7C3AED', '#1A1B1C', '#DB2777', '#0891B2'].map(c => (
@@ -1014,7 +1014,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 // ─── SEO Editor ──────────────────────────────────────────────────
 function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <Section label="SEO & Metadatos">
         <Field label="Título SEO">
           <Input value={seo.title} onChange={v => onUpdate({ title: v })} placeholder="Nombre de tu negocio" />
@@ -1046,8 +1046,8 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#9A9D9F' }}>{label}</p>
-      <div className="space-y-3">{children}</div>
+      <p className="text-xs font-bold uppercase tracking-wider mb-3.5" style={{ color: '#9A9D9F' }}>{label}</p>
+      <div className="space-y-4">{children}</div>
     </div>
   )
 }
@@ -1055,7 +1055,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs font-medium block mb-1" style={{ color: '#5A5D60' }}>{label}</label>
+      <label className="text-[13px] font-medium block mb-1.5" style={{ color: '#5A5D60' }}>{label}</label>
       {children}
     </div>
   )
@@ -1064,7 +1064,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full px-3 py-2 rounded-xl text-sm outline-none transition-all"
+      className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
       style={{ background: '#F6F6F5', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C', fontFamily: 'inherit' }}
       onFocus={e => (e.target.style.borderColor = '#E8150A')}
       onBlur={e => (e.target.style.borderColor = 'rgba(26,27,28,0.09)')} />
@@ -1106,12 +1106,12 @@ function ImageUploadButton({ onUploaded }: { onUploaded: (url: string) => void }
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-center justify-between cursor-pointer">
+    <label className="flex items-center justify-between cursor-pointer py-0.5">
       <span className="text-sm" style={{ color: '#1A1B1C' }}>{label}</span>
       <div onClick={() => onChange(!value)}
-        className="w-9 h-5 rounded-full relative transition-colors flex-shrink-0"
+        className="w-10 h-6 rounded-full relative transition-colors flex-shrink-0"
         style={{ background: value ? '#E8150A' : '#E5E7EB' }}>
-        <div className="w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all shadow"
+        <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all shadow"
           style={{ left: value ? 18 : 2 }} />
       </div>
     </label>
