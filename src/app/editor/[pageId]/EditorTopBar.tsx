@@ -16,17 +16,17 @@ export function EditorTopBar({ page, isDirty, isSaving, onSave, onPublish }: Pro
   const { previewDevice, setPreviewDevice, undo, redo, canUndo, canRedo } = useEditorStore()
 
   return (
-    <div className="flex items-center gap-2 lg:gap-3 px-2 lg:px-4 h-12 bg-white border-b flex-shrink-0 overflow-x-auto"
+    <div className="flex items-center gap-2 lg:gap-3 px-3 lg:px-5 py-3 bg-white border-b flex-shrink-0 overflow-x-auto"
       style={{borderColor:'rgba(26,27,28,0.09)'}}>
 
       {/* Back */}
-      <Link href="/dashboard" className="flex items-center gap-1.5 text-sm mr-1 lg:mr-2 flex-shrink-0"
+      <Link href="/dashboard" className="flex items-center gap-1.5 text-sm mr-1 lg:mr-2 flex-shrink-0 px-1.5 py-1 rounded-lg transition-colors hover:bg-gray-50"
         style={{color:'#9A9D9F'}}>
         <ArrowLeft size={14}/> <span className="hidden sm:inline">Páginas</span>
       </Link>
 
       {/* Page name */}
-      <div className="text-sm font-semibold truncate max-w-[120px] sm:max-w-[180px] flex-shrink-0" style={{color:'#1A1B1C'}}>
+      <div className="text-[15px] font-semibold truncate max-w-[120px] sm:max-w-[180px] flex-shrink-0" style={{color:'#1A1B1C'}}>
         {page.name}
       </div>
 
@@ -37,30 +37,30 @@ export function EditorTopBar({ page, isDirty, isSaving, onSave, onPublish }: Pro
 
       {/* Undo/Redo */}
       <button onClick={undo} disabled={!canUndo()} title="Deshacer"
-        className="p-1.5 rounded-lg disabled:opacity-30 transition-colors hover:bg-gray-50 flex-shrink-0"
+        className="p-2 rounded-lg disabled:opacity-30 transition-colors hover:bg-gray-50 flex-shrink-0"
         style={{color:'#5A5D60'}}>
-        <Undo2 size={15}/>
+        <Undo2 size={16}/>
       </button>
       <button onClick={redo} disabled={!canRedo()} title="Rehacer"
-        className="p-1.5 rounded-lg disabled:opacity-30 transition-colors hover:bg-gray-50 flex-shrink-0"
+        className="p-2 rounded-lg disabled:opacity-30 transition-colors hover:bg-gray-50 flex-shrink-0"
         style={{color:'#5A5D60'}}>
-        <Redo2 size={15}/>
+        <Redo2 size={16}/>
       </button>
 
       {/* Device preview toggle — only meaningful with room to spare; on a real
           small screen you're already looking at the mobile viewport. */}
-      <div className="hidden lg:flex gap-0.5 bg-gray-100 p-0.5 rounded-lg flex-shrink-0">
+      <div className="hidden lg:flex gap-0.5 p-1 rounded-lg flex-shrink-0" style={{background:'#F2F3F4'}}>
         {[
-          { d: 'mobile' as const, icon: <Smartphone size={13}/>, label: 'Móvil' },
-          { d: 'tablet' as const, icon: <Tablet size={13}/>, label: 'Tablet' },
-          { d: 'desktop' as const, icon: <Monitor size={13}/>, label: 'Escritorio' },
+          { d: 'mobile' as const, icon: <Smartphone size={14}/>, label: 'Móvil' },
+          { d: 'tablet' as const, icon: <Tablet size={14}/>, label: 'Tablet' },
+          { d: 'desktop' as const, icon: <Monitor size={14}/>, label: 'Escritorio' },
         ].map(({ d, icon, label }) => (
           <button key={d} onClick={() => setPreviewDevice(d)} title={label}
-            className="p-1.5 rounded-md transition-colors"
+            className="p-2 rounded-md transition-all"
             style={{
               background: previewDevice === d ? '#fff' : 'transparent',
               color: previewDevice === d ? '#1A1B1C' : '#9A9D9F',
-              boxShadow: previewDevice === d ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              boxShadow: previewDevice === d ? '0 1px 4px rgba(26,27,28,0.14)' : 'none',
             }}>
             {icon}
           </button>
@@ -70,25 +70,33 @@ export function EditorTopBar({ page, isDirty, isSaving, onSave, onPublish }: Pro
       {/* View live */}
       {page.published && (
         <Link href={`/p/${page.slug}`} target="_blank"
-          className="hidden sm:block text-xs font-medium px-3 py-1.5 rounded-lg flex-shrink-0"
-          style={{background:'#F6F6F5',color:'#5A5D60'}}>
-          Ver →
+          className="hidden sm:flex items-center text-[13px] font-medium px-4 py-2.5 rounded-lg flex-shrink-0 transition-colors"
+          style={{background:'#F2F3F4',color:'#5A5D60'}}
+          onMouseEnter={e => (e.currentTarget.style.background = '#E9EAEB')}
+          onMouseLeave={e => (e.currentTarget.style.background = '#F2F3F4')}>
+          Ver página →
         </Link>
       )}
 
       {/* Save */}
       <button onClick={onSave} disabled={!isDirty || isSaving}
-        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-40 transition-all flex-shrink-0"
-        style={{background:'#F6F6F5',color:'#1A1B1C'}}>
-        {isSaving ? <Loader2 size={13} className="animate-spin"/> : <Save size={13}/>}
+        className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg disabled:opacity-40 transition-all flex-shrink-0"
+        style={{background:'#F2F3F4',color:'#1A1B1C'}}
+        onMouseEnter={e => { if (isDirty && !isSaving) e.currentTarget.style.background = '#E9EAEB' }}
+        onMouseLeave={e => (e.currentTarget.style.background = '#F2F3F4')}>
+        {isSaving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14}/>}
         <span className="hidden sm:inline">Guardar</span>
       </button>
 
-      {/* Publish */}
+      {/* Publish — the one primary action in this bar, the only button that
+          carries real weight (color + shadow) on purpose so it reads as
+          the default next step, not one flat pill among several. */}
       <button onClick={onPublish}
-        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-all flex-shrink-0"
-        style={{background: page.published ? '#B50F07' : '#E8150A'}}>
-        {page.published ? <GlobeLock size={13}/> : <Globe size={13}/>}
+        className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-lg text-white transition-all flex-shrink-0"
+        style={{background: page.published ? '#B50F07' : '#E8150A', boxShadow: '0 2px 8px rgba(232,21,10,0.28)'}}
+        onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+        onMouseLeave={e => (e.currentTarget.style.transform = 'none')}>
+        {page.published ? <GlobeLock size={14}/> : <Globe size={14}/>}
         <span className="hidden sm:inline">{page.published ? 'Despublicar' : 'Publicar'}</span>
       </button>
     </div>

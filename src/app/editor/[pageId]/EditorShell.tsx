@@ -4,11 +4,11 @@ import { Layers, Eye, Settings2 } from 'lucide-react'
 import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Page, Plan, BlockType } from '@/types'
 import { PLAN_LIMITS, blockRequiresPro } from '@/types'
-import { BLOCK_CATEGORIES } from '@/lib/blocks/registry'
 import { BlockListPanel } from './BlockListPanel'
 import { PropertiesPanel } from './PropertiesPanel'
 import { EditorPreview } from './EditorPreview'
 import { EditorTopBar } from './EditorTopBar'
+import { AddBlockModal } from './AddBlockModal'
 import toast from 'react-hot-toast'
 
 interface Props { page: Page; plan: Plan }
@@ -146,54 +146,7 @@ export function EditorShell({ page, plan }: Props) {
         ))}
       </div>
 
-      {/* Add Block Modal */}
-      {addBlockOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4"
-          style={{background:'rgba(0,0,0,0.5)'}}>
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-auto"
-            style={{border:'1px solid rgba(26,27,28,0.09)'}}>
-            <div className="sticky top-0 bg-white px-6 pt-6 pb-4 border-b" style={{borderColor:'rgba(26,27,28,0.09)'}}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold" style={{color:'#1A1B1C'}}>Añadir bloque</h3>
-                <button onClick={() => setAddBlockOpen(false)} style={{color:'#9A9D9F',fontSize:22,lineHeight:1}}>×</button>
-              </div>
-            </div>
-            <div className="p-6 space-y-6">
-              {Object.entries(BLOCK_CATEGORIES).map(([cat, blocks]) => (
-                <div key={cat}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:'#9A9D9F'}}>
-                    {cat === 'navigation' ? 'Navegación' : cat === 'content' ? 'Contenido' : cat === 'social' ? 'Redes' : 'Diseño'}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {blocks.map(def => {
-                      const locked = blockRequiresPro(def.type) && !limits.advancedBlocks
-                      return (
-                        <button key={def.type} onClick={() => handleAddBlock(def.type)}
-                          className="text-left p-4 rounded-xl border transition-all"
-                          style={{
-                            borderColor: locked ? 'rgba(26,27,28,0.06)' : 'rgba(26,27,28,0.09)',
-                            background: locked ? '#F9F9F9' : '#F6F6F5',
-                            opacity: locked ? 0.7 : 1,
-                          }}>
-                          <div style={{fontSize:24,marginBottom:8}}>{def.icon}</div>
-                          <div className="text-sm font-semibold mb-1" style={{color:'#1A1B1C'}}>{def.label}</div>
-                          <div className="text-xs leading-relaxed" style={{color:'#9A9D9F'}}>{def.description}</div>
-                          {locked && (
-                            <div className="mt-2 text-xs font-bold px-2 py-0.5 rounded-full inline-block"
-                              style={{background:'#FEF0EF',color:'#E8150A'}}>
-                              Pro
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <AddBlockModal open={addBlockOpen} limits={limits} onClose={() => setAddBlockOpen(false)} onAdd={handleAddBlock} />
     </div>
   )
 }

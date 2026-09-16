@@ -478,6 +478,19 @@ export function normalizeBlock(block: Block): Block {
   return block
 }
 
+// A color identity per category, shared between the block list and the
+// "Añadir bloque" modal so a block's icon tile looks the same wherever it
+// shows up. With 17 block types in one flat catalog, a consistent accent
+// per group is what lets someone scan for "the social ones" instead of
+// reading every title — separate from ICON_BG_PRESETS above, which is a
+// palette the *user* picks per link block, not a fixed structural one.
+export const CATEGORY_META: Record<string, { label: string; accent: string; tint: string }> = {
+  navigation: { label: 'Navegación', accent: '#185FA5', tint: '#EAF2FB' },
+  content:    { label: 'Contenido',  accent: '#E8150A', tint: '#FEF0EF' },
+  social:     { label: 'Redes',      accent: '#7C3AED', tint: '#F0ECFF' },
+  layout:     { label: 'Diseño',     accent: '#16A34A', tint: '#ECFDF5' },
+}
+
 export const BLOCK_CATEGORIES = {
   navigation: BLOCK_REGISTRY.filter(b => b.category === 'navigation'),
   content:    BLOCK_REGISTRY.filter(b => b.category === 'content'),
