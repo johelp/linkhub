@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode, BlockCondition } from '@/types'
 import { generateId } from '@/lib/utils'
-import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
+import { BLOCK_BY_TYPE, normalizeBlock } from '@/lib/blocks/registry'
 
 interface EditorState {
   page: Page | null
@@ -53,8 +53,13 @@ export const useEditorStore = create<EditorState>()(
     historyIndex: -1,
 
     setPage: (page) => set(state => {
-      state.page = page
-      state.history = [page.blocks]
+      // Upgrade any blocks left over from a retired type (e.g. old
+      // `menu_pdf` pages) before they ever reach the block list / properties
+      // panel -- see normalizeBlock. Saving the page then persists the
+      // upgrade for good.
+      const blocks = page.blocks.map(normalizeBlock)
+      state.page = { ...page, blocks }
+      state.history = [blocks]
       state.historyIndex = 0
       state.isDirty = false
     }),

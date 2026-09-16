@@ -452,6 +452,32 @@ export const BLOCK_BY_TYPE = Object.fromEntries(
   BLOCK_REGISTRY.map(b => [b.type, b])
 ) as Record<BlockType, BlockDef>
 
+// Upgrades blocks from a retired type to their replacement, on read. Pages
+// saved before the `menu_pdf` -> `menu` rename (see git history: `menu_pdf`
+// was `{ translations, url }`, a plain link to a PDF) still have that old
+// `type` sitting in their stored `blocks` JSON -- BLOCK_BY_TYPE has no
+// entry for it anymore, so without this the block list shows the raw type
+// string with a generic icon and the properties panel shows no editor at
+// all. Normalizing on every read (editor load + public render) means the
+// block just works immediately, and saving the page in the editor
+// persists it as a real `menu` block from then on -- no DB migration script
+// needed, the existing save flow does it.
+export function normalizeBlock(block: Block): Block {
+  const raw = block as unknown as { type: string; data: Record<string, unknown> }
+  if (raw.type === 'menu_pdf') {
+    return {
+      ...block,
+      type: 'menu',
+      data: {
+        translations: raw.data.translations,
+        sections: [],
+        pdfUrl: raw.data.url,
+      },
+    } as unknown as Block
+  }
+  return block
+}
+
 export const BLOCK_CATEGORIES = {
   navigation: BLOCK_REGISTRY.filter(b => b.category === 'navigation'),
   content:    BLOCK_REGISTRY.filter(b => b.category === 'content'),
