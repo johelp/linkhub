@@ -99,9 +99,12 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
           background: isSelected ? '#FEF0EF' : 'transparent',
           border: `1.5px solid ${isSelected ? '#E8150A' : 'transparent'}`,
         }}>
-        {/* Drag handle */}
+        {/* Drag handle — hover-reveal only on devices that actually have
+            hover (desktop); always visible below that, since a touch
+            screen never fires :hover and the handle would otherwise be
+            impossible to find on tablet/mobile. */}
         <div {...attributes} {...listeners}
-          className="drag-handle flex-shrink-0 p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
           style={{color:'#9A9D9F'}}>
           <GripVertical size={14}/>
         </div>
@@ -116,8 +119,8 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
           </p>
         </div>
 
-        {/* Actions - show on hover */}
-        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        {/* Actions — same hover-reveal-on-desktop-only reasoning as the drag handle */}
+        <div className="flex gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
           <ActionBtn onClick={e => { e.stopPropagation(); onToggleVisibility() }} title={block.visible ? 'Ocultar' : 'Mostrar'}>
             {block.visible ? <Eye size={11}/> : <EyeOff size={11}/>}
           </ActionBtn>

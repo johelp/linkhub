@@ -52,6 +52,7 @@ En el SQL Editor de Supabase, correr en orden:
 7. `supabase/migrations/007_mercadopago_connect.sql` — tablas `payment_connections` (tokens OAuth, sin acceso desde el navegador ni para el dueño) y `payments` (log de cobros) para el bloque de Mercado Pago.
 8. `supabase/migrations/008_event_tickets.sql` — tabla `tickets` (sin acceso público de lectura, mismo criterio que `payment_connections`) y columnas `tier_id`/`tier_name` en `payments`, para el bloque de entradas a eventos.
 9. `supabase/migrations/009_loyalty_cards.sql` — tabla `loyalty_cards` (sin acceso público de lectura, mismo criterio que `tickets`) para el bloque "Tarjeta de sellos".
+10. `supabase/migrations/010_storage_images.sql` — bucket público `images` + políticas RLS sobre `storage.objects` (lectura pública, escritura solo en la propia carpeta por `auth.uid()`) para la subida de imágenes del bloque de imagen.
 
 **Auth → URL Configuration:**
 - Site URL: tu dominio de producción

@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Globe, Edit2, QrCode, Mail, Ticket, Award } from 'lucide-react'
+import { Globe, Edit2 } from 'lucide-react'
 import { PLAN_LIMITS, type Plan } from '@/types'
 import type { Views } from '@/lib/supabase/database.types'
 import { formatDate, formatNumber } from '@/lib/utils'
 import { NewPageButton } from './NewPageButton'
+import { PageCardActions } from './PageCardActions'
 
 type PageSummary = Views<'pages_summary'>
 
@@ -20,7 +21,11 @@ const S = {
   bannerText: { fontSize: 13, fontWeight: 600, color: '#E8150A' } as React.CSSProperties,
   bannerSub: { fontSize: 12, color: '#B50F07', marginTop: 2 } as React.CSSProperties,
   bannerBtn: { fontSize: 12, fontWeight: 700, color: '#fff', background: '#E8150A', padding: '8px 16px', borderRadius: 20, textDecoration: 'none', flexShrink: 0 } as React.CSSProperties,
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 } as React.CSSProperties,
+  // auto-fit (not auto-fill): with few pages, the existing cards stretch to
+  // use the freed-up row instead of sitting small next to a wall of empty
+  // space — auto-fill would reserve those extra tracks even with nothing to
+  // put in them. Capped at 320px so a single page doesn't stretch absurdly wide.
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 320px))', gap: 14 } as React.CSSProperties,
   empty: { textAlign: 'center', padding: '80px 0' } as React.CSSProperties,
   emptyIcon: { fontSize: 56, marginBottom: 16 } as React.CSSProperties,
   emptyTitle: { fontSize: 18, fontWeight: 700, color: '#1A1B1C', marginBottom: 8 } as React.CSSProperties,
@@ -106,27 +111,12 @@ function PageCard({ page }: { page: PageSummary }) {
             <Edit2 size={12} /> Editar
           </Link>
           {page.published && (
-            <Link href={`/p/${page.slug}`} target="_blank"
+            <Link href={`/p/${page.slug}`} target="_blank" title="Ver página pública"
               style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               <Globe size={13} />
             </Link>
           )}
-          <Link href={`/dashboard/qr/${page.id}`}
-            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <QrCode size={13} />
-          </Link>
-          <a href={`/api/subscribers/export?pageId=${page.id}`} title="Descargar suscriptores (CSV)"
-            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <Mail size={13} />
-          </a>
-          <Link href={`/dashboard/validate/${page.id}`} title="Validar entradas"
-            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <Ticket size={13} />
-          </Link>
-          <Link href={`/dashboard/loyalty/${page.id}`} title="Tarjeta de sellos"
-            style={{ padding: '8px 10px', borderRadius: 10, background: '#F6F6F5', color: '#5A5D60', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <Award size={13} />
-          </Link>
+          <PageCardActions pageId={page.id!} />
         </div>
       </div>
     </div>
