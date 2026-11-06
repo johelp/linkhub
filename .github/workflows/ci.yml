@@ -20,6 +20,12 @@ jobs:
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
+      - name: Documentation check (advisory)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: node scripts/check-docs.mjs
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
       - run: npm ci
       - run: npm run typecheck
       - run: npx eslint

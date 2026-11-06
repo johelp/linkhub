@@ -16,6 +16,7 @@ LinkHub es una app Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage) 
 | [migraciones-y-entornos.md](./migraciones-y-entornos.md) | Staging/producción, flags, migraciones 011–019 en orden, variables de entorno |
 | [seguridad.md](./seguridad.md) | Resumen de controles y enlaces a [`security/`](../../security/) |
 | [../CHANGELOG.md](../CHANGELOG.md) | Qué cambió y cuándo |
+| `docs/operacion/`, `docs/estrategia/` | Operación y estrategia de producto; existen en la rama principal y se mantienen aparte (referencia, no forman parte de este índice) |
 
 Otros documentos de la raíz: [`README.md`](../../README.md) (visión de producto y planes), [`SETUP.md`](../../SETUP.md) (cuentas y puesta en marcha), [`ROADMAP.md`](../../ROADMAP.md).
 
