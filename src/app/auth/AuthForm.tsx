@@ -12,24 +12,39 @@ const LIGHT = '#6B6E71'
 const SNOW = '#F6F6F5'
 const BORDER = 'rgba(26,27,28,0.09)'
 
+// Supabase messages are English and technical; translate the ones people actually hit.
+function friendlyAuthError(message: string, status?: number): string {
+  if (status === 429 || /rate limit/i.test(message)) return 'Se han enviado demasiados correos en poco tiempo. Espera unos minutos e inténtalo de nuevo.'
+  if (/invalid.*email|email.*invalid/i.test(message)) return 'Revisa la dirección de correo: no parece válida.'
+  if (/signups? (not allowed|disabled)/i.test(message)) return 'Ahora mismo no se admiten cuentas nuevas con ese correo.'
+  return 'No hemos podido enviar el enlace. Inténtalo de nuevo en unos minutos.'
+}
+
 export function AuthForm() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/dashboard'
+  const callbackFailed = searchParams.get('error') === 'callback'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    })
-    setLoading(false)
-    if (error) { toast.error(error.message); return }
-    setSent(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
+      })
+      if (error) { toast.error(friendlyAuthError(error.message, error.status)); return }
+      setSent(true)
+    } catch {
+      // createClient throws when the Supabase URL/key are not configured for this deployment.
+      toast.error('El acceso no está disponible ahora mismo. Inténtalo de nuevo en unos minutos.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -44,13 +59,18 @@ export function AuthForm() {
         </div>
 
         <div style={{ background: '#fff', borderRadius: 20, padding: 28, border: `1px solid ${BORDER}` }}>
+          {callbackFailed && !sent && (
+            <p role="alert" style={{ fontSize: 13, color: '#B50F07', background: '#FEF0EF', borderRadius: 10, padding: '10px 12px', marginBottom: 14, lineHeight: 1.5 }}>
+              El enlace no ha funcionado: puede haber caducado o haberse abierto en otro navegador. Pide uno nuevo y ábrelo en el mismo navegador desde el que lo solicitas.
+            </p>
+          )}
           {sent ? (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
               <div style={{ fontSize: 52, marginBottom: 16 }}>📬</div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: INK, marginBottom: 10 }}>Revisá tu email</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: INK, marginBottom: 10 }}>Revisa tu correo</h2>
               <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6 }}>
-                Enviamos un link a <strong>{email}</strong>.<br />
-                Hacé clic en él para acceder.
+                Te hemos enviado un enlace a <strong>{email}</strong>.<br />
+                Ábrelo en este mismo navegador para acceder.
               </p>
               <button onClick={() => setSent(false)}
                 style={{ marginTop: 20, fontSize: 12, color: LIGHT, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>
@@ -60,7 +80,7 @@ export function AuthForm() {
           ) : (
             <>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: INK, marginBottom: 6 }}>Acceder a LinkHub</h2>
-              <p style={{ fontSize: 13, color: LIGHT, marginBottom: 20 }}>Sin contraseña — te enviamos un link mágico.</p>
+              <p style={{ fontSize: 13, color: LIGHT, marginBottom: 20 }}>Sin contraseña: te enviamos un enlace de acceso.</p>
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <input
                   type="email" value={email} required
@@ -72,11 +92,11 @@ export function AuthForm() {
                 />
                 <button type="submit" disabled={loading || !email}
                   style={{ padding: '12px 0', borderRadius: 12, background: R, color: '#fff', fontWeight: 600, fontSize: 14, border: 'none', cursor: loading ? 'wait' : 'pointer', opacity: loading || !email ? 0.6 : 1, fontFamily: 'inherit' }}>
-                  {loading ? 'Enviando...' : 'Enviar link mágico →'}
+                  {loading ? 'Enviando...' : 'Enviar enlace de acceso →'}
                 </button>
               </form>
               <p style={{ fontSize: 11, textAlign: 'center', marginTop: 16, color: LIGHT }}>
-                Al continuar aceptás los <Link href="/terms" style={{ color: LIGHT }}>términos de uso</Link>
+                Al continuar aceptas los <Link href="/legal/terminos" style={{ color: LIGHT }}>términos</Link> y la <Link href="/legal/privacidad" style={{ color: LIGHT }}>política de privacidad</Link>
               </p>
             </>
           )}

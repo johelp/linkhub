@@ -2,6 +2,12 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Hero de la landing y pantalla de acceso
+
+**Cambiado**
+- Hero de la landing: titular que aparece palabra a palabra con subrayado animado en «sin necesidad de una web», móvil que entra con un giro suave, tres tarjetas flotantes (cita, pedido, cobro) en escritorio, resplandor de fondo y línea de pasarelas. Todo el movimiento se desactiva con `prefers-reduced-motion`.
+- Pantalla de acceso (`/auth`): enlace a términos corregido (apuntaba a `/terms`, que no existe; ahora `/legal/terminos` y privacidad), mensajes de error en español (límite de correos, correo inválido, acceso no disponible), aviso cuando el enlace de acceso falla (`?error=callback`) y textos en tuteo neutro.
+
 ## 2026-11-06 — Onboarding guiado con IA («Crear con IA»)
 
 **Añadido**

@@ -60,6 +60,22 @@ const faqs = [
   { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. Gestionas tu suscripción desde tu cuenta y puedes volver al plan gratuito en cualquier momento.' },
 ]
 
+// Headline split into words so each one can rise into place in sequence; the
+// key phrase gets an accent underline that draws itself afterwards.
+function HeadlineWords() {
+  const lead = ['Tu', 'presencia', 'profesional,']
+  const key = ['sin', 'necesidad', 'de', 'una', 'web']
+  const word = (w: string, i: number) => (
+    <span key={w + i}><span className="hw"><span style={{ ['--i' as string]: i }}>{w}</span></span>{' '}</span>
+  )
+  return (
+    <>
+      {lead.map((w, i) => word(w, i))}
+      <span className="hero-em">{key.map((w, i) => word(w, lead.length + i))}</span>
+    </>
+  )
+}
+
 export default function LandingPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -88,7 +104,7 @@ export default function LandingPage() {
             <div className="text-center lg:text-left">
               <p className="hero-fade-up text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED, animationDelay: '0s' }}>Para autónomos y profesionales</p>
               <h1 id="hero-h" className="hero-fade-up mt-4 font-bold" style={{ fontSize: 'clamp(36px, 5.2vw, 60px)', lineHeight: 1.06, letterSpacing: '-0.035em', animationDelay: '.06s' }}>
-                Tu presencia profesional, sin necesidad de una web
+                <HeadlineWords />
               </h1>
               <p className="hero-fade-up mx-auto lg:mx-0 mt-6 max-w-[560px]" style={{ fontSize: 'clamp(17px, 1.6vw, 19px)', lineHeight: 1.6, color: BODY, animationDelay: '.12s' }}>
                 Reúne en una sola página tus servicios, tu agenda, tus pedidos y tus cobros. La compartes desde Instagram, WhatsApp o un código QR, y tus clientes reservan o compran sin salir de ahí.
@@ -101,6 +117,9 @@ export default function LandingPage() {
                   Ver un ejemplo
                 </a>
               </div>
+              <p className="hero-fade-up mt-5 text-[13px] lg:text-left text-center" style={{ color: MUTED, animationDelay: '.3s' }}>
+                Cobra con <strong style={{ color: INK }}>Mercado Pago</strong>, <strong style={{ color: INK }}>Stripe</strong> o <strong style={{ color: INK }}>Redsys</strong>, y te ayudamos a ponerla en marcha.
+              </p>
               <ul className="hero-fade-up mt-6 flex flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-[14px]" style={{ color: MUTED, listStyle: 'none', padding: 0, animationDelay: '.24s' }}>
                 {['Gratis para empezar', 'Sin tarjeta de crédito', 'Publicada en minutos'].map(t => (
                   <li key={t} className="flex items-center gap-2"><Check size={15} aria-hidden style={{ color: '#15803D' }} />{t}</li>

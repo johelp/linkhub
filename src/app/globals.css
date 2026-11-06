@@ -188,3 +188,25 @@ html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 @keyframes lhRing { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(2); opacity: 0 } }
 @keyframes lhSlide { 0% { transform: translateX(-110%) } 100% { transform: translateX(260%) } }
 @keyframes lhBreath { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+
+/* ─── Landing hero v2: staged entrance ─────────────────────────────
+   Everything is visible by default; motion is added only when the visitor
+   hasn't asked for reduced motion. */
+.hw { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+.hw > span { display: inline-block; }
+.hero-em { background-image: linear-gradient(var(--hero-accent, #E8150A), var(--hero-accent, #E8150A)); background-repeat: no-repeat; background-position: 0 92%; background-size: 100% .09em; }
+.hero-glow-bg { position: absolute; inset: 5% 0 auto auto; width: 80%; height: 80%; pointer-events: none; z-index: 0;
+  background: radial-gradient(closest-side, rgba(232,21,10,.14), rgba(232,21,10,0)); filter: blur(10px); }
+.hero-chip-pos { position: absolute; z-index: 2; }
+@keyframes lhWord { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes lhUnderline { from { background-size: 0 .09em; } to { background-size: 100% .09em; } }
+@keyframes lhPhoneIn { from { opacity: 0; transform: translateY(40px) rotate(2.5deg) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes lhChipIn { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes lhGlow { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hw > span { animation: lhWord .8s cubic-bezier(.16,.84,.3,1) both; animation-delay: calc(.1s + var(--i, 0) * .07s); }
+  .hero-em { animation: lhUnderline .9s cubic-bezier(.65,0,.35,1) .95s both; }
+  .hero-phone-in { animation: lhPhoneIn 1s cubic-bezier(.16,.84,.3,1) .25s both; }
+  .hero-chip-in { animation: lhChipIn .6s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: calc(.9s + var(--c, 0) * .18s); }
+  .hero-glow-bg { animation: lhGlow 1.4s ease-out .1s both; }
+}
