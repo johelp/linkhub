@@ -374,7 +374,12 @@ export default function LandingPage() {
           <FooterCol title="Para tu rubro" links={VERTICALS.map(v => [v.label, `/para/${v.slug}`] as [string, string])} />
           <FooterCol title="Contacto" links={[['hola@linkhub.app', 'mailto:hola@linkhub.app'], ['Herramientas QR', '/herramientas']]} />
         </div>
-        <p className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-10 text-[13px]" style={{ color: MUTED }}>© {new Date().getFullYear()} LinkHub</p>
+        <p className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-10 text-[13px] flex flex-wrap gap-x-5 gap-y-2" style={{ color: MUTED }}>
+          <span>© {new Date().getFullYear()} LinkHub</span>
+          <a href="/legal/privacidad" className="underline">Privacidad</a>
+          <a href="/legal/terminos" className="underline">Términos</a>
+          <a href="/legal/cookies" className="underline">Cookies</a>
+        </p>
       </footer>
     </div>
   )

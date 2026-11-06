@@ -2,6 +2,12 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Páginas legales y consentimiento de cookies
+
+**Añadido**
+- Páginas `/legal/privacidad`, `/legal/terminos` y `/legal/cookies` (borradores: faltan los datos del titular y revisión legal por mercado) y enlaces en el pie de la landing y el sitemap.
+- `TrackingConsent` en páginas públicas: GA4 y Meta Pixel de los clientes solo se cargan tras pulsar «Aceptar» (clave `lh_tracking_consent` en localStorage). Se elimina el `<noscript>` del píxel de Meta, que omitía el consentimiento.
+
 ## 2026-11-06 — Emails de la plataforma con identidad propia
 
 **Añadido**
