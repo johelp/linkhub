@@ -72,6 +72,11 @@ export async function GET(request: NextRequest) {
     tier = { id: found.id, name: found.name }
   }
 
+  // The block is owner-authored JSON, so re-validate the money fields here.
+  if (!Number.isFinite(price) || price <= 0 || price > 10_000_000 || !/^[A-Z]{3}$/.test(currency)) {
+    return errorRedirect(typedPage.slug, 'failed')
+  }
+
   const admin = createAdminClient()
   const { data: connection } = await admin
     .from('payment_connections')

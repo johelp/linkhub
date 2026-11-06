@@ -6,6 +6,7 @@ import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, Expandabl
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
+import { sanitizeBlocks } from '@/lib/security'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -115,8 +116,7 @@ export function PageView({ page, editing = false }: Props) {
   // normalizeBlock upgrades any block left over from a retired type (e.g.
   // `menu_pdf`, renamed to `menu`) so an old page doesn't just silently
   // drop that block on the public page -- see registry.ts.
-  const visibleBlocks = page.blocks
-    .map(normalizeBlock)
+  const visibleBlocks = sanitizeBlocks(page.blocks.map(normalizeBlock))
     .filter(b => b.visible)
     .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
     .filter(b => {

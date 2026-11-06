@@ -19,7 +19,7 @@
     "immer": "^11.1.4",
     "lucide-react": "^1.8.0",
     "nanoid": "^5.1.7",
-    "next": "16.3.4",
+    "next": "^16.4.5",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-colorful": "^5.6.1",
@@ -36,7 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

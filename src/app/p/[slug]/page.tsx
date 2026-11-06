@@ -75,7 +75,8 @@ export default async function PublicPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Escape '<' so owner-controlled text can't close the <script> tag (stored XSS).
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       {validGa4Id && (
         <>
