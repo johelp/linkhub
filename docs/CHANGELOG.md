@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Onboarding guiado con IA («Crear con IA»)
+
+**Añadido**
+- Flag `ai_onboarding` (apagado por defecto; los administradores siempre lo ven). Con él, «Nueva página» ofrece «Crear con IA»: el cliente describe su negocio y recibe una propuesta (eslogan, presentación, servicios, preguntas frecuentes, tipo schema.org y color) que puede revisar antes de crear la página. Las preguntas frecuentes se guardan en la base de conocimiento.
+- `POST /api/ai/draft` (`src/app/api/ai/draft/route.ts`): requiere sesión y el flag, límite de 5 propuestas/hora/usuario por instancia, salida estructurada (JSON Schema) y saneado en `src/lib/aiDraft.ts`. Sin `ANTHROPIC_API_KEY`, o si falla/rechaza, devuelve una base sencilla sin IA (`source: "basic"`).
+- Variables `ANTHROPIC_API_KEY` y `AI_MODEL` (por defecto `claude-opus-5-5`). Dependencia `@anthropic-ai/sdk`.
+
 ## 2026-11-06 — Fiabilidad y alertas
 
 **Añadido**

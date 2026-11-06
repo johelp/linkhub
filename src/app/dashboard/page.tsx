@@ -5,6 +5,7 @@ import { ArrowUpRight, ArrowDownRight, Check, Lock } from 'lucide-react'
 import { PLAN_LIMITS, type Plan } from '@/types'
 import { loadDashboardStats, lastNDays, seriesFor, sum, delta } from '@/lib/dashboardStats'
 import { NewPageButton } from './NewPageButton'
+import { getFlagsForUser } from '@/lib/flags.server'
 import { PagesGrid, type PageRow } from './PagesGrid'
 import { Sparkline } from './charts'
 
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
   ])
   const plan = (profile?.plan || 'free') as Plan
   const limits = PLAN_LIMITS[plan]
+  const aiEnabled = user ? (await getFlagsForUser(user.id, user.email)).ai_onboarding : false
   const list = (pages || []).filter(p => p.id)
   const ids = list.map(p => p.id!)
   const fullAnalytics = limits.analytics !== 'basic'
@@ -83,7 +85,7 @@ export default async function DashboardPage() {
           <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Hola{hello ? `, ${hello}` : ''} 👋</h1>
           <p className="text-sm text-[#5B6064] mt-1">Así viene tu actividad en los últimos 30 días.</p>
         </div>
-        <NewPageButton canCreate={canCreate} plan={plan} />
+        <NewPageButton canCreate={canCreate} plan={plan} aiEnabled={aiEnabled} />
       </header>
 
       {/* KPIs */}
@@ -96,7 +98,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px] items-start">
         <div className="min-w-0 order-2 xl:order-1">
-          {rows.length === 0 ? <EmptyState canCreate={canCreate} plan={plan} /> : <PagesGrid pages={rows} canCreate={canCreate} plan={plan} showClicks={fullAnalytics} />}
+          {rows.length === 0 ? <EmptyState canCreate={canCreate} plan={plan} aiEnabled={aiEnabled} /> : <PagesGrid pages={rows} canCreate={canCreate} plan={plan} showClicks={fullAnalytics} aiEnabled={aiEnabled} />}
           <div className="xl:hidden mt-6">{planCard}</div>
           {stats.approximate && rows.length > 0 && (
             <p className="text-xs text-[#6B6E71] mt-5">Las métricas son una muestra reciente. Aplicá la migración <code>012_dashboard_stats.sql</code> para ver el total exacto.</p>
@@ -158,13 +160,13 @@ function Kpi({ label, value, delta: d, spark, color, hint, locked, href }: {
   return href ? <Link href={href} className="no-underline block">{body}</Link> : body
 }
 
-function EmptyState({ canCreate, plan }: { canCreate: boolean; plan: Plan }) {
+function EmptyState({ canCreate, plan, aiEnabled }: { canCreate: boolean; plan: Plan; aiEnabled: boolean }) {
   return (
     <div className="bg-white rounded-3xl text-center px-6 py-14" style={{ border: '1px dashed rgba(26,27,28,0.18)' }}>
       <div className="text-5xl mb-4">🚀</div>
       <h2 className="text-xl font-bold text-[#1A1B1C] mb-2">Creá tu primera página</h2>
       <p className="text-sm text-[#5B6064] max-w-sm mx-auto mb-6">Elegí una plantilla (catálogo, citas, pedidos…) o empezá en blanco. Queda lista en minutos.</p>
-      {canCreate && <div className="inline-block"><NewPageButton canCreate plan={plan} /></div>}
+      {canCreate && <div className="inline-block"><NewPageButton canCreate plan={plan} aiEnabled={aiEnabled} /></div>}
     </div>
   )
 }

@@ -48,6 +48,7 @@ Plantilla: `.env.local.example`. En Vercel/Railway se cargan en el panel del pro
 | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO` | Para cobrar el plan Pro | Suscripciones |
 | `STRIPE_CONNECT_CLIENT_ID`, `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PLATFORM_FEE_PERCENT` | Opcionales | Stripe Connect para los clientes (comisión 0–100) |
 | `MERCADOPAGO_CLIENT_ID`, `MERCADOPAGO_CLIENT_SECRET`, `MERCADOPAGO_WEBHOOK_SECRET`, `MERCADOPAGO_PLATFORM_FEE_PERCENT` | Opcionales | Mercado Pago (OAuth, webhooks, comisión) |
+| `ANTHROPIC_API_KEY`, `AI_MODEL` | Opcionales | Asistente «Crear con IA» (flag `ai_onboarding`) |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPPORT_EMAIL` | Recomendadas | Emails transaccionales (ver `docs/operacion/emails.md`) |
 | `EMAIL_SANDBOX_ALLOW` | No | En no producción, únicos destinatarios que reciben email |
 | `NEXT_PUBLIC_ENDORSELY_ORG_ID` | No | Programa de afiliados |

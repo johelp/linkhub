@@ -13,6 +13,7 @@ export const FLAGS = {
   appointment_block: { label: 'Bloque Solicitud de citas', description: 'Turnos por WhatsApp para profesionales.', default: false },
   stripe_connect: { label: 'Cobros con Stripe', description: 'Conectar Stripe (Connect) para cobrar online.', default: false },
   redsys: { label: 'Cobros con Redsys', description: 'TPV virtual de banco español.', default: false },
+  ai_onboarding: { label: 'Crear página con IA', description: 'Asistente que redacta una primera versión de la página a partir de una descripción del negocio.', default: false },
   developer_api: { label: 'API para desarrolladores', description: 'API keys, servidor MCP autenticado y API REST /api/v1 para integraciones propias.', default: false },
 } as const
 

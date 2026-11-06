@@ -16,7 +16,7 @@ type Filter = 'all' | 'live' | 'draft'
 
 const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
-export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageRow[]; canCreate: boolean; plan: Plan; showClicks: boolean }) {
+export function PagesGrid({ pages, canCreate, plan, showClicks, aiEnabled }: { pages: PageRow[]; canCreate: boolean; plan: Plan; showClicks: boolean; aiEnabled?: boolean }) {
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -91,7 +91,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
             </div>
           </article>
         ))}
-        {filter === 'all' && !q && canCreate && <NewPageButton canCreate plan={plan} asCard />}
+        {filter === 'all' && !q && canCreate && <NewPageButton canCreate plan={plan} aiEnabled={aiEnabled} asCard />}
       </div>
 
       {shown.length === 0 && (
