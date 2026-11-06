@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Fiabilidad y alertas
+
+**Añadido**
+- `reportError` (`src/lib/observability.ts`) con variable `ALERT_WEBHOOK_URL`, aplicado a los webhooks de pagos; `src/lib/alerting.ts` (tachado de secretos y deduplicado).
+- `error.tsx` y `global-error.tsx`; workflow `uptime.yml` (variable de repo `HEALTHCHECK_URL`); guía `docs/operacion/fiabilidad.md`.
+- El webhook de Stripe envía los correos de pago fallido y regularizado al empezar/terminar el periodo de gracia.
+
 ## 2026-11-06 — Páginas legales y consentimiento de cookies
 
 **Añadido**

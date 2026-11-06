@@ -1,9 +1,12 @@
+import { reportError } from '@/lib/observability'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
-import { LAPSE_STATUSES } from '@/lib/billing'
+import { LAPSE_STATUSES, graceDays } from '@/lib/billing'
+import { emailConfigured, sendPaymentFailedEmail, sendPaymentRecoveredEmail } from '@/lib/email'
+import { absoluteUrl } from '@/lib/utils'
 
 // Subscription statuses that mean "this user should have Pro access".
 const ACTIVE_STATUSES = new Set(['active', 'trialing'])
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
         break
     }
   } catch (err) {
-    console.error('Stripe webhook handler error', err)
+    await reportError('webhook:stripe', err)
     // Release the idempotency key so Stripe's retry is processed, not skipped.
     await supabase.from('processed_webhook_events' as never).delete().eq('id' as never, event.id as never)
     return NextResponse.json({ error: 'Error procesando el evento' }, { status: 500 })
@@ -100,9 +103,32 @@ async function setLapse(db: ReturnType<typeof createAdminClient>, who: { userId?
     const { data: p } = await q.maybeSingle()
     if (!p) return
     const row = p as { id: string; billing_lapsed_at: string | null }
-    if (lapsed && !row.billing_lapsed_at) await db.from('profiles').update({ billing_lapsed_at: new Date().toISOString() }).eq('id', row.id)
-    if (!lapsed && row.billing_lapsed_at) await db.from('profiles').update({ billing_lapsed_at: null }).eq('id', row.id)
+    if (lapsed && !row.billing_lapsed_at) {
+      await db.from('profiles').update({ billing_lapsed_at: new Date().toISOString() }).eq('id', row.id)
+      await notifyOwner(db, row.id, 'failed')
+    }
+    if (!lapsed && row.billing_lapsed_at) {
+      await db.from('profiles').update({ billing_lapsed_at: null }).eq('id', row.id)
+      await notifyOwner(db, row.id, 'recovered')
+    }
     const { data: pages } = await db.from('pages').select('slug').eq('user_id', row.id)
     for (const pg of pages ?? []) revalidatePath(`/p/${pg.slug}`)
-  } catch (err) { console.error('setLapse failed (migration 017 pending?)', err) }
+  } catch (err) { await reportError('billing:setLapse (migration 017 pending?)', err) }
+}
+
+// One email when the lapse starts and one when it clears. A failure to email
+// must never fail the webhook (Stripe would retry and re-run the whole event).
+async function notifyOwner(db: ReturnType<typeof createAdminClient>, userId: string, kind: 'failed' | 'recovered') {
+  try {
+    if (!emailConfigured()) return
+    const { data } = await db.auth.admin.getUserById(userId)
+    const to = data.user?.email
+    if (!to) return
+    if (kind === 'failed') {
+      const pause = new Date(Date.now() + graceDays() * 86400000).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+      await sendPaymentFailedEmail({ to, portalUrl: absoluteUrl('/dashboard/settings'), pauseDate: pause })
+    } else {
+      await sendPaymentRecoveredEmail({ to, dashboardUrl: absoluteUrl('/dashboard') })
+    }
+  } catch (err) { await reportError(`email:payment-${kind}`, err) }
 }

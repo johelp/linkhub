@@ -1,3 +1,4 @@
+import { reportError } from '@/lib/observability'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptSecret } from '@/lib/crypto'
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   // Bind the signed payload to OUR record: same merchant, same amount.
   if (param(params, 'Ds_MerchantCode') !== conn.provider_user_id || param(params, 'Ds_Amount') !== toCents(Number(payment.amount))) {
-    console.error('Redsys notification mismatch', { order })
+    await reportError('webhook:redsys', `notification mismatch for order ${order}`)
     await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'redsys', type: 'notification.invalid', level: 'error', message: 'Comercio o importe no coinciden con el pedido' })
     return NextResponse.json({ error: 'Mismatch' }, { status: 400 })
   }

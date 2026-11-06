@@ -1,3 +1,4 @@
+import { reportError } from '@/lib/observability'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getMercadoPagoPayment, verifyMercadoPagoSignature } from '@/lib/mercadopago'
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId: paymentRow.page_id, provider: 'mercadopago', type: newStatus === 'approved' ? 'payment.approved' : newStatus === 'refunded' ? 'payment.refunded' : 'payment.rejected', level: newStatus === 'rejected' ? 'warn' : 'info', message: `Pago ${newStatus}` })
     }
   } catch (err) {
-    console.error('Mercado Pago webhook payment lookup error', err)
+    await reportError('webhook:mercadopago', err)
     return NextResponse.json({ error: 'Lookup failed' }, { status: 500 })
   }
 
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
       // Don't fail the webhook over the ticket/email step -- the payment is
       // already recorded as approved; the buyer can still be helped
       // manually via the payments/tickets tables if this part hiccups.
-      console.error('Mercado Pago ticket issuance error', err)
+      await reportError('mercadopago:ticket', err)
     }
   }
 

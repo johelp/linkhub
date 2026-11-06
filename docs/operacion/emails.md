@@ -16,3 +16,6 @@ Dos canales, un mismo diseño (`src/lib/emailLayout.ts`):
 7. Para recibir respuestas en `hola@…` hace falta Cloudflare Email Routing (reenvío a tu Gmail); es independiente del envío.
 
 Fuera de producción solo reciben correo las direcciones de `EMAIL_SANDBOX_ALLOW`. Al pasar a un dominio definitivo se repite el proceso con ese dominio.
+
+## Correos de impago
+`POST /api/webhooks/stripe` envía «pago fallido» cuando empieza el periodo de gracia (`billing_lapsed_at`) y «pago regularizado» cuando se limpia. Solo se envían en la transición (no en cada reintento) y un fallo de correo nunca hace fallar el webhook.

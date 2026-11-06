@@ -1,3 +1,4 @@
+import { reportError } from '@/lib/observability'
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (err) {
-    console.error('stripe-connect webhook error', err)
+    await reportError('webhook:stripe-connect', err)
     await admin.from('processed_webhook_events' as never).delete().eq('id' as never, event.id as never)
     return NextResponse.json({ error: 'Error procesando el evento' }, { status: 500 })
   }
