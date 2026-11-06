@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Page } from '@/types'
 import { PageView } from './PageView'
+import { activeDomainOfPage } from '@/lib/domains.server'
 import { TrackingConsent } from './TrackingConsent'
 
 // Owner-supplied IDs end up interpolated into inline scripts below, so they're
@@ -38,7 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { page, availability: av, knowledge } = loaded
   const facts = extractFacts(page, page.settings.defaultLang, knowledge)
   const meta = defaultMeta(page, facts)
-  const url = `${baseUrl()}/p/${page.slug}`
+  // With an active custom domain, that domain is the canonical address (no duplicate content).
+  const custom = await activeDomainOfPage(page.id)
+  const url = custom ? `https://${custom}` : `${baseUrl()}/p/${page.slug}`
   // Paused or opted-out pages stay out of search results and AI answers.
   const indexable = av !== 'paused' && !page.settings.seo.noindex
   return {

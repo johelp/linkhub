@@ -14,6 +14,7 @@ export const FLAGS = {
   stripe_connect: { label: 'Cobros con Stripe', description: 'Conectar Stripe (Connect) para cobrar online.', default: false },
   redsys: { label: 'Cobros con Redsys', description: 'TPV virtual de banco español.', default: false },
   ai_onboarding: { label: 'Crear página con IA', description: 'Asistente que redacta una primera versión de la página a partir de una descripción del negocio.', default: false },
+  custom_domain: { label: 'Dominio propio', description: 'Los clientes Pro conectan su dominio (tu-nombre.com). Cada dominio se activa a mano desde /admin/domains.', default: false },
   developer_api: { label: 'API para desarrolladores', description: 'API keys, servidor MCP autenticado y API REST /api/v1 para integraciones propias.', default: false },
 } as const
 

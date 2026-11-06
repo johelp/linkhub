@@ -15,6 +15,7 @@ export default async function SettingsPage({ searchParams }: Props) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
+  const flags = await getFlagsForUser(user.id, user.email)
   // Old links / OAuth returns that still point here.
   if (mp) redirect(`/dashboard/payments?result=${mp}&provider=mercadopago`)
 
@@ -28,6 +29,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           { href: '/dashboard/payments', icon: '💳', title: 'Cobros online', text: 'Conecta Mercado Pago, Stripe o el TPV de tu banco (Redsys) con un asistente paso a paso.' },
           { href: '/dashboard/knowledge', icon: '📚', title: 'Base de conocimiento', text: 'Preguntas frecuentes, políticas y datos de tu negocio para tu página, Google y asistentes de IA.' },
           { href: '/dashboard/contacts', icon: '✉️', title: 'Contactos', text: 'Los emails que dejan tus visitantes.' },
+          ...(flags.custom_domain ? [{ href: '/dashboard/domain', icon: '🌐', title: 'Dominio propio', text: 'Muestra tu página en tu propio dominio (tunegocio.com).' }] : []),
           { href: '/dashboard/roadmap', icon: '💡', title: 'Próximamente', text: 'Vota las funciones que te gustaría ver primero.' },
           { href: '/dashboard/upgrade', icon: '✨', title: 'Plan y facturación', text: 'Tu suscripción y las ventajas de Pro.' },
         ].map(c => (

@@ -2,6 +2,15 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Dominio propio (activación manual)
+
+**Añadido**
+- Flag `custom_domain` (apagado por defecto). Pantalla del cliente `/dashboard/domain` (alta, registros DNS con copiar, «Comprobar ahora», quitar) y pantalla de administración `/admin/domains` (activar/desactivar tras añadir el dominio en Vercel). Solo plan Pro.
+- Rutas: `POST/DELETE /api/domains`, `POST /api/domains/verify` (comprueba el TXT `_linkhub-verify`), `POST /api/admin/domains`.
+- `proxy.ts` sirve la página en el host del cliente (solo la página y sus endpoints; el resto 404) y `canonical` apunta al dominio propio. Lógica en `src/lib/domains.ts` y `domains.server.ts`.
+- **Migración 021**: estado, token y restricciones de `custom_domains`. **Cambio de seguridad:** la política de la 001 dejaba al dueño marcar su dominio como verificado; ahora solo puede leer, añadir (siempre `pending`) y borrar.
+- `/admin/system` comprueba también la 021. Manual: `docs/operacion/dominios-propios.md`.
+
 ## 2026-11-06 — Inicio de sesión: causa del fallo y diagnóstico
 
 **Causa** (primera prueba): el enlace mágico llevaba a `https://linkhub-pi.vercel.app/?code=…`. La URL de la preview no estaba en las *Redirect URLs* de Supabase, que cae al Site URL (producción, con el código viejo). Se arregla en Supabase; ver `docs/operacion/login.md`.

@@ -54,5 +54,6 @@ test('platform hosts are never treated as customer domains', () => {
   assert.equal(isPlatformHost('linkhub.johelpastorino.com', PLATFORM), true)
   assert.equal(isPlatformHost('linkhub-git-x.vercel.app', PLATFORM), true)
   assert.equal(isPlatformHost('localhost:3000', PLATFORM), true)
+  assert.equal(isPlatformHost('127.0.0.1:3000', PLATFORM), true)
   assert.equal(isPlatformHost('www.mipsicologa.com', PLATFORM), false)
 })

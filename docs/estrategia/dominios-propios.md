@@ -1,6 +1,6 @@
 # Dominios propios (enlaces personalizados) con coste extra
 
-> Análisis de compatibilidad. **No está implementado**: hoy existe la columna `pages.custom_domain` y la tabla `custom_domains`, pero ninguna ruta sirve dominios externos. Las cifras de precio/límites de proveedores son orientativas y deben verificarse.
+> Análisis de compatibilidad. **Implementado en versión manual y tras el flag `custom_domain`** (verificación TXT + activación manual en `/admin/domains`; ver `docs/operacion/dominios-propios.md`). Siguen sin hacer: alta automática en Vercel, cobro del complemento y redirección 301. Las cifras de precio/límites de proveedores son orientativas y deben verificarse.
 
 ## 1. Qué se vende
 Que `www.mipsicologa.com` (o `reservas.midespacho.es`) muestre la página de LinkHub, con HTTPS y sin la marca de LinkHub en la URL. Para el cliente: imagen profesional, SEO propio, confianza. Para ti: **ingreso recurrente (complemento)** y retención (cambiar de plataforma implica cambiar de dominio).

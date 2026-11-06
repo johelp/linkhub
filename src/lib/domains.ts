@@ -82,5 +82,5 @@ export function routeForCustomerHost(pathname: string, slug: string): HostRoute 
 /** Hosts that belong to the platform itself (never looked up as customer domains). */
 export function isPlatformHost(host: string, platformHosts: string[]): boolean {
   const h = host.toLowerCase().replace(/:\d+$/, '')
-  return !h || h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.vercel.app') || platformHosts.some(p => p && h === p.toLowerCase())
+  return !h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]' || h.endsWith('.localhost') || h.endsWith('.vercel.app') || platformHosts.some(p => p && h === p.toLowerCase())
 }

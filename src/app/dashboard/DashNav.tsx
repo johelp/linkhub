@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
-import { LayoutDashboard, BarChart3, Users, CreditCard, BookOpen, Sparkles, Lightbulb, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Users, CreditCard, BookOpen, Sparkles, Lightbulb, Settings, ShieldCheck, Code2, Globe, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
 
 const R = '#E8150A'
@@ -32,6 +32,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
 const MOBILE_HREFS = ['/dashboard', '/dashboard/analytics', '/dashboard/payments', '/dashboard/knowledge', '/dashboard/settings']
 const MOBILE_ITEMS = MOBILE_HREFS.map(h => SECTIONS.flatMap(s => s.items).find(i => i.href === h)!)
 // Desktop only: on mobile it is linked from Ajustes.
+const DOMAIN_ITEM: Item = { href: '/dashboard/domain', label: 'Dominio propio', hint: 'Tu página en tu dominio', icon: Globe }
 const DEVELOPERS_ITEM: Item = { href: '/dashboard/developers', label: 'Desarrolladores', hint: 'API keys y MCP', icon: Code2 }
 
 // Collapsed/expanded preference, remembered per browser. External-store
@@ -44,9 +45,9 @@ function setCollapsed(v: boolean) {
   window.dispatchEvent(new Event('lh-dash-collapse'))
 }
 
-interface Props { name: string; initial: string; plan: string; isAdmin: boolean; developers?: boolean }
+interface Props { name: string; initial: string; plan: string; isAdmin: boolean; developers?: boolean; domains?: boolean }
 
-export function DashNav({ name, initial, plan, isAdmin, developers = false }: Props) {
+export function DashNav({ name, initial, plan, isAdmin, developers = false, domains = false }: Props) {
   const pathname = usePathname()
   const collapsed = useSyncExternalStore(subscribe, read, () => false)
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname === href || pathname.startsWith(href + '/'))
@@ -91,7 +92,7 @@ export function DashNav({ name, initial, plan, isAdmin, developers = false }: Pr
               {collapsed
                 ? <div className="mx-3 mb-2 h-px" style={{ background: 'rgba(26,27,28,0.08)' }} aria-hidden />
                 : <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-[.08em]" style={{ color: SUB }}>{sec.title}</p>}
-              <div className="flex flex-col gap-0.5">{(developers && sec.title === 'Cuenta' ? [...sec.items, DEVELOPERS_ITEM] : sec.items).map(link)}</div>
+              <div className="flex flex-col gap-0.5">{(sec.title === 'Cuenta' ? [...sec.items, ...(domains ? [DOMAIN_ITEM] : []), ...(developers ? [DEVELOPERS_ITEM] : [])] : sec.items).map(link)}</div>
             </div>
           ))}
           {isAdmin && (

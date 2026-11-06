@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, FileText, CreditCard, ToggleRight, ScrollText, Activity, ArrowLeft } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, CreditCard, ToggleRight, ScrollText, Activity, ArrowLeft, Globe } from 'lucide-react'
 
 const R = '#E8150A'
 const ITEMS = [
@@ -9,6 +9,7 @@ const ITEMS = [
   { href: '/admin/users', label: 'Clientes', hint: 'Cuentas y planes', icon: Users },
   { href: '/admin/pages', label: 'Páginas', hint: 'Moderación', icon: FileText },
   { href: '/admin/payments', label: 'Cobros', hint: 'Pagos y eventos', icon: CreditCard },
+  { href: '/admin/domains', label: 'Dominios', hint: 'Activar dominios propios', icon: Globe },
   { href: '/admin/features', label: 'Funciones', hint: 'Despliegue gradual', icon: ToggleRight },
   { href: '/admin/audit', label: 'Auditoría', hint: 'Quién hizo qué', icon: ScrollText },
   { href: '/admin/system', label: 'Sistema', hint: 'Salud y configuración', icon: Activity },

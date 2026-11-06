@@ -16,7 +16,7 @@
 El código se comporta distinto según `NEXT_PUBLIC_APP_ENV`: en staging aparece una barra "Entorno de PRUEBAS", Redsys solo acepta su entorno de pruebas, los emails se filtran y todo queda fuera de Google.
 
 ## 2. Puesta en marcha (una sola vez)
-1. **Supabase:** crea un segundo proyecto "linkhub-staging". Aplica en él todas las migraciones de `supabase/migrations/` en orden (001 → 020).
+1. **Supabase:** crea un segundo proyecto "linkhub-staging". Aplica en él todas las migraciones de `supabase/migrations/` en orden (001 → 021).
 2. **Vercel:** en el proyecto, *Settings → Git*: *Production Branch* = `main`. Añade el dominio `staging.…` y asígnalo a la rama `staging`. En *Environment Variables* carga cada variable **por entorno** (Production / Preview=staging), con claves distintas.
 3. **GitHub:** crea *Environments* `staging` y `production` (en `production`, marca *Required reviewers* = tú). Guarda los secretos `SUPABASE_DB_URL` en cada uno. Protege `main` (PR obligatorio + checks de CI).
 4. **Stripe/Mercado Pago/Redsys:** en staging usa claves de prueba; registra los webhooks de staging y de producción por separado.
@@ -47,7 +47,7 @@ Añadir un flag: declararlo en `FLAGS`, usarlo con `getFlagsForUser()` en servid
 
 ## 6. Migraciones (orden y reglas)
 Aplica siempre en orden numérico. Todas son idempotentes. Principio **expandir → migrar → contraer**: primero añade columnas/tablas (compatible con el código viejo), despliega el código, y solo después elimina lo antiguo.
-`011` endurecimiento · `012` estadísticas · `013` idempotencia/auditoría/moderación/límites · `014` multi-pasarela · `015` eventos de pago · `016` flags · `017` impago · `018` claves API (si existe) · `019` base de conocimiento · `020` votos de Próximamente.
+`011` endurecimiento · `012` estadísticas · `013` idempotencia/auditoría/moderación/límites · `014` multi-pasarela · `015` eventos de pago · `016` flags · `017` impago · `018` claves API (si existe) · `019` base de conocimiento · `020` votos de Próximamente · `021` dominio propio.
 Si venías aplicando a mano, marca las ya aplicadas con `supabase migration repair --status applied <versión>` antes de activar el workflow.
 
 ## 7. Salud, copias y marcha atrás
@@ -59,7 +59,7 @@ Si venías aplicando a mano, marca las ya aplicadas con `supabase migration repa
 ## 8. Lista de comprobación antes de producción
 - [ ] Claves de Supabase **rotadas** (las antiguas estuvieron en el historial de Git).
 - [ ] `ADMIN_EMAILS`, `TOKEN_ENCRYPTION_KEY`, `NEXT_PUBLIC_APP_ENV=production` definidos.
-- [ ] Migraciones 011–020 aplicadas (`/admin/system` en verde).
+- [ ] Migraciones 011–021 aplicadas (`/admin/system` en verde).
 - [ ] Webhooks de Stripe (plataforma y Connect), Mercado Pago configurados con la URL de producción.
 - [ ] Precios por moneda creados en Stripe y sus IDs cargados.
 - [ ] Dominio, HTTPS y `NEXT_PUBLIC_APP_URL` correctos; `/robots.txt` y `/sitemap.xml` correctos.
