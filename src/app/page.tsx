@@ -344,7 +344,7 @@ export default function LandingPage() {
           </Reveal>
           <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ listStyle: 'none', padding: 0 }}>
             {ROADMAP.map((r, i) => (
-              <li key={r.key}><Reveal delay={(i % 3) * 70} className="h-full">
+              <li key={r.id}><Reveal delay={(i % 3) * 70} className="h-full">
                 <div className="h-full rounded-2xl p-6" style={{ background: '#fff', border: `1px solid ${LINE}` }}>
                   <span aria-hidden className="text-2xl">{r.icon}</span>
                   <h3 className="mt-3 text-[16px] font-semibold" style={{ color: INK }}>{r.title} <span className="ml-1 align-middle text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: '#F2F3F4', color: MUTED }}>En estudio</span></h3>

@@ -1,0 +1,2 @@
+# False positive: `{ key: 'custom_domain', ... }` (roadmap item id, not a secret). The field was renamed to `id` in the next commit; the old commit stays in history.
+a5ef3c0b3970e0c516a0a864757a9ee1aa6b1d40:src/lib/roadmap.ts:generic-api-key:8
