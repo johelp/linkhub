@@ -2,6 +2,14 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Emails de la plataforma con identidad propia
+
+**Añadido**
+- Sistema único de emails: `src/lib/emailLayout.ts` (maqueta) y `src/lib/emailTemplates.ts` (plantillas). Seis plantillas de Supabase Auth (enlace mágico, confirmación, invitación, recuperación, cambio de correo, código de reautenticación) en español neutro, sin emojis ni imágenes; versión en texto plano.
+- Emails transaccionales nuevos: pago fallido y pago regularizado (`sendPaymentFailedEmail`, `sendPaymentRecoveredEmail`; **aún sin conectar al webhook de facturación**). `sendTicketEmail` usa el nuevo diseño y escapa el texto dinámico.
+- `npm run emails:build` regenera `supabase/email-templates/*.html`; `npm run emails:push` las sube a Supabase por la Management API (`--apply`; sin verificar contra la API real, probar primero en staging).
+- Variable `SUPPORT_EMAIL` (pie de los correos). `RESEND_FROM_EMAIL` pasa a ser obligatoria en producción.
+
 ## 2026-11-06 — Servidor MCP, API keys y documentación para desarrolladores
 
 **Añadido**
