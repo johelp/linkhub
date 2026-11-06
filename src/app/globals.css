@@ -210,3 +210,20 @@ html { scroll-behavior: smooth; scroll-padding-top: 72px; }
   .hero-chip-in { animation: lhChipIn .6s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: calc(.9s + var(--c, 0) * .18s); }
   .hero-glow-bg { animation: lhGlow 1.4s ease-out .1s both; }
 }
+
+/* ─── Landing: story chat + niches marquee ───────────────────────── */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .story:not(.play) .story-b { opacity: 0; transform: translateY(10px); }
+  .story.play .story-b { animation: lhChipIn .55s cubic-bezier(.2,.9,.3,1.1) both; animation-delay: calc(var(--d, 0) * 1s); }
+}
+@keyframes lhMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; width: max-content; gap: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track { animation: lhMarquee 55s linear infinite; }
+  .marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .marquee-dup { display: none; }
+}

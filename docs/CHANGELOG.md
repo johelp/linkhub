@@ -2,6 +2,12 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Demo interactiva y pantalla de acceso nueva
+
+**Cambiado**
+- Landing: la demo («Pruébalo ahora») deja de ser un mockup inerte: se elige sector, nombre, color y módulos, y la página de la derecha es la real en modo vista previa (se puede pedir cita o armar un pedido; no se envía nada). Nueva escena «Deja de repetir las mismas respuestas» (conversación animada) y cinta de sectores; fondo cálido en el hero.
+- `/auth` rediseñada: panel de marca en escritorio, formulario con etiqueta visible y autocompletado, estado «Revisa tu correo» con acceso directo al buzón (Gmail, Outlook, Yahoo, iCloud), reenvío con cuenta atrás de 30 s, «Usar otro correo» y errores en línea.
+
 ## 2026-11-06 — Landing v2
 
 **Cambiado**

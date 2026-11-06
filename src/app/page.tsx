@@ -8,6 +8,7 @@ import { HeroShowcase } from './HeroShowcase'
 import { ROADMAP } from '@/lib/roadmap'
 import { CONTACT_EMAIL } from '@/lib/contact'
 import { Pricing } from './landing/Pricing'
+import { Story } from './landing/Story'
 import { QR_TOOLS } from '@/lib/qrTools'
 import { VERTICALS } from '@/lib/verticals'
 import { NICHES } from '@/lib/examples'
@@ -101,7 +102,7 @@ export default function LandingPage() {
 
       <main id="contenido">
         {/* HERO */}
-        <section aria-labelledby="hero-h" style={{ borderBottom: `1px solid ${LINE}` }}>
+        <section aria-labelledby="hero-h" style={{ borderBottom: `1px solid ${LINE}`, background: 'radial-gradient(900px 520px at 88% 0%, rgba(232,21,10,.09), transparent 62%), radial-gradient(760px 520px at -5% 100%, rgba(15,118,110,.09), transparent 60%), #FAFAF8' }}>
           <div className="mx-auto max-w-[1160px] px-5 sm:px-8 pt-12 pb-16 lg:pt-20 lg:pb-24 grid gap-14 lg:grid-cols-[1.05fr_0.95fr] items-center">
             <div className="text-center lg:text-left">
               <p className="hero-fade-up text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED, animationDelay: '0s' }}>Para autónomos y profesionales</p>
@@ -147,6 +148,44 @@ export default function LandingPage() {
               </div>
             ))}
           </dl>
+        </section>
+
+        {/* STORY: the problem in one scene */}
+        <section aria-labelledby="story-h" style={{ background: '#FFF6EF', borderBottom: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28 grid gap-12 lg:grid-cols-2 items-center">
+            <Reveal>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED }}>Lo que cambia</p>
+              <h2 id="story-h" className="mt-3 font-bold" style={{ fontSize: 'clamp(32px, 4.8vw, 54px)', lineHeight: 1.05, letterSpacing: '-0.035em' }}>
+                Deja de repetir las mismas respuestas
+              </h2>
+              <p className="mt-6 max-w-[520px] text-[18px] leading-relaxed" style={{ color: BODY }}>
+                Precio, horario, cómo llegar, si queda hueco. Tu página lo responde por ti, a cualquier hora, y la cita o el pedido te llega a WhatsApp ya ordenado.
+              </p>
+              <p className="mt-4 max-w-[520px] text-[18px] leading-relaxed" style={{ color: BODY }}>
+                Tú sigues cerrando el trato por chat, como siempre. Solo que ya no empiezas de cero cada vez.
+              </p>
+            </Reveal>
+            <Story />
+          </div>
+        </section>
+
+        {/* MARQUEE OF SECTORS */}
+        <section aria-label="Sectores con ejemplo" className="py-8" style={{ background: '#fff', borderBottom: `1px solid ${LINE}` }}>
+          <div className="marquee">
+            <div className="marquee-track">
+              {[0, 1].map(copy => (
+                <ul key={copy} className={copy ? 'marquee-dup flex gap-3' : 'flex gap-3'} aria-hidden={copy ? true : undefined} style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {NICHES.map(n => (
+                    <li key={n.slug}>
+                      <Link href={`/ejemplos/${n.slug}`} tabIndex={copy ? -1 : undefined} className="inline-flex items-center gap-2.5 rounded-full px-5 py-2.5 text-[15px] font-semibold no-underline whitespace-nowrap" style={{ border: `1px solid ${LINE}`, color: INK, background: '#FAFAF8' }}>
+                        <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ background: n.color }} />{n.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* WHO IT'S FOR */}
