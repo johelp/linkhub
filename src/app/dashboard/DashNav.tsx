@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
-import { LayoutDashboard, BarChart3, Users, CreditCard, BookOpen, Sparkles, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Users, CreditCard, BookOpen, Sparkles, Lightbulb, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
 
 const R = '#E8150A'
@@ -24,6 +24,7 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   ] },
   { title: 'Cuenta', items: [
     { href: '/dashboard/upgrade', label: 'Planes', hint: 'Tu suscripción', icon: Sparkles },
+    { href: '/dashboard/roadmap', label: 'Próximamente', hint: 'Vota lo que viene', icon: Lightbulb },
     { href: '/dashboard/settings', label: 'Ajustes', hint: 'Pagos y conexiones', icon: Settings },
   ] },
 ]

@@ -28,6 +28,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           { href: '/dashboard/payments', icon: '💳', title: 'Cobros online', text: 'Conecta Mercado Pago, Stripe o el TPV de tu banco (Redsys) con un asistente paso a paso.' },
           { href: '/dashboard/knowledge', icon: '📚', title: 'Base de conocimiento', text: 'Preguntas frecuentes, políticas y datos de tu negocio para tu página, Google y asistentes de IA.' },
           { href: '/dashboard/contacts', icon: '✉️', title: 'Contactos', text: 'Los emails que dejan tus visitantes.' },
+          { href: '/dashboard/roadmap', icon: '💡', title: 'Próximamente', text: 'Vota las funciones que te gustaría ver primero.' },
           { href: '/dashboard/upgrade', icon: '✨', title: 'Plan y facturación', text: 'Tu suscripción y las ventajas de Pro.' },
         ].map(c => (
           <Link key={c.href} href={c.href} className="flex items-center gap-4 bg-white rounded-2xl p-5 no-underline hover:shadow-md transition-shadow" style={{ border: '1px solid rgba(26,27,28,0.08)' }}>

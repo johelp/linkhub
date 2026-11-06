@@ -33,14 +33,16 @@ async function probe(admin: ReturnType<typeof createAdminClient>, table: string,
 
 export default async function SystemPage() {
   const admin = createAdminClient()
-  const [db, m011, m013a, m013b, m014, m015, m016] = await Promise.all([
+  const [db, m011, m013a, m013b, m014, m015, m016, m017, m018, m019, m020] = await Promise.all([
     probe(admin, 'profiles', 'id'), probe(admin, 'pages', 'moderated_at'), probe(admin, 'processed_webhook_events', 'id'), probe(admin, 'admin_audit_log', 'id'),
     probe(admin, 'payment_connections', 'config'), probe(admin, 'payment_events', 'id'), probe(admin, 'feature_flags', 'key'),
+    probe(admin, 'profiles', 'billing_lapsed_at'), probe(admin, 'api_keys', 'id'), probe(admin, 'knowledge_entries', 'id'), probe(admin, 'roadmap_votes', 'item_key'),
   ])
   const rpc = await admin.rpc('owner_daily_stats' as never, { days: 1 } as never)
   const migrations = [
     ['011 · Endurecimiento (RLS, imágenes)', null], ['012 · Estadísticas del dashboard', !rpc.error ? true : rpc.error.message.includes('auth') || rpc.error.code === 'PGRST202' ? false : true],
     ['013 · Idempotencia, auditoría, moderación', m013a && m013b && m011], ['014 · Cobros multi-pasarela', m014], ['015 · Registro de eventos de pago', m015], ['016 · Funciones por cliente', m016],
+    ['017 · Periodo de gracia por impago', m017], ['018 · Claves de API', m018], ['019 · Base de conocimiento', m019], ['020 · Votos de Próximamente', m020],
   ] as [string, boolean | null][]
   const items = ENV.map(e => ({ ...e, set: !!process.env[e.name] }))
   const missingReq = items.filter(i => i.need === 'required' && !i.set).length

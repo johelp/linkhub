@@ -13,7 +13,7 @@ LinkHub es una app Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage) 
 | [api-keys-y-integraciones.md](./api-keys-y-integraciones.md) | Guía para clientes: crear una clave, API REST, MCP, recetas |
 | [agregar-un-bloque.md](./agregar-un-bloque.md) | Checklist para un tipo de bloque nuevo |
 | [agregar-una-pasarela-de-pago.md](./agregar-una-pasarela-de-pago.md) | Checklist para un proveedor de cobro nuevo |
-| [migraciones-y-entornos.md](./migraciones-y-entornos.md) | Staging/producción, flags, migraciones 011–019 en orden, variables de entorno |
+| [migraciones-y-entornos.md](./migraciones-y-entornos.md) | Staging/producción, flags, migraciones 011–020 en orden, variables de entorno |
 | [seguridad.md](./seguridad.md) | Resumen de controles y enlaces a [`security/`](../../security/) |
 | [../CHANGELOG.md](../CHANGELOG.md) | Qué cambió y cuándo |
 | `docs/operacion/`, `docs/estrategia/` | Operación y estrategia de producto; existen en la rama principal y se mantienen aparte (referencia, no forman parte de este índice) |

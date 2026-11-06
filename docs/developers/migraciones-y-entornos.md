@@ -24,6 +24,7 @@ Las migraciones están en `supabase/migrations/`, numeradas e **idempotentes** (
 | 017 | `017_billing_lapse.sql` | `profiles.billing_lapsed_at` | Nadie se pausa por impago |
 | 018 | `018_api_keys.sql` | `api_keys`, `api_key_audit`, triggers de protección y tope de 10 claves activas | Sin claves de API: la pantalla Desarrolladores no funciona |
 | 019 | `019_knowledge_base.sql` | `knowledge_entries` (tope 300 por cuenta, RLS del dueño) | Sin base de conocimiento |
+| 020 | `020_roadmap_votes.sql` | `roadmap_votes` (máx. 10 votos por cuenta, RLS del dueño; totales solo con service role) | Sin votos en Próximamente |
 
 Notas:
 

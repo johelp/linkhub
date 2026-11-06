@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Próximamente y votos
+
+**Añadido**
+- Lista de funciones en estudio en `src/lib/roadmap.ts` (dominio propio, citas con calendario, facturas, Google Business, recordatorios por WhatsApp, equipo). Se muestra en la landing («Escuchamos tus necesidades»), en el panel del cliente (`/dashboard/roadmap`, también desde Ajustes) y con recuento de votos en `/admin/features`.
+- **Migración 020** (`roadmap_votes`): cada cliente ve y gestiona solo sus votos (RLS), máximo 10 por cuenta; los totales solo los lee el servidor con la service role. Ruta `POST /api/roadmap/vote`.
+- `/admin/system` ahora comprueba también las migraciones 017–020.
+
 ## 2026-11-06 — Hero de la landing y pantalla de acceso
 
 **Cambiado**

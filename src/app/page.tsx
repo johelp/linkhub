@@ -5,6 +5,7 @@ import { ArrowRight, Check, CalendarClock, ShoppingBag, CreditCard, BarChart3, S
 import { LivePreview } from './LivePreview'
 import { Reveal, LandingNav, StickyCta } from './landing/ScrollFx'
 import { HeroShowcase } from './HeroShowcase'
+import { ROADMAP } from '@/lib/roadmap'
 import { Pricing } from './landing/Pricing'
 import { QR_TOOLS } from '@/lib/qrTools'
 import { VERTICALS } from '@/lib/verticals'
@@ -334,6 +335,25 @@ export default function LandingPage() {
         <section id="precios" aria-labelledby="precios-h" className="mx-auto max-w-[960px] px-5 sm:px-8 py-20 lg:py-28">
           <Reveal><SectionHead id="precios-h" eyebrow="Precios" title="Empieza gratis. Pasa a Pro cuando lo necesites" lead="Pagas en la moneda de tu país y sin permanencia." /></Reveal>
           <Pricing />
+        </section>
+
+        {/* LISTENING */}
+        <section id="escuchamos" aria-labelledby="escuchamos-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-24">
+          <Reveal>
+            <SectionHead id="escuchamos-h" eyebrow="Escuchamos tus necesidades" title="Lo próximo lo decides tú" lead="Estamos estudiando estas funciones. Los clientes votan desde su panel y construimos primero lo que más piden." />
+          </Reveal>
+          <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ listStyle: 'none', padding: 0 }}>
+            {ROADMAP.map((r, i) => (
+              <li key={r.key}><Reveal delay={(i % 3) * 70} className="h-full">
+                <div className="h-full rounded-2xl p-6" style={{ background: '#fff', border: `1px solid ${LINE}` }}>
+                  <span aria-hidden className="text-2xl">{r.icon}</span>
+                  <h3 className="mt-3 text-[16px] font-semibold" style={{ color: INK }}>{r.title} <span className="ml-1 align-middle text-[11px] font-semibold rounded-full px-2 py-0.5" style={{ background: '#F2F3F4', color: MUTED }}>En estudio</span></h3>
+                  <p className="mt-1.5 text-[14.5px] leading-relaxed" style={{ color: BODY }}>{r.text}</p>
+                </div>
+              </Reveal></li>
+            ))}
+          </ul>
+          <p className="mt-6 text-[14px]" style={{ color: MUTED }}>¿Te falta algo? Cuéntanos qué necesitas en <a href="mailto:hola@linkhub.johelpastorino.com" className="underline">hola@linkhub.johelpastorino.com</a>.</p>
         </section>
 
         {/* FAQ */}
