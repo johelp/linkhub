@@ -121,3 +121,19 @@ Idea planteada por el usuario para motivar a que la gente venda y revenda LinkHu
 
 - Verificación de dominio propio con UI (la tabla `custom_domains` existe en la base pero no hay pantalla)
 - Mensaje "sin comisión sobre tus ventas" en el pricing una vez que haya ventas de productos — es diferencial real vs. Linktree (12%) y Beacons (9%)
+
+
+## Solicitud de citas (anotado, sin implementar)
+
+**Para quién:** profesionales (psicólogos, kinesiólogos, abogados, contadores), peluquerías y salones, clases y entrenadores, consultorios y estudios.
+
+**Idea:** un bloque `appointment_request` donde el cliente elige servicio y día/franja, deja su nombre y contacto, y la solicitud llega al dueño por WhatsApp (misma mecánica que `order_menu`) y, en una segunda fase, queda guardada en el panel.
+
+**Alcance propuesto**
+1. *Fase 1 (sin base de datos):* servicios con duración y precio, días y franjas disponibles tomadas del bloque de horarios, formulario y mensaje a WhatsApp con el pedido de turno ("Quiero reservar *Corte* el *jueves 14, 16:00*"). Es solo una solicitud: el dueño confirma por chat.
+2. *Fase 2 (con base de datos):* tabla `appointment_requests` (RLS por dueño, inserción pública solo en páginas publicadas, rate limiting), bandeja en `/dashboard` con estados pendiente/confirmada/rechazada, aviso por email al dueño (Resend) y al cliente, y exportación CSV.
+3. *Fase 3:* disponibilidad real (bloquear franjas ya confirmadas), recordatorios, cancelación por enlace, sincronización con Google Calendar, cobro de seña con Mercado Pago.
+
+**Decisiones abiertas:** cuánta anticipación y duración por servicio, zona horaria del negocio (ya existe en `business_hours`), política de datos personales (Ley 25.326 / RGPD) y límites de uso en el plan Free.
+
+Ya hay una landing de rubro `/para/profesionales-y-clases` que lo menciona como "próximamente".

@@ -106,3 +106,16 @@ body {
   .lh-cell a[href] { transition: none; }
   .lh-cell a[href]:hover { transform: none; }
 }
+
+/* Landing: scroll reveal. Only hides content when JS can reveal it again and
+   the visitor hasn't asked for reduced motion. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+}
+.lh-navlink:hover { color: #1A1B1C !important; }
+@keyframes chipFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+.hero-chip { animation: chipFloat 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hero-chip { animation: none; } }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

@@ -14,7 +14,7 @@ export function LivePreview() {
   const page = buildDemoPage(name, !!name.trim())
 
   return (
-    <section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
+    <section id="probalo" style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
       <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>Probalo con tu negocio</h2>
       <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 28 }}>
         Escribí el nombre de tu negocio y mirá la vista previa — sin registrarte.
