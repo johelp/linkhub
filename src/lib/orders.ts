@@ -15,9 +15,13 @@ export const MAX_QTY = 50
 // wa.me links break somewhere past ~2000 chars; keep a safe margin.
 const MAX_MESSAGE_CHARS = 1500
 
+// Each currency is shown the way people in its market write it ("60 €" in
+// Spain, "$ 8.500" in Argentina, "$8,500" in Mexico).
+const LOCALE_BY_CURRENCY: Record<string, string> = { EUR: 'es-ES', ARS: 'es-AR', MXN: 'es-MX', CLP: 'es-CL', COP: 'es-CO', PEN: 'es-PE', UYU: 'es-UY', BRL: 'pt-BR', USD: 'en-US', GBP: 'en-GB' }
+
 export function formatMoney(amount: number, currency: string): string {
   try {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount)
+    return new Intl.NumberFormat(LOCALE_BY_CURRENCY[currency] ?? 'es-ES', { style: 'currency', currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount)
   } catch {
     return `${amount} ${currency}`
   }

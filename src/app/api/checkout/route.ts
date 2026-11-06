@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
 import { absoluteUrl } from '@/lib/utils'
+import { REGION_COOKIE, regionById, stripePriceFor } from '@/lib/pricing'
+import { cookies } from 'next/headers'
 
 // Endorsely referral IDs are UUIDs; this just guards against a malformed or
 // tampered value, not a security boundary (worst case of a garbage value
@@ -14,7 +16,8 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const priceId = process.env.STRIPE_PRICE_ID_PRO
+  // The visitor saw prices in their regional currency on the landing; charge the same.
+  const priceId = stripePriceFor(regionById((await cookies()).get(REGION_COOKIE)?.value))
   if (!priceId) {
     return NextResponse.json({ error: 'Pagos no configurados todavía' }, { status: 503 })
   }

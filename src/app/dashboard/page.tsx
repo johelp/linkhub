@@ -71,7 +71,7 @@ export default async function DashboardPage() {
             <div className="h-1.5 rounded-full bg-[#F2F3F4] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min((list.length / Math.min(limits.pages, 10)) * 100, 100)}%`, background: '#1A1B1C' }} /></div>
             <p className="text-xs text-[#6B6E71] mt-1.5">{list.length} de {plan === 'pro' ? 'ilimitadas' : limits.pages}</p>
             {plan !== 'pro' && (
-              <Link href="/dashboard/upgrade" className="mt-4 flex items-center justify-center h-10 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}>Ver Pro · €19/mes</Link>
+              <Link href="/dashboard/upgrade" className="mt-4 flex items-center justify-center h-10 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}>Ver el plan Pro</Link>
             )}
           </section>
   )

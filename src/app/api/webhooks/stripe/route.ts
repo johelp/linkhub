@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { revalidatePath } from 'next/cache'
+import { LAPSE_STATUSES } from '@/lib/billing'
 
 // Subscription statuses that mean "this user should have Pro access".
 const ACTIVE_STATUSES = new Set(['active', 'trialing'])
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
             stripe_subscription_id: subscriptionId ?? null,
             stripe_subscription_status: 'active',
           }).eq('id', userId)
+          await setLapse(supabase, { userId }, false)
         }
         break
       }
@@ -63,10 +66,15 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id
         const isActive = event.type === 'customer.subscription.updated' && ACTIVE_STATUSES.has(subscription.status)
+        // A failed payment (not a voluntary cancellation) starts the lapse clock;
+        // a cancellation that follows a failed payment keeps it running.
+        const { data: before } = await supabase.from('profiles').select('stripe_subscription_status').eq('stripe_customer_id', customerId).maybeSingle()
+        const lapsed = LAPSE_STATUSES.has(subscription.status) || (event.type === 'customer.subscription.deleted' && LAPSE_STATUSES.has(before?.stripe_subscription_status ?? ''))
         await supabase.from('profiles').update({
           plan: isActive ? 'pro' : 'free',
           stripe_subscription_status: subscription.status,
         }).eq('stripe_customer_id', customerId)
+        await setLapse(supabase, { customerId }, lapsed)
         break
       }
 
@@ -81,4 +89,20 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ received: true })
+}
+
+// Starts (once) or clears the lapse clock, then refreshes the owner's cached
+// public pages so the pause / reactivation shows up immediately, not after ISR.
+async function setLapse(db: ReturnType<typeof createAdminClient>, who: { userId?: string; customerId?: string }, lapsed: boolean) {
+  try {
+    let q = db.from('profiles').select('id, billing_lapsed_at')
+    q = who.userId ? q.eq('id', who.userId) : q.eq('stripe_customer_id', who.customerId!)
+    const { data: p } = await q.maybeSingle()
+    if (!p) return
+    const row = p as { id: string; billing_lapsed_at: string | null }
+    if (lapsed && !row.billing_lapsed_at) await db.from('profiles').update({ billing_lapsed_at: new Date().toISOString() }).eq('id', row.id)
+    if (!lapsed && row.billing_lapsed_at) await db.from('profiles').update({ billing_lapsed_at: null }).eq('id', row.id)
+    const { data: pages } = await db.from('pages').select('slug').eq('user_id', row.id)
+    for (const pg of pages ?? []) revalidatePath(`/p/${pg.slug}`)
+  } catch (err) { console.error('setLapse failed (migration 017 pending?)', err) }
 }

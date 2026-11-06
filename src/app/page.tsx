@@ -1,388 +1,353 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import type { Metadata } from 'next'
+import { ArrowRight, Check, CalendarClock, ShoppingBag, CreditCard, BarChart3, Stethoscope, Scissors, GraduationCap, Utensils, Ticket, Mountain, QrCode, Languages, MonitorSmartphone, SlidersHorizontal, LifeBuoy, Wallet } from 'lucide-react'
 import { LivePreview } from './LivePreview'
-import { Reveal, Parallax, LandingNav, StickyCta } from './landing/ScrollFx'
+import { Reveal, LandingNav, StickyCta } from './landing/ScrollFx'
 import { HeroShowcase } from './HeroShowcase'
-import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
-import { blockRequiresPro } from '@/types'
+import { Pricing } from './landing/Pricing'
 import { QR_TOOLS } from '@/lib/qrTools'
 import { VERTICALS } from '@/lib/verticals'
 
 export const metadata: Metadata = {
-  title: 'LinkHub — Crea tu página de enlaces profesional',
-  description: 'Crea páginas de enlaces profesionales con bloques visuales, multiidioma, analíticas y QR.',
+  title: 'LinkHub — Tu presencia profesional sin necesidad de una web',
+  description: 'Reúne servicios, citas, pedidos y cobros en una sola página que compartes desde Instagram, WhatsApp o un código QR. Para autónomos y profesionales en España y Latinoamérica.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'LinkHub — Tu página de enlaces, profesional y en minutos',
-    description: 'Catálogo con pedidos por WhatsApp, horarios, multiidioma y QR. Para negocios, profesionales y creadores.',
+    title: 'LinkHub — Tu presencia profesional sin necesidad de una web',
+    description: 'Citas, pedidos y cobros en una sola página para autónomos y profesionales.',
     type: 'website',
   },
   twitter: { card: 'summary_large_image' },
 }
 
-const R = '#E8150A'
-const INK = '#1A1B1C'
-const MUTED = '#5A5D60'
-const LIGHT = '#9A9D9F'
-const SNOW = '#F6F6F5'
-const BORDER = 'rgba(26,27,28,0.09)'
+// Design tokens for this page: one neutral scale, one accent (used only for the
+// primary action). No gradients, no glows: the product screenshots carry the colour.
+const INK = '#111314'
+const BODY = '#3F4346'
+const MUTED = '#5B6064'
+const LINE = 'rgba(17,19,20,0.10)'
+const PAPER = '#FAFAF8'
+const ACCENT = '#E8150A'
 
-const useCases = [
-  { icon: '💇', title: 'Servicios y comercios locales', desc: 'WhatsApp, ubicación, horarios y redes sociales — todo lo que un cliente necesita antes de visitarte.' },
-  { icon: '🎨', title: 'Creadores y freelancers', desc: 'Portfolio, redes, contacto y captura de email para tu lista, todo en un solo link.' },
-  { icon: '🏔️', title: 'Turismo y negocios de temporada', desc: 'Filtros automáticos por temporada cuando tu oferta cambia con el año — invierno, verano, o lo que sea.' },
-  { icon: '🎉', title: 'Eventos y lanzamientos', desc: 'Un link temporal con toda la info, listo para compartir por QR o redes.' },
+const LAUNCH_OFFER_HREF = 'mailto:hola@linkhub.app?subject=Acceso%20de%20lanzamiento%20LinkHub'
+
+const segments = [
+  { icon: Stethoscope, title: 'Salud y bienestar', text: 'Consultas, terapias y fisioterapia con solicitud de cita y horarios claros.', href: '/para/profesionales-y-clases' },
+  { icon: Scissors, title: 'Belleza y estética', text: 'Peluquerías y centros con reservas por WhatsApp y horario siempre al día.', href: '/para/peluquerias-y-salones' },
+  { icon: GraduationCap, title: 'Clases y formación', text: 'Profesores y entrenadores con servicios, tarifas y reserva de plaza.', href: '/para/profesionales-y-clases' },
+  { icon: Utensils, title: 'Gastronomía y comercio', text: 'Carta, catálogo y pedidos a domicilio o para recoger, directos a tu móvil.', href: '/para/restaurantes' },
+  { icon: Ticket, title: 'Eventos', text: 'Venta de entradas con código QR y validación en la puerta.', href: '/para/eventos' },
+  { icon: Mountain, title: 'Turismo y temporada', text: 'Contenido que cambia con la temporada y en varios idiomas.', href: '/para/turismo-y-temporada' },
 ]
 
 const steps = [
-  { n: '1', title: 'Creá tu página', desc: 'Elegí un nombre, tu página queda lista en segundos con un slug único.' },
-  { n: '2', title: 'Armá tus bloques', desc: 'Arrastrá y soltá links, destacados, redes, contacto — sin tocar código.' },
-  { n: '3', title: 'Compartí el QR o el link', desc: 'Imprimí el QR, pegalo en redes, o poné el link en tu Instagram bio.' },
+  { n: '01', title: 'Crea tu página', text: 'Elige una plantilla o empieza en blanco. Tu enlace queda listo al instante.' },
+  { n: '02', title: 'Añade lo que ofreces', text: 'Servicios, horarios, catálogo, contacto y redes. Editas directamente sobre la vista previa.' },
+  { n: '03', title: 'Compártela y empieza a recibir', text: 'Ponla en tu biografía de Instagram, en WhatsApp o imprime el QR. Las citas y pedidos llegan a tu móvil.' },
 ]
 
-const features = [
-  { icon: '🔗', title: 'Bloques visuales', desc: 'Links, acordeones, destacados, redes y más. Arrastrá y soltá, o tocá directo sobre la vista previa.' },
-  { icon: '🛒', title: 'Pedidos por WhatsApp', desc: 'Armá tu mini tienda o menú de delivery: el cliente elige, arma su pedido y te llega ordenado a WhatsApp.' },
-  { icon: '🖥️', title: 'Linda en celular y en PC', desc: 'Se adapta a cualquier pantalla: en computadora muestra tu perfil y tus bloques en dos columnas.' },
-  { icon: '🌍', title: 'Multiidioma', desc: 'Contenido en ES, EN, PT y más. Cada bloque con su traducción independiente.' },
-  { icon: '📱', title: 'QR incluido', desc: 'Cada página genera un QR listo para imprimir o compartir en redes.' },
-  { icon: '📊', title: 'Analíticas', desc: 'Vistas, clics por bloque, dispositivos y países en tiempo real.' },
-  { icon: '🌨️', title: 'Filtros de temporada', desc: 'Mostrá bloques solo en invierno, verano u off. Automático.' },
-  { icon: '📅', title: 'Solicitud de citas', desc: 'Para profesionales, peluquerías y clases: tus clientes eligen servicio, día y hora, y te piden el turno por WhatsApp.' },
-  { icon: '⚡', title: 'Rápida y optimizada para SEO', desc: 'SSG + ISR. Carga instantánea y pensada para buscadores e IA.' },
+const faqs = [
+  { q: '¿Quién controla mi página y mis datos?', a: 'Tú. Editas todo cuando quieras, conectas tu propia pasarela de cobro y puedes exportar tus contactos y tus cobros. Si dejas LinkHub, te llevas tu información.' },
+  { q: '¿Me ayudáis a ponerlo en marcha?', a: 'Sí. La plataforma incluye un asistente paso a paso para crear tu página y conectar tus cobros, y puedes escribirnos a hola@linkhub.app si te atascas.' },
+  { q: '¿Necesito tener una página web?', a: 'No. LinkHub está pensado para quien trabaja desde Instagram, WhatsApp o el boca a boca: tu página reúne lo que ofreces y la compartes con un enlace o un código QR. Si más adelante quieres tu propio dominio, el plan Pro lo incluye.' },
+  { q: '¿Cómo recibo los pagos?', a: 'Conectas tu propia cuenta (Mercado Pago, Stripe o el TPV de tu banco con Redsys) y el dinero va directo a ti. LinkHub no retiene fondos. Elige la pasarela que mejor encaje con tu país y tu banco.' },
+  { q: '¿Cobráis comisión por las ventas, pedidos o citas?', a: 'Las citas y los pedidos llegan por WhatsApp y no pasan por nosotros. Por defecto LinkHub no aplica ninguna comisión sobre tus ventas; solo pagas la suscripción si eliges Pro. Las pasarelas de pago cobran sus propias tarifas.' },
+  { q: '¿Qué pasa con los datos de mis clientes?', a: 'Los pedidos y las solicitudes de cita se envían directamente a tu WhatsApp. Solo guardamos los emails que tus visitantes dejen en un formulario de contacto, y las credenciales de cobro se almacenan cifradas.' },
+  { q: '¿Funciona fuera de España?', a: 'Sí. Está pensado para España y Latinoamérica: monedas locales, varias pasarelas y WhatsApp como canal principal. Puedes ofrecer tu página en varios idiomas.' },
+  { q: '¿Puedo cancelar cuando quiera?', a: 'Sí. Gestionas tu suscripción desde tu cuenta y puedes volver al plan gratuito en cualquier momento.' },
 ]
-
-// Precios y comisiones relevados en sep. 2026 desde los sitios de cada
-// plataforma (o coberturas de terceros recientes cuando el sitio oficial no
-// publica el número) -- no son datos inventados, pero cada plataforma puede
-// cambiarlos en cualquier momento. LinkHub no cobra comisión propia por
-// venta salvo que el dueño de la página la active a propósito (ver
-// MERCADOPAGO_PLATFORM_FEE_PERCENT en SETUP.md), así que el 0% de acá es el
-// comportamiento por defecto real, no una promesa de marketing.
-const comparison = [
-  { name: 'LinkHub', free: true, paidFrom: '€19/mes', fee: '0%', mercadoPago: true, highlight: true },
-  { name: 'Linktree', free: true, paidFrom: '$8/mes', fee: '9–12%*', mercadoPago: false },
-  { name: 'Beacons', free: true, paidFrom: '$10/mes', fee: '9%*', mercadoPago: false },
-  { name: 'Stan Store', free: false, paidFrom: '$29/mes', fee: '0%', mercadoPago: false },
-]
-
-const plans = [
-  {
-    name: 'Free', price: '0', suffix: '',
-    highlight: false,
-    features: ['1 página', 'Links simples y separadores', '1 idioma', 'Sin filtros de temporada', 'QR básico', 'Analíticas de vistas'],
-    cta: 'Empezar gratis', href: '/auth',
-  },
-  {
-    name: 'Pro', price: '19', suffix: '/mes',
-    highlight: true,
-    features: ['Páginas ilimitadas', 'Todos los bloques', 'Multiidioma (ES, EN, PT…)', 'Filtros de temporada', 'QR personalizado SVG+PNG', 'Analíticas completas + export CSV', 'Dominio propio', 'Soporte prioritario'],
-    cta: 'Empezar Pro', href: '/auth',
-  },
-]
-
-// Founding-member requests land here until there's a WhatsApp number or a
-// real form — update once hola@linkhub.app is an inbox you actually own
-// (or swap the domain). See SETUP.md §9 (Dar plan Pro gratis).
-const LAUNCH_OFFER_HREF = 'mailto:hola@linkhub.app?subject=Cupo%20de%20lanzamiento%20LinkHub'
 
 export default function LandingPage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'SoftwareApplication', name: 'LinkHub', applicationCategory: 'BusinessApplication', operatingSystem: 'Web', offers: [{ '@type': 'Offer', price: '0', priceCurrency: 'EUR', name: 'Free' }, { '@type': 'Offer', price: '19', priceCurrency: 'EUR', name: 'Pro (EUR)' }, { '@type': 'Offer', price: '20', priceCurrency: 'USD', name: 'Pro (USD)' }] },
+      { '@type': 'FAQPage', mainEntity: faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) },
+    ],
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: SNOW }}>
+    <div style={{ background: PAPER, color: INK }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
-      {/* LAUNCH BANNER */}
-      <Link href={LAUNCH_OFFER_HREF} style={{
-        display: 'block', textAlign: 'center', fontSize: 12.5, fontWeight: 600,
-        color: '#fff', background: `linear-gradient(90deg, ${R}, #FF8C00)`,
-        padding: '9px 16px', textDecoration: 'none',
-      }}>
-        🎉 Cupos de lanzamiento: los primeros negocios se llevan plan Pro gratis — Escribinos →
-      </Link>
+      {/* Announcement: plain text, one link */}
+      <div style={{ background: INK, color: '#fff', textAlign: 'center', fontSize: 13, padding: '9px 16px' }}>
+        Lanzamiento: plan Pro gratuito para los primeros negocios.{' '}
+        <Link href={LAUNCH_OFFER_HREF} style={{ color: '#fff', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 3 }}>Solicitar acceso</Link>
+      </div>
 
-      {/* NAV (sticky, frosted on scroll, progress bar) */}
       <LandingNav />
 
-      {/* HERO */}
-      <section style={{ position: 'relative', overflow: 'hidden' }}>
-        <div aria-hidden className="hero-glow" style={{
-          position: 'absolute', top: -200, left: '50%', width: 700, height: 700, marginLeft: -520, borderRadius: '50%',
-          filter: 'blur(80px)', opacity: 0.32, background: `radial-gradient(circle, ${R} 0%, transparent 70%)`, pointerEvents: 'none',
-        }} />
-        <div aria-hidden className="hero-glow" style={{
-          position: 'absolute', top: -140, right: '50%', width: 600, height: 600, marginRight: -620, borderRadius: '50%',
-          filter: 'blur(80px)', opacity: 0.28, background: 'radial-gradient(circle, #FF8C00 0%, transparent 70%)', pointerEvents: 'none', animationDelay: '-6s',
-        }} />
-        {/* dotted grid, faded at the edges: texture without weight */}
-        <div aria-hidden style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5,
-          backgroundImage: 'radial-gradient(rgba(26,27,28,0.12) 1px, transparent 1px)', backgroundSize: '22px 22px',
-          maskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%)',
-        }} />
-
-        <div style={{ position: 'relative', maxWidth: 1180, margin: '0 auto', padding: '36px 24px 88px', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 48, alignItems: 'center' }}
-          className="lg:!grid-cols-[1.05fr_0.95fr]">
-          <div style={{ textAlign: 'center' }} className="lg:!text-left">
-            <div className="hero-fade-up" style={{ animationDelay: '0s', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, background: '#fff', color: INK, padding: '6px 14px 6px 8px', borderRadius: 999, border: `1px solid ${BORDER}`, boxShadow: '0 2px 10px rgba(26,27,28,0.06)', marginBottom: 22 }}>
-              <span style={{ background: R, color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '3px 8px', borderRadius: 999, letterSpacing: '.4px' }}>NUEVO</span>
-              Pedidos y delivery por WhatsApp
-            </div>
-            <h1 className="hero-fade-up" style={{ animationDelay: '.08s', fontSize: 'clamp(36px, 5.6vw, 64px)', fontWeight: 700, color: INK, lineHeight: 1.04, letterSpacing: '-1.5px', marginBottom: 22 }}>
-              Todo tu negocio<br />en{' '}
-              <span style={{ backgroundImage: `linear-gradient(90deg, ${R}, #FF8C00)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>un solo link</span>
-            </h1>
-            <p className="hero-fade-up mx-auto lg:!mx-0" style={{ animationDelay: '.16s', fontSize: 'clamp(16px, 1.7vw, 19px)', color: MUTED, lineHeight: 1.55, marginBottom: 32, maxWidth: 520 }}>
-              Mostrá tu catálogo, recibí pedidos por WhatsApp y compartí tu horario, tus redes y tu QR.
-              Una página que se ve increíble en el celular y en la computadora.
-            </p>
-            <div className="hero-fade-up justify-center lg:!justify-start" style={{ animationDelay: '.24s', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link href="/auth" className="hero-cta"
-                style={{ fontSize: 16, fontWeight: 700, color: '#fff', background: R, padding: '16px 34px', borderRadius: 999, textDecoration: 'none', display: 'inline-block', boxShadow: '0 12px 30px rgba(232,21,10,0.32)' }}>
-                Crear mi página gratis →
-              </Link>
-              <a href="#probalo" style={{ fontSize: 16, fontWeight: 600, color: INK, padding: '16px 26px', borderRadius: 999, textDecoration: 'none', border: `1.5px solid ${BORDER}`, background: 'rgba(255,255,255,0.8)', display: 'inline-block' }}>
-                Ver cómo queda ↓
-              </a>
-            </div>
-            <ul className="hero-fade-up justify-center lg:!justify-start" style={{ animationDelay: '.32s', display: 'flex', gap: '8px 20px', flexWrap: 'wrap', listStyle: 'none', padding: 0, margin: '22px 0 0', fontSize: 13, color: MUTED }}>
-              {['Sin tarjeta de crédito', 'Free para siempre', 'Lista en minutos'].map(t => (
-                <li key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span aria-hidden style={{ color: '#16A34A', fontWeight: 700 }}>✓</span>{t}</li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Phone + floating proof chips (depth via parallax; chips are
-              illustrative UI, not real metrics) */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <HeroShowcase />
-            <Parallax speed={0.1} style={{ position: 'absolute', left: '2%', top: '18%', zIndex: 2 }} >
-              <div className="hero-chip hidden sm:flex" style={{ alignItems: 'center', gap: 10, background: '#fff', padding: '10px 14px', borderRadius: 14, boxShadow: '0 14px 34px rgba(26,27,28,0.16)', border: `1px solid ${BORDER}` }}>
-                <span style={{ fontSize: 20 }}>🛒</span>
-                <span style={{ fontSize: 12.5, lineHeight: 1.3, color: INK }}><b>Pedido recibido</b><br /><span style={{ color: MUTED }}>por WhatsApp</span></span>
+      <main id="contenido">
+        {/* HERO */}
+        <section aria-labelledby="hero-h" style={{ borderBottom: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 pt-12 pb-16 lg:pt-20 lg:pb-24 grid gap-14 lg:grid-cols-[1.05fr_0.95fr] items-center">
+            <div className="text-center lg:text-left">
+              <p className="hero-fade-up text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED, animationDelay: '0s' }}>Para autónomos y profesionales</p>
+              <h1 id="hero-h" className="hero-fade-up mt-4 font-bold" style={{ fontSize: 'clamp(36px, 5.2vw, 60px)', lineHeight: 1.06, letterSpacing: '-0.035em', animationDelay: '.06s' }}>
+                Tu presencia profesional, sin necesidad de una web
+              </h1>
+              <p className="hero-fade-up mx-auto lg:mx-0 mt-6 max-w-[560px]" style={{ fontSize: 'clamp(17px, 1.6vw, 19px)', lineHeight: 1.6, color: BODY, animationDelay: '.12s' }}>
+                Reúne en una sola página tus servicios, tu agenda, tus pedidos y tus cobros. La compartes desde Instagram, WhatsApp o un código QR, y tus clientes reservan o compran sin salir de ahí.
+              </p>
+              <div className="hero-fade-up mt-8 flex flex-wrap gap-3 justify-center lg:justify-start" style={{ animationDelay: '.18s' }}>
+                <Link href="/auth" className="inline-flex items-center gap-2 rounded-full px-7 text-[16px] font-semibold text-white no-underline transition-colors hover:brightness-95" style={{ background: ACCENT, height: 52 }}>
+                  Crear mi página gratis <ArrowRight size={17} aria-hidden />
+                </Link>
+                <a href="#probar" className="inline-flex items-center rounded-full px-6 text-[16px] font-semibold no-underline transition-colors hover:bg-white" style={{ height: 52, color: INK, border: `1.5px solid ${LINE}` }}>
+                  Ver un ejemplo
+                </a>
               </div>
-            </Parallax>
-            <Parallax speed={0.2} style={{ position: 'absolute', right: '0%', top: '55%', zIndex: 2 }}>
-              <div className="hero-chip hidden sm:flex" style={{ animationDelay: '-3s', alignItems: 'center', gap: 10, background: '#fff', padding: '10px 14px', borderRadius: 14, boxShadow: '0 14px 34px rgba(26,27,28,0.16)', border: `1px solid ${BORDER}` }}>
-                <span style={{ fontSize: 20 }}>🕒</span>
-                <span style={{ fontSize: 12.5, lineHeight: 1.3, color: INK }}><b>Abierto ahora</b><br /><span style={{ color: MUTED }}>se actualiza solo</span></span>
-              </div>
-            </Parallax>
-          </div>
-        </div>
-      </section>
-
-      <LivePreview />
-
-      {/* USE CASES */}
-      <Reveal><section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>¿Para quién es LinkHub?</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>Negocios, creadores y equipos que quieren algo más profesional que un link en bio simple.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
-          {useCases.map((u, i) => (
-            <Reveal key={u.title} delay={i * 90} style={{ height: '100%' }}><div style={{ background: '#fff', borderRadius: 16, padding: 22, border: `1px solid ${BORDER}`, height: '100%' }}>
-              <div style={{ fontSize: 28, marginBottom: 12 }}>{u.icon}</div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: INK, marginBottom: 6 }}>{u.title}</p>
-              <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55 }}>{u.desc}</p>
-            </div></Reveal>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* VERTICALS */}
-      <Reveal><section id="rubros" style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>LinkHub para tu rubro</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
-          Mirá qué bloques te sirven y cómo queda tu página, según el tipo de negocio.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          {VERTICALS.map(v => (
-            <Link key={v.slug} href={`/para/${v.slug}`}
-              style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{v.label}</p>
-              <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{v.intro}</p>
-            </Link>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* HOW IT WORKS */}
-      <Reveal><section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 36 }}>Cómo funciona</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
-          {steps.map(s => (
-            <div key={s.n} style={{ textAlign: 'center' }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 20, background: R, color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, fontWeight: 700, margin: '0 auto 14px',
-              }}>{s.n}</div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: INK, marginBottom: 6 }}>{s.title}</p>
-              <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55 }}>{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* FEATURES */}
-      <Reveal><section id="funciones" style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 36 }}>Todo lo que necesitás</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-          {features.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 90} style={{ height: '100%' }}><div style={{ background: '#fff', borderRadius: 16, padding: 20, border: `1px solid ${BORDER}`, height: '100%' }}>
-              <div style={{ fontSize: 28, marginBottom: 12 }}>{f.icon}</div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: INK, marginBottom: 6 }}>{f.title}</p>
-              <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55 }}>{f.desc}</p>
-            </div></Reveal>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* BLOCKS */}
-      <Reveal><section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>Bloques para armar tu página</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
-          Arrastrá y soltá los que necesites. {BLOCK_REGISTRY.length} bloques y sumando.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-          {BLOCK_REGISTRY.map(b => (
-            <div key={b.type} style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, position: 'relative' }}>
-              {blockRequiresPro(b.type) && (
-                <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, fontWeight: 700, letterSpacing: '.3px', textTransform: 'uppercase', color: R, background: '#FEF0EF', padding: '2px 7px', borderRadius: 20 }}>
-                  Pro
-                </span>
-              )}
-              <div style={{ fontSize: 22, marginBottom: 8 }}>{b.icon}</div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: INK, marginBottom: 4 }}>{b.label}</p>
-              <p style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{b.description}</p>
-            </div>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* FREE TOOLS TEASER */}
-      <Reveal><section style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 72px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 8 }}>Herramientas gratis</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 36 }}>
-          Generadores de QR sin registro — no hace falta cuenta para probarlos.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-          {QR_TOOLS.map(t => (
-            <Link key={t.slug} href={`/herramientas/${t.slug}`}
-              style={{ background: '#fff', borderRadius: 14, padding: 16, border: `1px solid ${BORDER}`, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 22 }}>{t.icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: INK }}>{t.label}</span>
-            </Link>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* PRICING */}
-      <Reveal><section id="precios" style={{ maxWidth: 620, margin: '0 auto', padding: '0 24px 80px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 10 }}>Precios simples</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 40 }}>
-          Empezá gratis. El salto a Pro es cuando necesitás más bloques.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
-          {plans.map(p => (
-            <div key={p.name} style={{ background: '#fff', borderRadius: 18, padding: 24, position: 'relative', border: p.highlight ? `2px solid ${R}` : `1px solid ${BORDER}` }}>
-              {p.highlight && (
-                <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', fontSize: 10, fontWeight: 700, background: R, color: '#fff', padding: '4px 12px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-                  Más popular
-                </div>
-              )}
-              <p style={{ fontSize: 17, fontWeight: 700, color: INK, marginBottom: 6 }}>{p.name}</p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
-                <span style={{ fontSize: 34, fontWeight: 700, color: INK }}>€{p.price}</span>
-                <span style={{ fontSize: 13, color: LIGHT }}>{p.suffix}</span>
-              </div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-                {p.features.map(f => (
-                  <li key={f} style={{ fontSize: 13, color: MUTED, display: 'flex', gap: 8 }}>
-                    <span style={{ color: R, flexShrink: 0 }}>✓</span>{f}
-                  </li>
+              <ul className="hero-fade-up mt-6 flex flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-[14px]" style={{ color: MUTED, listStyle: 'none', padding: 0, animationDelay: '.24s' }}>
+                {['Gratis para empezar', 'Sin tarjeta de crédito', 'Publicada en minutos'].map(t => (
+                  <li key={t} className="flex items-center gap-2"><Check size={15} aria-hidden style={{ color: '#15803D' }} />{t}</li>
                 ))}
               </ul>
-              <Link href={p.href}
-                style={{ display: 'block', textAlign: 'center', fontSize: 13, fontWeight: 600, padding: '11px 0', borderRadius: 12, textDecoration: 'none', background: p.highlight ? R : '#F2F3F4', color: p.highlight ? '#fff' : INK }}>
-                {p.cta}
-              </Link>
             </div>
-          ))}
-        </div>
-      </section></Reveal>
-
-      {/* COMPARISON */}
-      <Reveal><section style={{ maxWidth: 780, margin: '0 auto', padding: '0 24px 80px' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: INK, textAlign: 'center', marginBottom: 10 }}>Cómo nos comparamos</h2>
-        <p style={{ fontSize: 14, color: MUTED, textAlign: 'center', marginBottom: 32 }}>
-          Frente a los link-in-bio más conocidos, LinkHub arranca más barato y no te cobra por vender.
-        </p>
-        <div style={{ overflowX: 'auto', border: `1px solid ${BORDER}`, borderRadius: 16, background: '#fff' }}>
-          <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '14px 16px', color: LIGHT, fontWeight: 600, fontSize: 12 }}></th>
-                {comparison.map(c => (
-                  <th key={c.name} style={{
-                    textAlign: 'center', padding: '14px 12px', fontWeight: 700, color: c.highlight ? R : INK,
-                    background: c.highlight ? '#FEF0EF' : 'transparent',
-                  }}>
-                    {c.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {([
-                { label: 'Plan gratis', get: (c: typeof comparison[number]) => c.free ? '✓' : '—' },
-                { label: 'Plan pago desde', get: (c: typeof comparison[number]) => c.paidFrom },
-                { label: 'Comisión propia sobre ventas', get: (c: typeof comparison[number]) => c.fee },
-                { label: 'Mercado Pago (LatAm)', get: (c: typeof comparison[number]) => c.mercadoPago ? '✓' : '—' },
-              ]).map((row, i) => (
-                <tr key={row.label} style={{ borderTop: `1px solid ${BORDER}` }}>
-                  <td style={{ padding: '12px 16px', color: MUTED, fontWeight: 500 }}>{row.label}</td>
-                  {comparison.map(c => (
-                    <td key={c.name} style={{
-                      textAlign: 'center', padding: '12px 12px', fontWeight: 600,
-                      color: row.get(c) === '✓' ? '#16A34A' : row.get(c) === '—' ? LIGHT : INK,
-                      background: c.highlight ? '#FEF0EF' : i % 2 === 0 ? 'transparent' : 'transparent',
-                    }}>
-                      {row.get(c)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p style={{ fontSize: 11, color: LIGHT, textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
-          *Linktree y Beacons bajan la comisión a 0% recién en sus planes más caros ($35/mes y $30-90/mes respectivamente).
-          Precios públicos relevados en septiembre 2026, cada plataforma puede cambiarlos — confirmá en su sitio antes de decidir.
-        </p>
-      </section></Reveal>
-
-      {/* CLOSING CTA */}
-      <Reveal>
-        <section id="empezar" style={{ maxWidth: 1080, margin: '0 auto', padding: '0 24px 88px' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, padding: 'clamp(36px, 6vw, 72px) 24px', textAlign: 'center', background: `linear-gradient(135deg, ${INK}, #2B1210 60%, #4A1410)`, color: '#fff' }}>
-            <div aria-hidden style={{ position: 'absolute', width: 420, height: 420, right: -120, top: -160, borderRadius: '50%', background: `radial-gradient(circle, ${R}99, transparent 70%)`, filter: 'blur(40px)' }} />
-            <h2 style={{ position: 'relative', fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: 700, letterSpacing: '-0.8px', lineHeight: 1.1, marginBottom: 14 }}>Tu página lista en minutos</h2>
-            <p style={{ position: 'relative', fontSize: 16, color: 'rgba(255,255,255,0.72)', maxWidth: 480, margin: '0 auto 28px', lineHeight: 1.55 }}>
-              Empezá gratis, sin tarjeta. Cuando tu negocio crezca, pasás a Pro.
-            </p>
-            <Link href="/auth" className="hero-cta" style={{ position: 'relative', display: 'inline-block', fontSize: 16, fontWeight: 700, color: '#fff', background: R, padding: '16px 36px', borderRadius: 999, textDecoration: 'none', boxShadow: '0 12px 30px rgba(232,21,10,0.45)' }}>
-              Crear mi página gratis →
-            </Link>
+            <HeroShowcase />
           </div>
         </section>
-      </Reveal>
+
+        {/* WHO IT'S FOR */}
+        <section id="rubros" aria-labelledby="rubros-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28">
+          <Reveal>
+            <SectionHead id="rubros-h" eyebrow="Para quién" title="Hecho para quien trabaja desde sus redes" lead="Si tus clientes te encuentran en Instagram o por recomendación, LinkHub te da un lugar profesional al que dirigirlos." />
+          </Reveal>
+          <div className="mt-12 grid gap-px rounded-2xl overflow-hidden sm:grid-cols-2 lg:grid-cols-3" style={{ background: LINE, border: `1px solid ${LINE}` }}>
+            {segments.map((s, i) => (
+              <Reveal key={s.title} delay={(i % 3) * 70} style={{ background: '#fff' }}>
+                <Link href={s.href} className="group block h-full p-7 no-underline transition-colors hover:bg-[#FAFAF8]">
+                  <s.icon size={22} strokeWidth={1.75} aria-hidden />
+                  <h3 className="mt-5 text-[17px] font-semibold" style={{ color: INK }}>{s.title}</h3>
+                  <p className="mt-2 text-[15px] leading-relaxed" style={{ color: BODY }}>{s.text}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-[14px] font-semibold" style={{ color: INK }}>Ver ejemplo <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-1" /></span>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* PRODUCT */}
+        <section id="funciones" aria-labelledby="func-h" style={{ background: '#fff', borderBlock: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28">
+            <Reveal><SectionHead id="func-h" eyebrow="El producto" title="Todo lo que tu negocio necesita en un solo enlace" lead="Sin instalar nada y sin conocimientos técnicos." /></Reveal>
+
+            <div className="mt-16 space-y-24 lg:space-y-32">
+              <Feature icon={MonitorSmartphone} title="Un editor que se entiende a la primera"
+                text="Haz clic sobre cualquier parte de tu página para editarla. Ves el resultado al instante en móvil, tableta u ordenador, y los cambios se guardan solos."
+                points={['Edición directa sobre la vista previa', 'Bloques para servicios, horarios, contacto, redes y mapa de Google', 'Se adapta a móvil y ordenador']}>
+                <Shot src="/landing/editor.webp" w={1600} h={1000} alt="Editor de LinkHub: estructura de la página a la izquierda, vista previa en el centro y ajustes del bloque a la derecha" />
+              </Feature>
+
+              <Feature flip icon={CalendarClock} title="Citas y pedidos que llegan a tu WhatsApp"
+                text="Tus clientes eligen el servicio y un horario libre, o arman su pedido, y te llega un mensaje ordenado. Tú confirmas por chat, como siempre."
+                points={['Solicitud de cita con servicios, duración y precio', 'Carrito de pedidos para catálogo o carta', 'Sin comisiones sobre tus ventas']}>
+                <div className="relative">
+                  <Shot src="/landing/pagina-escritorio.webp" w={1400} h={875} alt="Página pública de una psicóloga con solicitud de cita, bono de sesiones y horario de consulta" />
+                  <div className="hidden sm:block absolute -bottom-8 -right-3 lg:-right-8 w-[28%] rounded-[22px] overflow-hidden" style={{ border: `6px solid ${INK}`, boxShadow: '0 20px 50px rgba(17,19,20,.25)' }}>
+                    <Image src="/landing/pagina-movil.webp" width={640} height={1385} alt="La misma página vista en un teléfono" sizes="200px" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                  </div>
+                </div>
+              </Feature>
+
+              <Feature icon={CreditCard} title="Cobra online con la pasarela de tu país"
+                text="Conecta tu cuenta con un asistente paso a paso. El dinero va directo a ti y puedes consultar el detalle de cada cobro cuando lo necesites."
+                points={['Mercado Pago, Stripe y Redsys (TPV de tu banco)', 'Cada cliente elige su pasarela', 'Historial completo y exportación a CSV']}
+                >
+                <Shot src="/landing/cobros.webp" w={1100} h={990} alt="Asistente de cobros de LinkHub con la elección de pasarela de pago" />
+              </Feature>
+
+              <Feature flip icon={BarChart3} title="Entiende qué funciona"
+                text="Consulta cuántas personas visitan tu página, qué enlaces y servicios generan más clics y desde qué dispositivos entran."
+                points={['Visitas y clics con comparación del periodo anterior', 'Bloques más clicados', 'Datos por página']}>
+                <Shot src="/landing/analiticas.webp" w={1200} h={900} alt="Panel de analíticas con gráfico de visitas y clics y bloques más clicados" />
+              </Feature>
+            </div>
+          </div>
+        </section>
+
+        {/* CONTROL / ONBOARDING / GATEWAYS */}
+        <section aria-labelledby="control-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28">
+          <Reveal><SectionHead id="control-h" eyebrow="Tú decides" title="Control total sobre tu página, desde el primer día" lead="Sin depender de un desarrollador ni de una agencia." /></Reveal>
+          <div className="mt-12 grid gap-5 lg:grid-cols-3">
+            {[
+              { icon: SlidersHorizontal, title: 'Control total sobre tu página', text: 'Editas contenido, diseño, idiomas y enlaces cuando quieras, sin pedir permiso. Tus contactos y tus datos son tuyos y puedes exportarlos.', items: ['Edición sin límites y guardado automático', 'Dominio propio en el plan Pro', 'Exporta tus contactos y tus cobros a CSV'] },
+              { icon: LifeBuoy, title: 'Puesta en marcha asistida', text: 'Un asistente te guía paso a paso para crear tu página y conectar tus cobros, y te acompañamos si te atascas.', items: ['Plantillas por tipo de negocio', 'Asistente de cobros en 3 pasos', 'Soporte por correo'] },
+              { icon: Wallet, title: 'Cobros con tu pasarela', text: 'Cada cliente elige cómo cobrar. El dinero va directo a tu cuenta; LinkHub no retiene fondos.', items: ['Mercado Pago', 'Stripe', 'Redsys (TPV de tu banco)'] },
+            ].map((c, i) => (
+              <Reveal key={c.title} delay={i * 80}>
+                <div className="h-full rounded-2xl p-8" style={{ background: '#fff', border: `1px solid ${LINE}` }}>
+                  <c.icon size={24} strokeWidth={1.75} aria-hidden />
+                  <h3 className="mt-5 text-[19px] font-semibold">{c.title}</h3>
+                  <p className="mt-3 text-[15.5px] leading-relaxed" style={{ color: BODY }}>{c.text}</p>
+                  <ul className="mt-5 space-y-2.5" style={{ listStyle: 'none', padding: 0 }}>
+                    {c.items.map(it => <li key={it} className="flex gap-3 text-[15px]" style={{ color: BODY }}><Check size={17} aria-hidden className="flex-shrink-0 mt-0.5" style={{ color: '#15803D' }} />{it}</li>)}
+                  </ul>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <p className="mt-6 text-[13.5px]" style={{ color: MUTED }}>Mercado Pago, Stripe y Redsys son marcas de sus respectivos titulares. La disponibilidad de cada pasarela depende de tu país y se está activando de forma gradual.</p>
+        </section>
+
+        {/* TRY IT */}
+        <LivePreview />
+
+        {/* HOW IT WORKS */}
+        <section aria-labelledby="como-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-20 lg:pb-28">
+          <Reveal><SectionHead id="como-h" eyebrow="Cómo funciona" title="De cero a tu primera cita en una tarde" /></Reveal>
+          <ol className="mt-12 grid gap-10 md:grid-cols-3" style={{ listStyle: 'none', padding: 0 }}>
+            {steps.map((s, i) => (
+              <Reveal key={s.n} delay={i * 80}>
+                <li>
+                  <p className="text-[13px] font-semibold tabular-nums" style={{ color: MUTED }}>{s.n}</p>
+                  <div className="mt-3 pt-5" style={{ borderTop: `2px solid ${INK}` }}>
+                    <h3 className="text-[19px] font-semibold">{s.title}</h3>
+                    <p className="mt-2 text-[16px] leading-relaxed" style={{ color: BODY }}>{s.text}</p>
+                  </div>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
+        </section>
+
+        {/* MARKETS */}
+        <section aria-labelledby="mercados-h" style={{ background: '#fff', borderBlock: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-24">
+            <Reveal><SectionHead id="mercados-h" eyebrow="Mercados" title="Pensado para España y Latinoamérica" lead="Cada mercado paga y se comunica a su manera. LinkHub se adapta." /></Reveal>
+            <div className="mt-12 grid gap-6 md:grid-cols-2">
+              {[
+                { t: 'España', items: ['Cobros en euros con Redsys (TPV de tu banco) o Stripe', 'Pensado para autónomos y profesionales', 'WhatsApp como canal de citas y pedidos'] },
+                { t: 'Latinoamérica', items: ['Cobros con Mercado Pago en moneda local', 'Pesos argentinos, mexicanos, chilenos, colombianos y más', 'WhatsApp como canal de ventas y atención'] },
+              ].map((m, i) => (
+                <Reveal key={m.t} delay={i * 80}>
+                  <div className="h-full rounded-2xl p-8" style={{ border: `1px solid ${LINE}`, background: PAPER }}>
+                    <h3 className="text-[20px] font-semibold">{m.t}</h3>
+                    <ul className="mt-5 space-y-3" style={{ listStyle: 'none', padding: 0 }}>
+                      {m.items.map(it => <li key={it} className="flex gap-3 text-[16px]" style={{ color: BODY }}><Check size={18} aria-hidden className="flex-shrink-0 mt-0.5" style={{ color: '#15803D' }} />{it}</li>)}
+                    </ul>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+            <p className="mt-6 flex items-center gap-2 text-[14px]" style={{ color: MUTED }}><Languages size={16} aria-hidden />Tu página puede mostrarse en varios idiomas, útil si atiendes a turistas o clientes internacionales.</p>
+          </div>
+        </section>
+
+        {/* PRICING */}
+        <section id="precios" aria-labelledby="precios-h" className="mx-auto max-w-[960px] px-5 sm:px-8 py-20 lg:py-28">
+          <Reveal><SectionHead id="precios-h" eyebrow="Precios" title="Empieza gratis. Pasa a Pro cuando lo necesites" lead="Pagas en la moneda de tu país y sin permanencia." /></Reveal>
+          <Pricing />
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" aria-labelledby="faq-h" style={{ background: '#fff', borderBlock: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[780px] px-5 sm:px-8 py-20 lg:py-24">
+            <Reveal><SectionHead id="faq-h" eyebrow="Preguntas frecuentes" title="Lo que suelen preguntarnos" /></Reveal>
+            <div className="mt-10" style={{ borderTop: `1px solid ${LINE}` }}>
+              {faqs.map(f => (
+                <details key={f.q} className="group" style={{ borderBottom: `1px solid ${LINE}` }}>
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 py-5 text-[17px] font-semibold" style={{ listStyle: 'none' }}>
+                    {f.q}
+                    <span aria-hidden className="text-[22px] leading-none transition-transform group-open:rotate-45" style={{ color: MUTED }}>+</span>
+                  </summary>
+                  <p className="pb-6 pr-8 text-[16px] leading-relaxed" style={{ color: BODY }}>{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FREE TOOLS */}
+        <section aria-labelledby="tools-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-16">
+          <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+            <div><h2 id="tools-h" className="text-[22px] font-semibold">Herramientas gratuitas</h2><p className="mt-1 text-[15px]" style={{ color: MUTED }}>Generadores de código QR, sin registro.</p></div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {QR_TOOLS.map(t => (
+              <Link key={t.slug} href={`/herramientas/${t.slug}`} className="flex items-center gap-3 rounded-xl px-5 py-4 no-underline bg-white transition-colors hover:bg-[#FAFAF8]" style={{ border: `1px solid ${LINE}`, color: INK }}>
+                <QrCode size={20} strokeWidth={1.75} aria-hidden /><span className="text-[15px] font-semibold">{t.label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* CLOSING CTA */}
+        <section id="empezar" aria-labelledby="cta-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-20 lg:pb-28">
+          <Reveal>
+            <div className="rounded-3xl px-6 py-16 sm:py-20 text-center" style={{ background: INK, color: '#fff' }}>
+              <h2 id="cta-h" className="font-bold mx-auto max-w-[640px]" style={{ fontSize: 'clamp(28px, 4vw, 42px)', lineHeight: 1.1, letterSpacing: '-0.03em' }}>Crea tu página profesional hoy</h2>
+              <p className="mt-4 mx-auto max-w-[480px] text-[17px]" style={{ color: 'rgba(255,255,255,.75)' }}>Gratis para empezar, sin tarjeta. Cuando tu negocio crezca, pasas a Pro.</p>
+              <Link href="/auth" className="mt-8 inline-flex items-center gap-2 rounded-full px-8 text-[16px] font-semibold text-white no-underline hover:brightness-95" style={{ background: ACCENT, height: 52 }}>Crear mi página gratis <ArrowRight size={17} aria-hidden /></Link>
+            </div>
+          </Reveal>
+        </section>
+      </main>
 
       <StickyCta />
 
       {/* FOOTER */}
-      <footer style={{ borderTop: `1px solid ${BORDER}`, padding: '24px 0', textAlign: 'center' }}>
-        <p style={{ fontSize: 12, color: LIGHT }}>© {new Date().getFullYear()} LinkHub · Hecho para negocios reales</p>
+      <footer style={{ borderTop: `1px solid ${LINE}`, background: '#fff' }}>
+        <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 text-[14px]">
+          <div>
+            <p className="text-[19px] font-bold">Link<span style={{ color: ACCENT }}>Hub</span></p>
+            <p className="mt-3 max-w-[240px] leading-relaxed" style={{ color: MUTED }}>Presencia profesional para autónomos y pequeños negocios.</p>
+          </div>
+          <FooterCol title="Producto" links={[['Funciones', '#funciones'], ['Precios', '#precios'], ['Preguntas frecuentes', '#faq'], ['Iniciar sesión', '/auth']]} />
+          <FooterCol title="Para tu rubro" links={VERTICALS.map(v => [v.label, `/para/${v.slug}`] as [string, string])} />
+          <FooterCol title="Contacto" links={[['hola@linkhub.app', 'mailto:hola@linkhub.app'], ['Herramientas QR', '/herramientas']]} />
+        </div>
+        <p className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-10 text-[13px]" style={{ color: MUTED }}>© {new Date().getFullYear()} LinkHub</p>
       </footer>
+    </div>
+  )
+}
+
+function SectionHead({ id, eyebrow, title, lead }: { id: string; eyebrow: string; title: string; lead?: string }) {
+  return (
+    <div className="max-w-[720px]">
+      <p className="text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED }}>{eyebrow}</p>
+      <h2 id={id} className="mt-3 font-bold" style={{ fontSize: 'clamp(28px, 3.6vw, 40px)', lineHeight: 1.12, letterSpacing: '-0.03em' }}>{title}</h2>
+      {lead && <p className="mt-4 text-[18px] leading-relaxed" style={{ color: BODY }}>{lead}</p>}
+    </div>
+  )
+}
+
+function Feature({ icon: Icon, title, text, points, note, flip, children }: { icon: typeof ShoppingBag; title: string; text: string; points: string[]; note?: string; flip?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-10 lg:gap-16 lg:grid-cols-2 items-center">
+      <Reveal className={flip ? 'lg:order-2' : ''}>
+        <div className="max-w-[500px]">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: PAPER, border: `1px solid ${LINE}` }}><Icon size={22} strokeWidth={1.75} aria-hidden /></span>
+          <h3 className="mt-5 font-bold" style={{ fontSize: 'clamp(24px, 2.6vw, 30px)', lineHeight: 1.15, letterSpacing: '-0.025em' }}>{title}</h3>
+          <p className="mt-4 text-[17px] leading-relaxed" style={{ color: BODY }}>{text}</p>
+          <ul className="mt-6 space-y-3" style={{ listStyle: 'none', padding: 0 }}>
+            {points.map(p => <li key={p} className="flex gap-3 text-[16px]" style={{ color: BODY }}><Check size={18} aria-hidden className="flex-shrink-0 mt-0.5" style={{ color: '#15803D' }} />{p}</li>)}
+          </ul>
+          {note && <p className="mt-4 text-[14px]" style={{ color: MUTED }}>{note}</p>}
+        </div>
+      </Reveal>
+      <Reveal delay={90} className={flip ? 'lg:order-1' : ''}>{children}</Reveal>
+    </div>
+  )
+}
+
+function Shot({ src, w, h, alt }: { src: string; w: number; h: number; alt: string }) {
+  return (
+    <div className="overflow-hidden rounded-2xl" style={{ border: `1px solid ${LINE}`, boxShadow: '0 1px 2px rgba(17,19,20,.04), 0 24px 60px -24px rgba(17,19,20,.28)', background: '#fff' }}>
+      <Image src={src} width={w} height={h} alt={alt} sizes="(min-width: 1024px) 560px, 92vw" style={{ width: '100%', height: 'auto', display: 'block' }} />
+    </div>
+  )
+}
+
+function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
+  return (
+    <div>
+      <p className="font-semibold">{title}</p>
+      <ul className="mt-4 space-y-2.5" style={{ listStyle: 'none', padding: 0 }}>
+        {links.map(([label, href]) => <li key={label}><Link href={href} className="no-underline hover:underline" style={{ color: MUTED }}>{label}</Link></li>)}
+      </ul>
     </div>
   )
 }

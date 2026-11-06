@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { derivedKey, sign, verifyNotification, encodeParameters, buildPaymentForm, newOrderNumber, toCents, isAuthorised, validateCredentialsShape, decodeParameters } from '../src/lib/payments/redsys.ts'
 import { chooseProvider, supportsCurrency } from '../src/lib/payments/meta.ts'
-import { toMinorUnits } from '../src/lib/payments/payable.ts'
+import { toMinorUnits } from '../src/lib/payments/money.ts'
 import { computeSteps } from '../src/lib/payments/steps.ts'
 
 const secret = randomBytes(24).toString('base64') // same shape as a Redsys key (24 bytes, base64)

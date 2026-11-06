@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { UpgradeButton } from './UpgradeButton'
+import { cookies } from 'next/headers'
+import { REGION_COOKIE, formatPrice, regionById } from '@/lib/pricing'
 
 export const metadata: Metadata = { title: 'Actualizar plan | LinkHub' }
 
@@ -13,6 +15,7 @@ export default async function UpgradePage() {
 
   const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
   const isPro = profile?.plan === 'pro'
+  const region = regionById((await cookies()).get(REGION_COOKIE)?.value)
   const paymentsConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
   return (
@@ -29,7 +32,7 @@ export default async function UpgradePage() {
             Todo incluido
           </div>
           <h2 className="text-xl font-bold mb-1" style={{ color: '#1A1B1C' }}>Pro</h2>
-          <div className="text-3xl font-bold mb-4" style={{ color: '#1A1B1C' }}>€19<span className="text-base font-normal" style={{ color: '#6B6E71' }}>/mes</span></div>
+          <div className="text-3xl font-bold mb-4" style={{ color: '#1A1B1C' }}>{formatPrice(region.pro, region.currency, region.locale)}<span className="text-base font-normal" style={{ color: '#6B6E71' }}>/mes</span></div>
           <ul className="space-y-2 mb-6 text-sm" style={{ color: '#5A5D60' }}>
             {[
               '✓ Páginas ilimitadas',

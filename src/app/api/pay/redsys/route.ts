@@ -5,6 +5,7 @@ import { decryptSecret } from '@/lib/crypto'
 import { resolvePayable, validMoney } from '@/lib/payments/payable'
 import { buildPaymentForm, newOrderNumber, REDSYS_CURRENCIES, REDSYS_ENDPOINTS } from '@/lib/payments/redsys'
 import { absoluteUrl } from '@/lib/utils'
+import { logPaymentEvent } from '@/lib/payments/events'
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -64,10 +65,12 @@ export async function GET(request: NextRequest) {
       notificationUrl: absoluteUrl('/api/webhooks/redsys'), okUrl: absoluteUrl(`/p/${slug}?paid=1`), koUrl: absoluteUrl(`/p/${slug}?payment_error=failed`),
     })
     if (!Object.values(REDSYS_ENDPOINTS).includes(form.action as never)) throw new Error('unexpected endpoint')
+    await logPaymentEvent(admin, { paymentId: row.id, pageId, provider: 'redsys', type: 'checkout.started', message: payable.title, detail: { amount: payable.price, currency: payable.currency, order } })
     const inputs = Object.entries(form.fields).map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('')
     return html(`<form id="f" method="POST" action="${esc(form.action)}">${inputs}<p style="font-size:14px;text-align:center">Redirigiendo a tu banco para el pago seguro…</p><noscript><button style="padding:12px 20px;font-size:15px">Continuar al pago</button></noscript></form><script>document.getElementById('f').submit()</script>`)
   } catch (err) {
     console.error('Redsys form error', err)
+    await logPaymentEvent(admin, { paymentId: row.id, pageId, provider: 'redsys', type: 'checkout.failed', level: 'error', message: 'No se pudo preparar el pago con Redsys' })
     return back('failed')
   }
 }

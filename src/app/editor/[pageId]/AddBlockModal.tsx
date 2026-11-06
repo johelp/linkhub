@@ -13,11 +13,12 @@ const BORDER = 'rgba(26,27,28,0.09)'
 interface Props {
   open: boolean
   limits: PlanLimits
+  hiddenTypes?: string[]   // blocks not enabled for this customer yet (staged rollout)
   onClose: () => void
   onAdd: (type: BlockType) => void
 }
 
-export function AddBlockModal({ open, limits, onClose, onAdd }: Props) {
+export function AddBlockModal({ open, limits, hiddenTypes = [], onClose, onAdd }: Props) {
   const [query, setQuery] = useState('')
 
   // Reset on close (a user-triggered event, not a render-phase effect) so
@@ -32,10 +33,10 @@ export function AddBlockModal({ open, limits, onClose, onAdd }: Props) {
     return Object.entries(BLOCK_CATEGORIES)
       .map(([cat, blocks]) => [
         cat,
-        q ? blocks.filter(b => b.label.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)) : blocks,
+        (q ? blocks.filter(b => b.label.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)) : blocks).filter(b => !hiddenTypes.includes(b.type)),
       ] as [string, BlockDef[]])
       .filter(([, blocks]) => blocks.length > 0)
-  }, [query])
+  }, [query, hiddenTypes])
 
   if (!open) return null
 

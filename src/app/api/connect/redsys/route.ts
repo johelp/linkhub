@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getFlagsForUser } from '@/lib/flags.server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { encryptSecret } from '@/lib/crypto'
 import { validateCredentialsShape } from '@/lib/payments/redsys'
+import { isProduction } from '@/lib/env'
 
 // Redsys has no OAuth: the seller pastes the data their bank gave them. The
 // secret key is encrypted at rest and never sent back to the browser.
@@ -11,11 +13,13 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!(await getFlagsForUser(user.id, user.email)).redsys) return NextResponse.json({ error: 'Esta pasarela todavía no está disponible para tu cuenta' }, { status: 403 })
   const body = await request.json().catch(() => ({})) as Record<string, unknown>
   const merchantCode = String(body.merchantCode ?? '').trim()
   const terminal = String(body.terminal ?? '1').trim()
   const secret = String(body.secret ?? '').trim()
-  const environment = body.environment === 'live' ? 'live' : 'test'
+  // Staging/previews can only talk to the bank's test environment.
+  const environment = body.environment === 'live' && isProduction() ? 'live' : 'test'
   const problem = validateCredentialsShape({ merchantCode, terminal, secret })
   if (problem) return NextResponse.json({ error: problem }, { status: 400 })
 

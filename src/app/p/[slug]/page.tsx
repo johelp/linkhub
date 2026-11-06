@@ -1,4 +1,8 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { getOwnerAvailability } from '@/lib/billing.server'
+import { extractFacts, defaultMeta, buildStructuredData } from '@/lib/seo'
+import { PausedPage } from './PausedPage'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import type { Metadata } from 'next'
@@ -15,56 +19,54 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+// One cached lookup shared by metadata + page (React cache dedupes per request).
+const loadPage = cache(async (slug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase.from('pages').select('*').eq('slug', slug).eq('published', true).single()
+  if (!data) return null
+  const page = data as unknown as Page
+  return { page, availability: await getOwnerAvailability(page.user_id) }
+})
+
+const baseUrl = () => (process.env.NEXT_PUBLIC_APP_URL || 'https://linkhub.app').replace(/\/$/, '')
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('pages')
-    .select('name, settings')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single()
-
-  if (!data) return { title: 'Página no encontrada' }
-
-  const settings = data.settings as unknown as Page['settings']
+  const loaded = await loadPage(slug)
+  if (!loaded) return { title: 'Página no encontrada', robots: { index: false } }
+  const { page, availability: av } = loaded
+  const facts = extractFacts(page)
+  const meta = defaultMeta(page, facts)
+  const url = `${baseUrl()}/p/${page.slug}`
+  // Paused or opted-out pages stay out of search results and AI answers.
+  const indexable = av !== 'paused' && !page.settings.seo.noindex
   return {
-    title: settings.seo.title || data.name,
-    description: settings.seo.description || undefined,
+    title: { absolute: meta.title },
+    description: meta.description,
+    alternates: { canonical: url, types: { 'text/markdown': `${url}/llms.txt`, 'application/json': `${url}/facts.json` } },
     openGraph: {
-      title: settings.seo.title || data.name,
-      description: settings.seo.description || undefined,
-      images: settings.seo.ogImage ? [settings.seo.ogImage] : [],
+      type: 'website', url, siteName: 'LinkHub', title: meta.title, description: meta.description, locale: page.settings.defaultLang === 'es' ? 'es_ES' : page.settings.defaultLang,
+      ...(page.settings.seo.ogImage ? { images: [page.settings.seo.ogImage] } : {}),   // otherwise the generated opengraph-image applies
     },
-    robots: { index: true, follow: true },
+    twitter: { card: 'summary_large_image', title: meta.title, description: meta.description },
+    robots: indexable ? { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' } : { index: false, follow: false },
   }
 }
 
-export const revalidate = 60 // ISR: revalidate every 60s
+export const revalidate = 60 // ISR: revalidate every 60s (billing events also revalidate on demand)
 
 export default async function PublicPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const loaded = await loadPage(slug)
+  if (!loaded) notFound()
+  const { page, availability: av } = loaded
 
-  const { data } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single()
+  // Payment lapsed beyond the grace period: a neutral "back soon" screen.
+  if (av === 'paused') return <PausedPage name={page.name} color={page.settings.primaryColor} avatarUrl={page.settings.profile?.avatarUrl} />
 
-  if (!data) notFound()
-
-  const page = data as unknown as Page
-
-  // Structured data for LLMs and search engines
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: page.settings.seo.title || page.name,
-    description: page.settings.seo.description,
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/p/${page.slug}`,
-  }
+  // Structured data (schema.org) chosen from the business type: search engines
+  // and AI assistants read this instead of guessing from the layout.
+  const jsonLd = buildStructuredData(page, baseUrl())
 
   const ga4Id = page.settings.pixels?.ga4Id
   const metaPixelId = page.settings.pixels?.metaPixelId

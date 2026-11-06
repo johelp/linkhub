@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createMercadoPagoPreference } from '@/lib/mercadopago'
 import { absoluteUrl } from '@/lib/utils'
 import { decryptSecret } from '@/lib/crypto'
+import { logPaymentEvent } from '@/lib/payments/events'
 import type { Page, PaymentButtonBlock, EventTicketsBlock } from '@/types'
 
 // Public route: a visitor clicks a "payment_button" or "event_tickets"
@@ -125,10 +126,12 @@ export async function GET(request: NextRequest) {
     })
 
     await admin.from('payments').update({ provider_preference_id: preference.id }).eq('id', paymentRow.id)
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId, provider: 'mercadopago', type: 'checkout.started', message: title, detail: { amount: price, currency, preferenceId: preference.id } })
 
     return NextResponse.redirect(preference.init_point)
   } catch (err) {
     console.error('Mercado Pago preference creation error', err)
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId, provider: 'mercadopago', type: 'checkout.failed', level: 'error', message: 'Mercado Pago no pudo crear la preferencia de pago' })
     return errorRedirect(typedPage.slug, 'failed')
   }
 }

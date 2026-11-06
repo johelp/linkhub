@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptSecret } from '@/lib/crypto'
 import { approvePayment, markPayment } from '@/lib/payments/fulfil'
+import { logPaymentEvent } from '@/lib/payments/events'
 import { decodeParameters, isAuthorised, param, toCents, verifyNotification } from '@/lib/payments/redsys'
 
 // Redsys "online notification" (the MERCHANTURL we sent with the order). It
@@ -36,18 +37,23 @@ export async function POST(request: NextRequest) {
   let secret: string
   try { secret = decryptSecret(conn.access_token) } catch { return NextResponse.json({ error: 'Key unavailable' }, { status: 500 }) }
   const { valid, params } = verifyNotification({ merchantParameters, signature, secretBase64: secret })
-  if (!valid || !params) return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  if (!valid || !params) {
+    await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'redsys', type: 'notification.invalid', level: 'error', message: 'Firma inválida en la notificación' })
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
 
   // Bind the signed payload to OUR record: same merchant, same amount.
   if (param(params, 'Ds_MerchantCode') !== conn.provider_user_id || param(params, 'Ds_Amount') !== toCents(Number(payment.amount))) {
     console.error('Redsys notification mismatch', { order })
+    await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'redsys', type: 'notification.invalid', level: 'error', message: 'Comercio o importe no coinciden con el pedido' })
     return NextResponse.json({ error: 'Mismatch' }, { status: 400 })
   }
 
+  await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'redsys', type: 'notification.received', message: `Respuesta ${param(params, 'Ds_Response') ?? '?'}`, detail: { response: param(params, 'Ds_Response'), authorisation: param(params, 'Ds_AuthorisationCode') } })
   if (isAuthorised(params)) {
     await approvePayment(admin, payment, { providerPaymentId: param(params, 'Ds_AuthorisationCode'), payerEmail: payment.payer_email, pageName: page.name })
   } else if (payment.status !== 'approved') {
-    await markPayment(admin, payment.id, 'rejected')
+    await markPayment(admin, payment.id, 'rejected', payment.page_id)
   }
   return NextResponse.json({ received: true })
 }

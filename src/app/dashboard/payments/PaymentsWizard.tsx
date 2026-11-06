@@ -18,15 +18,16 @@ const RESULT: Record<string, { tone: 'ok' | 'warn' | 'err'; title: string; text:
   not_configured: { tone: 'warn', title: 'Esta pasarela todavía no está activada', text: 'La plataforma aún no tiene activada esta conexión. Escribinos y lo resolvemos.' },
 }
 
-interface Props { status: PaymentsStatus; result: string | null; resultProvider: string | null; isAdmin: boolean; isPro: boolean }
+interface Props { status: PaymentsStatus; result: string | null; resultProvider: string | null; enabledProviders: string[]; isAdmin: boolean; isPro: boolean }
 
-export function PaymentsWizard({ status, result, resultProvider, isAdmin, isPro }: Props) {
+export function PaymentsWizard({ status, result, resultProvider, enabledProviders, isAdmin, isPro }: Props) {
   const states = computeSteps(status)
   const doneCount = states.filter(s => s === 'done').length
   const allDone = doneCount === 3
   const msg = result ? RESULT[result] : null
   const firstPage = status.pages.find(p => p.paymentBlocks === 0) ?? status.pages[0]
-  const initial = (PROVIDERS.find(p => p.id === resultProvider)?.id ?? status.connectedProviders[0] ?? 'mercadopago') as PaymentProvider
+  const visible = PROVIDERS.filter(p => enabledProviders.includes(p.id) || status.providers[p.id].connected)
+  const initial = (visible.find(p => p.id === resultProvider)?.id ?? status.connectedProviders[0] ?? visible[0]?.id ?? 'mercadopago') as PaymentProvider
   const [selected, setSelected] = useState<PaymentProvider>(initial)
 
   return (
@@ -56,7 +57,7 @@ export function PaymentsWizard({ status, result, resultProvider, isAdmin, isPro 
       <Step n={1} state={states[0]} title="Elegí cómo cobrar y conectá tu cuenta"
         summary={status.connectedProviders.length ? `Conectado: ${status.connectedProviders.map(id => PROVIDER_BY_ID[id].name.split(' (')[0]).join(', ')}` : 'Elegí la pasarela que mejor se adapte a tu país y a tu banco.'}>
         <div role="radiogroup" aria-label="Pasarela de cobro" className="grid sm:grid-cols-3 gap-2.5 mb-4">
-          {PROVIDERS.map(p => {
+          {visible.map(p => {
             const st = status.providers[p.id]
             const on = selected === p.id
             return (
@@ -133,7 +134,10 @@ export function PaymentsWizard({ status, result, resultProvider, isAdmin, isPro 
 
       {status.recent.length > 0 && (
         <section className="rounded-2xl bg-white overflow-hidden" style={card} aria-labelledby="recent-h">
-          <h2 id="recent-h" className="px-5 py-4 text-[15px] font-bold" style={{ color: INK }}>Cobros recientes</h2>
+          <div className="flex items-center justify-between px-5 py-4">
+            <h2 id="recent-h" className="text-[15px] font-bold" style={{ color: INK }}>Cobros recientes</h2>
+            <Link href="/dashboard/payments/history" className="text-[13px] font-semibold no-underline" style={{ color: '#0077AD' }}>Ver historial completo →</Link>
+          </div>
           <ul>
             {status.recent.map(p => (
               <li key={p.id} className="flex items-center gap-3 px-5 py-3 border-t text-[13px]" style={{ borderColor: 'rgba(26,27,28,0.06)' }}>
@@ -145,6 +149,7 @@ export function PaymentsWizard({ status, result, resultProvider, isAdmin, isPro 
           </ul>
         </section>
       )}
+      {status.recent.length === 0 && <p className="text-xs px-1"><Link href="/dashboard/payments/history" className="font-semibold underline text-[#0077AD]">Historial de cobros</Link></p>}
       <p className="text-xs text-[#5A5D60] px-1 pt-1">El dinero va directo a tu cuenta según los plazos de tu proveedor o banco. LinkHub no retiene fondos ni los toca.</p>
     </div>
   )

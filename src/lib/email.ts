@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { appEnv } from '@/lib/env'
 
 let _resend: Resend | null = null
 
@@ -21,6 +22,12 @@ export async function sendTicketEmail(params: {
   tierName: string
   ticketUrl: string
 }) {
+  // Outside production, real buyers must never get email from a test run:
+  // only addresses in EMAIL_SANDBOX_ALLOW (comma-separated) receive anything.
+  if (appEnv() !== 'production') {
+    const allow = (process.env.EMAIL_SANDBOX_ALLOW || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+    if (!allow.includes(params.to.toLowerCase())) { console.info('[email sandbox] skipped send to', params.to); return }
+  }
   const from = process.env.RESEND_FROM_EMAIL || 'LinkHub <onboarding@resend.dev>'
   await getResend().emails.send({
     from,

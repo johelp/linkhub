@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin'
 import { getPaymentsStatus } from '@/lib/payments'
 import { PaymentsWizard } from './PaymentsWizard'
+import { getFlagsForUser } from '@/lib/flags.server'
+import { PROVIDER_FLAG } from '@/lib/flags'
 
 export const metadata: Metadata = { title: 'Cobros | LinkHub' }
 
@@ -15,6 +17,8 @@ export default async function PaymentsPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
 
+  const flags = await getFlagsForUser(user.id, user.email)
+  const enabledProviders = ['mercadopago', 'stripe', 'redsys'].filter(id => { const f = PROVIDER_FLAG[id]; return !f || flags[f] })
   const [status, { data: profile }] = await Promise.all([
     getPaymentsStatus(supabase, user.id),
     supabase.from('profiles').select('plan').eq('id', user.id).single(),
@@ -26,7 +30,7 @@ export default async function PaymentsPage({ searchParams }: Props) {
       <p className="text-sm text-[#5A5D60] mt-1 mb-6 max-w-xl">
         Recibí pagos directo en tu cuenta, con Mercado Pago, Stripe o el TPV de tu banco (Redsys). Te guiamos en 3 pasos; no hace falta saber de tecnología.
       </p>
-      <PaymentsWizard status={status} result={result ?? null} resultProvider={provider ?? null} isAdmin={isAdminEmail(user.email)} isPro={profile?.plan === 'pro'} />
+      <PaymentsWizard status={status} result={result ?? null} resultProvider={provider ?? null} enabledProviders={enabledProviders} isAdmin={isAdminEmail(user.email)} isPro={profile?.plan === 'pro'} />
     </div>
   )
 }

@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 import type { Page } from '@/types'
 import { EditorShell } from './EditorShell'
 import { getConnections } from '@/lib/payments'
+import { getFlagsForUser } from '@/lib/flags.server'
+import { hiddenBlockTypes } from '@/lib/flags'
 import type { PaymentProvider } from '@/types'
 
 export const metadata: Metadata = { title: 'Editor | LinkHub' }
@@ -25,6 +27,7 @@ export default async function EditorPage({ params }: Props) {
   ])
 
   if (!page) notFound()
+  const hiddenBlocks = hiddenBlockTypes(await getFlagsForUser(user.id, user.email))
   const connected = (await getConnections(user.id)).map(c => c.provider as PaymentProvider)
 
   return (
@@ -32,6 +35,7 @@ export default async function EditorPage({ params }: Props) {
       page={page as unknown as Page}
       plan={profile?.plan || 'free'}
       connectedProviders={connected}
+      hiddenBlocks={hiddenBlocks}
     />
   )
 }

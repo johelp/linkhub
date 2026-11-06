@@ -58,6 +58,10 @@ export function summarizeBlock(block: Block, lang: Lang): BlockSummary {
       return { title: pick(block.data.translations, lang, 'title') || 'Tarjeta de sellos', detail: `${block.data.targetStamps} sellos` }
     case 'menu':
       return { title: pick(block.data.translations, lang, 'title') || 'Menú', detail: `${block.data.sections.length} categorías` }
+    case 'vcard':
+      return { title: pick(block.data.translations, lang, 'label') || 'Guardar contacto', detail: 'vCard' }
+    case 'map_embed':
+      return { title: block.data.query ? block.data.query.slice(0, 50) : 'Mapa', detail: block.data.query ? 'Google Maps' : 'Falta la dirección' }
     case 'appointment_request':
       return { title: pick(block.data.translations, lang, 'title') || 'Citas', detail: `${block.data.services.length} servicios · WhatsApp` }
     case 'order_menu': {
@@ -85,6 +89,7 @@ export function findBlockIssues(blocks: Block[], lang: Lang, connectedProviders?
     if ((b.type === 'payment_button' || b.type === 'event_tickets') && connectedProviders && connectedProviders.length === 0) {
       issues.push({ blockId: b.id, message: `“${name}” necesita una pasarela de cobro conectada (Cobros)` })
     }
+    if (b.type === 'map_embed' && !b.data.query.trim()) issues.push({ blockId: b.id, message: `“${name}” necesita una dirección` })
     if (b.type === 'appointment_request' && b.data.whatsapp.replace(/\D/g, '').length < 8) {
       issues.push({ blockId: b.id, message: `“${name}” necesita tu número de WhatsApp para recibir solicitudes` })
     }

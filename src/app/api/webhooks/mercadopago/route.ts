@@ -4,6 +4,7 @@ import { getMercadoPagoPayment, verifyMercadoPagoSignature } from '@/lib/mercado
 import { sendTicketEmail, emailConfigured } from '@/lib/email'
 import { absoluteUrl, generateId } from '@/lib/utils'
 import { decryptSecret } from '@/lib/crypto'
+import { logPaymentEvent } from '@/lib/payments/events'
 
 const STATUS_MAP: Record<string, 'approved' | 'rejected' | 'pending' | 'refunded'> = {
   approved: 'approved',
@@ -73,12 +74,16 @@ export async function POST(request: NextRequest) {
     }
 
     newStatus = STATUS_MAP[payment.status] || 'pending'
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId: paymentRow.page_id, provider: 'mercadopago', type: 'notification.received', message: `Estado: ${payment.status}`, detail: { mpPaymentId: dataId, status: payment.status } })
     payerEmail = payment.payer?.email ?? null
     await admin.from('payments').update({
       status: newStatus,
       provider_payment_id: dataId,
       payer_email: payerEmail,
     }).eq('id', ref)
+    if (newStatus !== paymentRow.status && newStatus !== 'pending') {
+      await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId: paymentRow.page_id, provider: 'mercadopago', type: newStatus === 'approved' ? 'payment.approved' : newStatus === 'refunded' ? 'payment.refunded' : 'payment.rejected', level: newStatus === 'rejected' ? 'warn' : 'info', message: `Pago ${newStatus}` })
+    }
   } catch (err) {
     console.error('Mercado Pago webhook payment lookup error', err)
     return NextResponse.json({ error: 'Lookup failed' }, { status: 500 })

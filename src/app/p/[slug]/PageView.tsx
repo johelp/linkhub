@@ -2,11 +2,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
 import { sanitizeBlocks } from '@/lib/security'
+import { mapEmbedUrl } from '@/lib/maps'
 import { OrderMenu } from './OrderMenu'
 import { AppointmentRequest } from './AppointmentRequest'
 
@@ -14,13 +15,7 @@ const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
 }
 
-function formatMoney(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(amount)
-  } catch {
-    return `${amount} ${currency}`
-  }
-}
+import { formatMoney } from '@/lib/orders'
 
 function buildWhatsAppUrl(phone: string, message?: string): string {
   const digits = phone.replace(/\D/g, '')
@@ -338,6 +333,7 @@ export function PageView({ page, editing = false, controls }: Props) {
                   lang={lang}
                   pc={pc}
                   pageId={page.id}
+                  pageSlug={page.slug}
                   pageName={page.name}
                   expandedId={expandedId}
                   setExpandedId={setExpandedId}
@@ -473,8 +469,8 @@ function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string })
 }
 
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpandedId, onTrackClick, editing }: {
-  block: Block; lang: Lang; pc: string; pageId: string; pageName: string
+function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId, setExpandedId, onTrackClick, editing }: {
+  block: Block; lang: Lang; pc: string; pageId: string; pageSlug: string; pageName: string
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
   editing: boolean
@@ -525,6 +521,30 @@ function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpan
           </div>
           <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
         </a>
+      )
+    }
+
+    case 'vcard': {
+      const b = block as VCardBlock
+      const label = b.data.translations[lang]?.label || b.data.translations.es?.label || 'Guardar en mis contactos'
+      return (
+        <a href={`/p/${pageSlug}/contact.vcf`} download onClick={() => onTrackClick(b.id, 'vcard', 'vcard')} style={card}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F2F3F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }} aria-hidden>📇</div>
+          <div style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: 18, color: '#9A9D9F' }} aria-hidden>↓</div>
+        </a>
+      )
+    }
+
+    case 'map_embed': {
+      const b = block as MapEmbedBlock
+      const src = mapEmbedUrl(b.data.query)
+      if (!src) return editing ? <EmptyBlockPlaceholder icon="🗺️" label="Escribe tu dirección para mostrar el mapa" /> : null
+      return (
+        <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(26,27,28,0.09)', marginBottom: 8, background: '#F2F3F4' }}>
+          <iframe src={src} title="Ubicación en Google Maps" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+            style={{ border: 0, width: '100%', height: Math.min(Math.max(b.data.height || 260, 160), 520), display: 'block' }} allowFullScreen />
+        </div>
       )
     }
 

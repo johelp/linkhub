@@ -13,7 +13,7 @@ import { AddBlockModal } from './AddBlockModal'
 import { PublishDialog } from './PublishDialog'
 import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 
-interface Props { page: Page; plan: Plan; connectedProviders: PaymentProvider[] }
+interface Props { page: Page; plan: Plan; connectedProviders: PaymentProvider[]; hiddenBlocks: string[] }
 
 type MobileTab = 'blocks' | 'preview' | 'properties'
 
@@ -25,7 +25,7 @@ function isTypingTarget(t: EventTarget | null) {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 
-export function EditorShell({ page, plan, connectedProviders }: Props) {
+export function EditorShell({ page, plan, connectedProviders, hiddenBlocks }: Props) {
   const ready = useEditorStore(s => s.page !== null)
   const isDirty = useEditorStore(s => s.isDirty)
   const isSaving = useEditorStore(s => s.isSaving)
@@ -206,7 +206,7 @@ export function EditorShell({ page, plan, connectedProviders }: Props) {
         ))}
       </div>
 
-      <AddBlockModal open={insertAt !== null} limits={limits} onClose={() => setInsertAt(null)} onAdd={handleAddBlock} />
+      <AddBlockModal open={insertAt !== null} limits={limits} hiddenTypes={hiddenBlocks} onClose={() => setInsertAt(null)} onAdd={handleAddBlock} />
       <PublishDialog open={publishOpen} onClose={() => setPublishOpen(false)} onSetPublished={setPublished} />
     </div>
   )

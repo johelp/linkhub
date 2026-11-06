@@ -375,6 +375,31 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'vcard',
+    label: 'Guardar contacto (vCard)',
+    description: 'Botón para que tus clientes te guarden en su agenda con un toque',
+    icon: '📇',
+    category: 'social',
+    createDefault: () => ({
+      id: generateId(), type: 'vcard', order: 0, visible: true, seasonFilter: 'always',
+      data: {
+        translations: Object.fromEntries((['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]).map(l => [l, { label: l === 'es' ? 'Guardar en mis contactos' : '' }])) as Record<Lang, { label: string }>,
+        fullName: '', jobTitle: '', organization: '', phone: '', email: '', address: '', note: '',
+      },
+    } as Block),
+  },
+  {
+    type: 'map_embed',
+    label: 'Mapa de Google',
+    description: 'Muestra tu ubicación con un mapa incrustado',
+    icon: '🗺️',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(), type: 'map_embed', order: 0, visible: true, seasonFilter: 'always',
+      data: { query: '', height: 260 },
+    } as Block),
+  },
+  {
     type: 'appointment_request',
     label: 'Solicitud de citas',
     description: 'El cliente elige servicio, día y hora y te pide el turno por WhatsApp',

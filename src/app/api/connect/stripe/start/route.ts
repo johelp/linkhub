@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
+import { getFlagsForUser } from '@/lib/flags.server'
 import { absoluteUrl } from '@/lib/utils'
 
 // Stripe Connect (Standard) OAuth: the seller authorises LinkHub on THEIR
@@ -11,6 +12,7 @@ export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.redirect(absoluteUrl('/auth'))
+  if (!(await getFlagsForUser(user.id, user.email)).stripe_connect) return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=not_configured&provider=stripe'))
   if (!process.env.STRIPE_CONNECT_CLIENT_ID || !process.env.STRIPE_SECRET_KEY) {
     return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=not_configured&provider=stripe'))
   }

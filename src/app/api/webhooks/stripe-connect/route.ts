@@ -3,6 +3,7 @@ import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { approvePayment, markPayment } from '@/lib/payments/fulfil'
+import { logPaymentEvent } from '@/lib/payments/events'
 
 // Events from sellers' connected accounts (Stripe Dashboard → Developers →
 // Webhooks → "Listen to events on Connected accounts"). Separate endpoint and
@@ -35,10 +36,14 @@ export async function POST(request: NextRequest) {
     if (!page) return NextResponse.json({ received: true })
     // The event must come from the seller's own connected account.
     const { data: conn } = await admin.from('payment_connections').select('provider_user_id').eq('user_id', page.user_id).eq('provider', 'stripe').maybeSingle()
-    if (!conn || conn.provider_user_id !== event.account) return NextResponse.json({ error: 'Account mismatch' }, { status: 400 })
+    if (!conn || conn.provider_user_id !== event.account) {
+      await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'stripe', type: 'notification.invalid', level: 'error', message: 'El evento no pertenece a la cuenta conectada del vendedor' })
+      return NextResponse.json({ error: 'Account mismatch' }, { status: 400 })
+    }
+    await logPaymentEvent(admin, { paymentId: payment.id, pageId: payment.page_id, provider: 'stripe', type: 'notification.received', message: event.type, detail: { eventId: event.id, paymentStatus: session.payment_status } })
 
     if (event.type === 'checkout.session.expired' || event.type === 'checkout.session.async_payment_failed') {
-      if (payment.status !== 'approved') await markPayment(admin, payment.id, 'rejected')
+      if (payment.status !== 'approved') await markPayment(admin, payment.id, 'rejected', payment.page_id)
     } else if (session.payment_status === 'paid') {
       await approvePayment(admin, payment, {
         providerPaymentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,

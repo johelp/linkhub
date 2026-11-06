@@ -21,6 +21,8 @@ export type BlockType =
   | 'menu'
   | 'order_menu'
   | 'appointment_request'
+  | 'vcard'
+  | 'map_embed'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -88,6 +90,8 @@ export interface PageSettings {
     title: string
     description: string
     ogImage: string | null
+    schemaType?: string   // schema.org business type (see lib/seo.ts), default LocalBusiness
+    noindex?: boolean     // keep the page out of search engines and the sitemap
   }
   // Header of the public page (hero card). All optional: without them the
   // page shows the name over a brand-colored gradient with an initial avatar.
@@ -391,11 +395,35 @@ export interface AppointmentRequestBlock extends BlockBase {
   }
 }
 
+// "Save to contacts": downloads a vCard (.vcf) with the business details.
+export interface VCardBlock extends BlockBase {
+  type: 'vcard'
+  data: {
+    translations: Record<Lang, { label: string }>
+    fullName: string       // optional overrides; empty = use the page's own data
+    jobTitle: string
+    organization: string
+    phone: string
+    email: string
+    address: string
+    note: string
+  }
+}
+
+// Google Maps embed (iframe) of the business location.
+export interface MapEmbedBlock extends BlockBase {
+  type: 'map_embed'
+  data: {
+    query: string          // an address / place name, or a pasted Google Maps embed link / iframe
+    height: number         // px
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock | VCardBlock | MapEmbedBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

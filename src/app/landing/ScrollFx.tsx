@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 
 const R = '#E8150A'
-const INK = '#1A1B1C'
-const MUTED = '#5A5D60'
+const INK = '#111314'
+const MUTED = '#4A4E52'
 
 // One shared observer for every <Reveal>: cheap even with dozens of targets.
 let observer: IntersectionObserver | null = null
@@ -62,9 +62,10 @@ export function Parallax({ children, speed = 0.12, style }: { children: ReactNod
 }
 
 const LINKS = [
-  { href: '#funciones', label: 'Funciones' },
-  { href: '#rubros', label: 'Para tu rubro' },
+  { href: '#funciones', label: 'Producto' },
+  { href: '#rubros', label: 'Para quién' },
   { href: '#precios', label: 'Precios' },
+  { href: '#faq', label: 'Preguntas' },
 ]
 
 // Sticky navigation: transparent at the top, frosted once you scroll, with a
@@ -91,7 +92,7 @@ export function LandingNav() {
   return (
     <header style={{
       position: 'sticky', top: 0, zIndex: 40, transition: 'background .2s, box-shadow .2s',
-      background: scrolled ? 'rgba(246,246,245,0.82)' : 'transparent',
+      background: scrolled ? 'rgba(250,250,248,0.88)' : '#FAFAF8',
       backdropFilter: scrolled ? 'saturate(180%) blur(14px)' : 'none',
       WebkitBackdropFilter: scrolled ? 'saturate(180%) blur(14px)' : 'none',
       boxShadow: scrolled ? '0 1px 0 rgba(26,27,28,0.08)' : 'none',
@@ -106,11 +107,11 @@ export function LandingNav() {
           ))}
         </div>
         <Link href="/auth" className="hidden sm:inline" style={{ fontSize: 14, fontWeight: 500, color: MUTED, textDecoration: 'none' }}>Iniciar sesión</Link>
-        <Link href="/auth" className="hero-cta" style={{ fontSize: 13.5, fontWeight: 600, color: '#fff', background: R, padding: '10px 20px', borderRadius: 24, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+        <Link href="/auth" style={{ fontSize: 14, fontWeight: 600, color: '#fff', background: INK, padding: '10px 20px', borderRadius: 999, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           Empezar gratis
         </Link>
       </nav>
-      <div ref={bar} aria-hidden style={{ height: 2, background: `linear-gradient(90deg, ${R}, #FF8C00)`, transformOrigin: '0 50%', transform: 'scaleX(0)', opacity: scrolled ? 1 : 0, transition: 'opacity .2s' }} />
+      <div ref={bar} aria-hidden style={{ height: 2, background: INK, transformOrigin: '0 50%', transform: 'scaleX(0)', opacity: scrolled ? 1 : 0, transition: 'opacity .2s' }} />
     </header>
   )
 }

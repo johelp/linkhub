@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { PLAN_LIMITS, blockRequiresPro, type Block, type Plan } from '@/types'
 import type { TablesUpdate, Json } from '@/lib/supabase/database.types'
 import { HEX_COLOR, sanitizeBlocks, sanitizeSettings } from '@/lib/security'
+import { getFlagsForUser } from '@/lib/flags.server'
+import { BLOCK_FLAG } from '@/lib/flags'
 
 const MAX_BLOCKS = 100
 const MAX_BODY_BYTES = 512 * 1024
@@ -76,7 +78,7 @@ export async function PATCH(request: NextRequest) {
   // Verify ownership
   const { data: page } = await supabase
     .from('pages')
-    .select('id, user_id')
+    .select('id, user_id, blocks')
     .eq('id', pageId)
     .single()
 
@@ -94,6 +96,16 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: `El bloque "${lockedBlock.type}" requiere plan Pro` }, { status: 403 })
       }
     }
+  }
+
+  // Staged rollout: a customer can't ADD a block type whose feature isn't enabled
+  // for them (the UI hides it, this closes the API). Types the page already had
+  // stay editable, so turning a flag off never locks anyone out of their page.
+  if (blocks !== undefined) {
+    const flags = await getFlagsForUser(user.id, user.email)
+    const had = new Set(((page.blocks as unknown as Block[]) ?? []).map(b => b.type))
+    const blocked = (blocks as Block[]).find(b => { const f = BLOCK_FLAG[b.type]; return f && !flags[f] && !had.has(b.type) })
+    if (blocked) return NextResponse.json({ error: 'Esta función todavía no está disponible para tu cuenta' }, { status: 403 })
   }
 
   const update: TablesUpdate<'pages'> = {}

@@ -4,7 +4,10 @@ import type { NextConfig } from 'next'
 // per-request nonces (and so dynamic rendering of the public pages) -- tracked
 // in security/05-plan-remediacion.md; until then we ship the CSP directives
 // that carry no compatibility risk.
+const notProd = process.env.NEXT_PUBLIC_APP_ENV !== 'production' && process.env.VERCEL_ENV !== 'production'
+
 const baseHeaders = [
+  ...(notProd ? [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] : []),
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getStripe } from '@/lib/stripe'
 import { resolvePayable, validMoney, toMinorUnits } from '@/lib/payments/payable'
 import { absoluteUrl } from '@/lib/utils'
+import { logPaymentEvent } from '@/lib/payments/events'
 
 // Stripe Checkout as a *direct charge* on the seller's connected account.
 export async function GET(request: NextRequest) {
@@ -41,9 +42,11 @@ export async function GET(request: NextRequest) {
     }, { stripeAccount: conn.provider_user_id })
     if (!session.url) throw new Error('no checkout url')
     await admin.from('payments').update({ provider_preference_id: session.id }).eq('id', row.id)
+    await logPaymentEvent(admin, { paymentId: row.id, pageId, provider: 'stripe', type: 'checkout.started', message: `${payable.title}`, detail: { amount: payable.price, currency: payable.currency, sessionId: session.id } })
     return NextResponse.redirect(session.url)
   } catch (err) {
     console.error('Stripe checkout error', err)
+    await logPaymentEvent(admin, { paymentId: row.id, pageId, provider: 'stripe', type: 'checkout.failed', level: 'error', message: 'Stripe no pudo crear la sesión de pago' })
     return fail('failed')
   }
 }

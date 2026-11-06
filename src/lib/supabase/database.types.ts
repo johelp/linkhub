@@ -14,6 +14,7 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           stripe_subscription_status: string | null
+          billing_lapsed_at: string | null
           created_at: string
           updated_at: string
         }
@@ -27,6 +28,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_subscription_status?: string | null
+          billing_lapsed_at?: string | null
         }
         Update: {
           email?: string
@@ -37,6 +39,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           stripe_subscription_status?: string | null
+          billing_lapsed_at?: string | null
         }
         Relationships: []
       }
@@ -51,6 +54,7 @@ export type Database = {
           published: boolean
           qr_url: string | null
           custom_domain: string | null
+          moderated_at: string | null
           views: number
           created_at: string
           updated_at: string
@@ -149,6 +153,18 @@ export type Database = {
           access_token: string; refresh_token: string; public_key?: string | null; live_mode?: boolean; config?: Json
         }
         Update: { access_token?: string; refresh_token?: string; public_key?: string | null; live_mode?: boolean; config?: Json; provider_user_id?: string }
+        Relationships: []
+      }
+      knowledge_entries: {
+        Row: { id: string; user_id: string; page_id: string | null; kind: 'faq' | 'info' | 'policy'; title: string; content: string; visibility: 'public' | 'private'; position: number; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; page_id?: string | null; kind?: 'faq' | 'info' | 'policy'; title: string; content: string; visibility?: 'public' | 'private'; position?: number }
+        Update: { page_id?: string | null; kind?: 'faq' | 'info' | 'policy'; title?: string; content?: string; visibility?: 'public' | 'private'; position?: number }
+        Relationships: []
+      }
+      payment_events: {
+        Row: { id: number; payment_id: string | null; page_id: string | null; provider: string | null; type: string; level: 'info' | 'warn' | 'error'; message: string | null; detail: Json; created_at: string }
+        Insert: { payment_id?: string | null; page_id?: string | null; provider?: string | null; type: string; level?: 'info' | 'warn' | 'error'; message?: string | null; detail?: Json }
+        Update: Record<string, never>
         Relationships: []
       }
       payments: {

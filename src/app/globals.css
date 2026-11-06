@@ -110,7 +110,7 @@ body {
 /* Landing: scroll reveal. Only hides content when JS can reveal it again and
    the visitor hasn't asked for reduced motion. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1); }
   .reveal.in { opacity: 1; transform: none; }
 }
 .lh-navlink:hover { color: #1A1B1C !important; }
@@ -163,3 +163,28 @@ html { scroll-behavior: smooth; scroll-padding-top: 72px; }
   .lh-fx .lh-reveal.lh-r1 { transition-delay: 70ms; }
   .lh-fx .lh-reveal.in { opacity: 1; transform: none; }
 }
+
+/* ─── Paused public page (plan lapsed): calm, neutral, never says why ───── */
+.lh-paused { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; position: relative; overflow: hidden;
+  background: radial-gradient(1000px 600px at 50% 35%, color-mix(in srgb, var(--c) 10%, #fff), #F6F6F4 70%); color: #1A1B1C; }
+.lh-paused-stage { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.lh-paused-avatar { width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 34px; font-weight: 700; border: 4px solid #fff; box-shadow: 0 6px 24px rgba(26,27,28,.14); filter: saturate(.7); position: relative; z-index: 2; }
+.lh-ring { position: absolute; inset: 0; margin: auto; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--c) 40%, transparent); width: 110px; height: 110px; opacity: .5; }
+.lh-paused-name { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-top: 4px; }
+.lh-paused-text { font-size: 18px; font-weight: 600; margin-top: 10px; color: #3F4346; }
+.lh-paused-sub { font-size: 15px; margin-top: 6px; color: #5B6064; max-width: 320px; }
+.lh-paused-bar { width: 160px; height: 3px; border-radius: 3px; background: rgba(26,27,28,.1); overflow: hidden; margin-top: 28px; }
+.lh-paused-bar span { display: block; height: 100%; width: 40%; border-radius: 3px; background: var(--c); opacity: .7; }
+.lh-paused-owner { position: absolute; bottom: 22px; font-size: 12.5px; color: #6B6E71; text-decoration: none; padding: 8px 12px; }
+.lh-paused-owner:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) {
+  .lh-ring { animation: lhRing 4.2s ease-out infinite; }
+  .lh-ring.r2 { animation-delay: 1.4s; } .lh-ring.r3 { animation-delay: 2.8s; }
+  .lh-paused-bar span { animation: lhSlide 1.8s ease-in-out infinite; }
+  .lh-paused-avatar { animation: lhBreath 4.2s ease-in-out infinite; }
+  .lh-paused-name, .lh-paused-text, .lh-paused-sub { animation: lhUp .8s ease both; }
+  .lh-paused-text { animation-delay: .15s; } .lh-paused-sub { animation-delay: .3s; }
+}
+@keyframes lhRing { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(2); opacity: 0 } }
+@keyframes lhSlide { 0% { transform: translateX(-110%) } 100% { transform: translateX(260%) } }
+@keyframes lhBreath { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
