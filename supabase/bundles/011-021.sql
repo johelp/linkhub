@@ -13,7 +13,7 @@ do $$
 begin
   if to_regclass('public.profiles') is null or to_regclass('public.pages') is null
      or to_regclass('public.analytics_events') is null or to_regclass('public.email_subscribers') is null then
-    raise exception 'Faltan las migraciones 001-010: aplícalas primero.';
+    raise exception 'Faltan las migraciones 001-010: aplícalas primero (o genera el script desde la 001).';
   end if;
 end $$;
 

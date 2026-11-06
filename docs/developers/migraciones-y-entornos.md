@@ -60,4 +60,4 @@ El MCP, la API de claves y `/api/v1` **no añaden variables nuevas**: usan las d
 
 
 ## Script único 011–021
-`supabase/bundles/011-021.sql` reúne las migraciones 011 a 021 en una sola transacción, con comprobación previa de 001–010 y consulta de verificación final. Se regenera con `npm run sql:bundle` (no editar a mano). Para pegarlo en el SQL Editor de **staging**.
+`supabase/bundles/011-021.sql` (y `001-021.sql`, solo para un proyecto nuevo y vacío) reúne las migraciones 011 a 021 en una sola transacción, con comprobación previa de 001–010 y consulta de verificación final. Se regenera con `npm run sql:bundle` (no editar a mano). Para pegarlo en el SQL Editor de **staging**.
