@@ -2,11 +2,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
 import { sanitizeBlocks } from '@/lib/security'
+import { OrderMenu } from './OrderMenu'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -27,7 +28,20 @@ function buildWhatsAppUrl(phone: string, message?: string): string {
     : `https://wa.me/${digits}`
 }
 
-interface Props { page: Page; editing?: boolean }
+// Extra wiring used only by the editor canvas: which block is selected, how to
+// select one, and how to act on it directly from the preview.
+export interface EditingControls {
+  lang: Lang
+  selectedBlockId: string | null
+  onSelect: (id: string | null) => void
+  onInsertAt: (index: number) => void
+  onMove: (id: string, dir: -1 | 1) => void
+  onDuplicate: (id: string) => void
+  onToggleVisibility: (id: string) => void
+  onDelete: (id: string) => void
+}
+
+interface Props { page: Page; editing?: boolean; controls?: EditingControls }
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: '📷', facebook: '👥', tiktok: '🎵',
@@ -48,8 +62,11 @@ const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   failed: 'No se pudo iniciar el pago. Intentá de nuevo en un momento.',
 }
 
-export function PageView({ page, editing = false }: Props) {
-  const [lang, setLang] = useState<Lang>(page.settings.defaultLang)
+export function PageView({ page, editing = false, controls }: Props) {
+  const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)
+  // In the editor the language is driven from outside, so the canvas always
+  // shows the language whose fields the inspector is editing.
+  const lang: Lang = controls?.lang ?? visitorLang
   const [season, setSeason] = useState<SeasonMode>(page.settings.seasonMode)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -87,7 +104,7 @@ export function PageView({ page, editing = false }: Props) {
 
   // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
-    if (page.id.startsWith('demo')) return
+    if (editing || page.id.startsWith('demo')) return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -100,7 +117,7 @@ export function PageView({ page, editing = false }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
-    if (page.id.startsWith('demo')) return
+    if (editing || page.id.startsWith('demo')) return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,
@@ -110,17 +127,19 @@ export function PageView({ page, editing = false }: Props) {
       url,
       lang,
     }).then(() => {})
-  }, [page.id, lang])
+  }, [page.id, lang, editing])
 
   // Filter blocks by season and by their conditional visibility (if any).
   // normalizeBlock upgrades any block left over from a retired type (e.g.
   // `menu_pdf`, renamed to `menu`) so an old page doesn't just silently
   // drop that block on the public page -- see registry.ts.
+  // The editor canvas shows every block (hidden / seasonal / conditional ones
+  // dimmed and tagged) so nothing the owner built ever "disappears" from view.
   const visibleBlocks = sanitizeBlocks(page.blocks.map(normalizeBlock))
-    .filter(b => b.visible)
-    .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
+    .filter(b => editing || b.visible)
+    .filter(b => editing || b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
     .filter(b => {
-      if (!b.condition) return true
+      if (editing || !b.condition) return true
       const isOpen = businessStatus[b.condition.sourceBlockId]
       if (isOpen === undefined) return false
       return b.condition.when === 'open' ? isOpen : !isOpen
@@ -130,84 +149,232 @@ export function PageView({ page, editing = false }: Props) {
   const enabledLangs = page.settings.enabledLangs || ['es']
   const showLangBar = enabledLangs.length > 1
 
+  const profile = page.settings.profile
+  const initial = (page.name.trim()[0] || '•').toUpperCase()
+  // Simple link cards sit two-per-row on wide layouts; everything richer
+  // (menus, stores, video, accordions...) spans the full row.
+  const SINGLE_CELL: Block['type'][] = ['link']
+
+  const langBar = showLangBar && !editing && (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+      {enabledLangs.map((l: Lang) => (
+        <button key={l} onClick={() => setLang(l)}
+          style={{
+            fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20,
+            border: `1px solid ${l === lang ? pc : 'rgba(26,27,28,0.15)'}`,
+            background: l === lang ? pc : 'rgba(255,255,255,0.7)',
+            color: l === lang ? '#fff' : '#5A5D60',
+            cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px',
+          }}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
-    <div style={{ background: bg, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
+    // `@container`: the layout reacts to the width of THIS box, not the
+    // browser window, so the editor's phone/tablet/desktop preview frames and
+    // the real public page share one set of rules.
+    <div className="@container lh-root" style={{ background: bg, minHeight: editing ? 420 : '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Soft brand glow behind everything -- gives wide screens depth instead of a flat grey field */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: `radial-gradient(900px 420px at 15% -5%, ${pc}26, transparent 70%), radial-gradient(700px 380px at 95% 0%, ${pc}14, transparent 65%)`,
+      }} />
 
-        {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
-        {paymentError && (
-          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <p style={{ fontSize: 12.5, color: '#1A1B1C', lineHeight: 1.5, flex: 1 }}>
-              {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
-            </p>
-            <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
-              style={{ border: 'none', background: 'none', color: '#9A9D9F', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+      <div className="relative mx-auto w-full max-w-[520px] px-4 pb-16 @2xl:max-w-[720px] @2xl:px-8 @4xl:grid @4xl:max-w-[1120px] @4xl:grid-cols-[340px_minmax(0,1fr)] @4xl:items-start @4xl:gap-14 @4xl:px-10 @4xl:pt-14 @4xl:pb-24">
+
+        {/* Hero / profile: stacked on top for phones & tablets, sticky left panel on desktop */}
+        <header className="pt-5 @4xl:sticky @4xl:top-10 @4xl:pt-0">
+          <div style={{ borderRadius: 24, overflow: 'hidden', background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 10px 30px rgba(26,27,28,0.07)' }}>
+            <div className="h-28 @2xl:h-36 @4xl:h-44" style={{
+              background: profile?.coverUrl
+                ? `center / cover no-repeat url("${profile.coverUrl.replace(/"/g, '%22')}")`
+                : `linear-gradient(135deg, ${pc}, ${pc}99 55%, ${pc}55)`,
+            }} />
+            <div style={{ padding: '0 20px 22px', textAlign: 'center' }}>
+              {profile?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.avatarUrl} alt="" width={88} height={88}
+                  style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', marginTop: -44, background: '#fff', boxShadow: '0 4px 14px rgba(26,27,28,0.15)' }} />
+              ) : (
+                <div aria-hidden style={{
+                  width: 88, height: 88, borderRadius: '50%', margin: '-44px auto 0', border: '4px solid #fff', background: pc, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, fontWeight: 700, boxShadow: '0 4px 14px rgba(26,27,28,0.15)',
+                }}>{initial}</div>
+              )}
+              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1A1B1C', marginTop: 12, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{page.name}</h1>
+              {profile?.tagline && <p style={{ fontSize: 14, color: '#5A5D60', marginTop: 6, lineHeight: 1.5 }}>{profile.tagline}</p>}
+              {langBar && <div style={{ marginTop: 14 }}>{langBar}</div>}
+            </div>
           </div>
-        )}
 
-        {/* Lang bar */}
-        {showLangBar && (
-          <div style={{ display: 'flex', gap: 6, padding: '14px 0 0', justifyContent: 'flex-end' }}>
-            {enabledLangs.map((l: Lang) => (
-              <button key={l} onClick={() => setLang(l)}
-                style={{
-                  fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
-                  border: `1px solid ${l === lang ? pc : 'rgba(26,27,28,0.15)'}`,
-                  background: l === lang ? pc : 'transparent',
-                  color: l === lang ? '#fff' : '#9A9D9F',
-                  cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px',
-                }}>
-                {l.toUpperCase()}
-              </button>
-            ))}
+          {/* Season admin (only if page has season blocks) */}
+          {page.settings.seasonMode !== 'always' && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', gap: 4 }}>
+              {(['winter','summer','off'] as SeasonMode[]).map(s => (
+                <button key={s} onClick={() => setSeason(s)}
+                  style={{
+                    fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
+                    border: `1px solid ${s === season ? pc : 'rgba(26,27,28,0.15)'}`,
+                    background: s === season ? pc : 'rgba(255,255,255,0.7)',
+                    color: s === season ? '#fff' : '#5A5D60', cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                  {s === 'winter' ? '❄️' : s === 'summer' ? '☀️' : '⏸'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {page.settings.showPoweredBy && (
+            <div className="hidden @4xl:block" style={{ textAlign: 'center', marginTop: 18 }}>
+              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
+                Creado con LinkHub
+              </a>
+            </div>
+          )}
+        </header>
+
+        <main className="min-w-0">
+          {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
+          {paymentError && (
+            <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <p style={{ fontSize: 12.5, color: '#1A1B1C', lineHeight: 1.5, flex: 1 }}>
+                {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
+              </p>
+              <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
+                style={{ border: 'none', background: 'none', color: '#9A9D9F', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+            </div>
+          )}
+
+          {/* Blocks: 1 column on phones, 2-up grid from tablet width */}
+          <div className="mt-4 grid grid-cols-1 gap-x-3 @2xl:grid-cols-2 @4xl:mt-0 @4xl:gap-x-4">
+            {editing && controls && (
+              <div className="@2xl:col-span-2"><InsertSlot index={0} onInsertAt={controls.onInsertAt} alwaysVisible={visibleBlocks.length === 0} /></div>
+            )}
+            {visibleBlocks.map((block, i) => {
+              const cell = SINGLE_CELL.includes(block.type) ? 'lh-cell' : 'lh-cell @2xl:col-span-2'
+              const rendered = (
+                <BlockRenderer
+                  block={block}
+                  lang={lang}
+                  pc={pc}
+                  pageId={page.id}
+                  pageName={page.name}
+                  expandedId={expandedId}
+                  setExpandedId={setExpandedId}
+                  onTrackClick={trackClick}
+                  editing={editing}
+                />
+              )
+              if (!editing || !controls) return <div key={block.id} className={cell}>{rendered}</div>
+              return (
+                <div key={block.id} className={cell}>
+                  <SelectableBlock block={block} index={i} total={visibleBlocks.length} controls={controls}>
+                    {rendered}
+                  </SelectableBlock>
+                  <InsertSlot index={i + 1} onInsertAt={controls.onInsertAt} />
+                </div>
+              )
+            })}
           </div>
-        )}
 
-        {/* Season admin (only if page has season blocks) */}
-        {page.settings.seasonMode !== 'always' && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 0 0' }}>
-            {(['winter','summer','off'] as SeasonMode[]).map(s => (
-              <button key={s} onClick={() => setSeason(s)}
-                style={{
-                  fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
-                  border: `1px solid ${s === season ? pc : 'rgba(26,27,28,0.15)'}`,
-                  background: s === season ? pc : 'transparent',
-                  color: s === season ? '#fff' : '#9A9D9F',
-                  marginLeft: 4, cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                {s === 'winter' ? '❄️' : s === 'summer' ? '☀️' : '⏸'}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Powered by (phones & tablets; on desktop it lives under the profile card) */}
+          {page.settings.showPoweredBy && (
+            <div className="@4xl:hidden" style={{ textAlign: 'center', marginTop: 32 }}>
+              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
+                Creado con LinkHub
+              </a>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}
 
-        {/* Blocks */}
-        <div style={{ marginTop: 16 }}>
-          {visibleBlocks.map(block => (
-            <BlockRenderer
-              key={block.id}
-              block={block}
-              lang={lang}
-              pc={pc}
-              pageId={page.id}
-              expandedId={expandedId}
-              setExpandedId={setExpandedId}
-              onTrackClick={trackClick}
-              editing={editing}
-            />
+// ─── Editor-only: selectable wrapper + insertion slots ───────────
+const TOOL_BTN: React.CSSProperties = {
+  width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: 'none', background: 'transparent', color: '#fff', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
+}
+
+function SelectableBlock({ block, index, total, controls, children }: {
+  block: Block; index: number; total: number; controls: EditingControls; children: React.ReactNode
+}) {
+  const [hover, setHover] = useState(false)
+  const selected = controls.selectedBlockId === block.id
+  const tags = [
+    !block.visible && 'Oculto',
+    block.seasonFilter !== 'always' && `Solo ${block.seasonFilter === 'winter' ? 'invierno' : block.seasonFilter === 'summer' ? 'verano' : 'fuera de temporada'}`,
+    block.condition && (block.condition.when === 'open' ? 'Solo si está abierto' : 'Solo si está cerrado'),
+  ].filter(Boolean) as string[]
+
+  const tool = (label: string, onClick: () => void, content: React.ReactNode, disabled = false) => (
+    <button type="button" aria-label={label} title={label} disabled={disabled}
+      onClick={e => { e.stopPropagation(); onClick() }}
+      style={{ ...TOOL_BTN, opacity: disabled ? 0.35 : 1, cursor: disabled ? 'default' : 'pointer' }}>
+      {content}
+    </button>
+  )
+
+  return (
+    <div
+      role="button" tabIndex={0} aria-pressed={selected}
+      aria-label={`Seleccionar bloque ${index + 1}`}
+      data-block-id={block.id}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      // Capture phase: the click is consumed here, so links, accordions and
+      // payment buttons inside the preview never fire while editing.
+      onClickCapture={e => { e.preventDefault(); e.stopPropagation(); controls.onSelect(block.id) }}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); controls.onSelect(block.id) } }}
+      style={{
+        position: 'relative', borderRadius: 16, cursor: 'pointer', outlineOffset: 2,
+        outline: selected ? '2px solid #E8150A' : hover ? '2px solid rgba(232,21,10,0.35)' : '2px solid transparent',
+        opacity: block.visible ? 1 : 0.45, transition: 'outline-color .12s',
+      }}>
+      <div style={{ pointerEvents: 'none' }}>{children}</div>
+
+      {tags.length > 0 && (
+        <div style={{ position: 'absolute', left: 6, top: 6, display: 'flex', gap: 4, pointerEvents: 'none' }}>
+          {tags.map(t => (
+            <span key={t} style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'rgba(26,27,28,0.82)', color: '#fff' }}>{t}</span>
           ))}
         </div>
+      )}
 
-        {/* Powered by */}
-        {page.settings.showPoweredBy && (
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
-              Creado con LinkHub
-            </a>
-          </div>
-        )}
-      </div>
+      {selected && (
+        <div style={{
+          position: 'absolute', right: 6, top: -38, zIndex: 5, display: 'flex', gap: 2, padding: 3,
+          background: '#1A1B1C', borderRadius: 11, boxShadow: '0 4px 14px rgba(26,27,28,0.3)',
+        }} onClickCapture={e => e.stopPropagation()}>
+          {tool('Subir', () => controls.onMove(block.id, -1), '↑', index === 0)}
+          {tool('Bajar', () => controls.onMove(block.id, 1), '↓', index === total - 1)}
+          {tool('Duplicar', () => controls.onDuplicate(block.id), '⧉')}
+          {tool(block.visible ? 'Ocultar' : 'Mostrar', () => controls.onToggleVisibility(block.id), block.visible ? '◉' : '○')}
+          {tool('Eliminar', () => controls.onDelete(block.id), '🗑')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InsertSlot({ index, onInsertAt, alwaysVisible }: { index: number; onInsertAt: (i: number) => void; alwaysVisible?: boolean }) {
+  const [hover, setHover] = useState(false)
+  const show = hover || alwaysVisible
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ height: show ? 30 : 12, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'height .12s' }}>
+      <button type="button" aria-label="Añadir bloque aquí" onClick={() => onInsertAt(index)}
+        style={{
+          opacity: show ? 1 : 0, transition: 'opacity .12s', display: 'flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: 20, border: '1.5px dashed #E8150A', background: '#FEF0EF',
+          color: '#E8150A', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+        + Añadir bloque
+      </button>
     </div>
   )
 }
@@ -229,8 +396,8 @@ function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string })
 }
 
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick, editing }: {
-  block: Block; lang: Lang; pc: string; pageId: string
+function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpandedId, onTrackClick, editing }: {
+  block: Block; lang: Lang; pc: string; pageId: string; pageName: string
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
   editing: boolean
@@ -282,6 +449,12 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
           <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
         </a>
       )
+    }
+
+    case 'order_menu': {
+      const b = block as OrderMenuBlock
+      return <OrderMenu block={b} lang={lang} pc={pc} pageName={pageName} editing={editing}
+        onSent={url => onTrackClick(b.id, 'order_menu', url)} />
     }
 
     case 'menu': {

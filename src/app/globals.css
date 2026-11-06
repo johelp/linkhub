@@ -13,7 +13,12 @@
   --sun:    #FF8C00;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Layered on purpose: an unlayered `* { margin:0; padding:0 }` outranks every
+   Tailwind utility (p-5, mx-auto, gap...) and silently disabled them app-wide.
+   Tailwind's preflight already zeroes margin/padding. */
+@layer base {
+  * { box-sizing: border-box; }
+}
 
 body {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
@@ -89,4 +94,15 @@ body {
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* Public page: gentle lift on interactive cards (disabled in the editor canvas,
+   where blocks are wrapped with pointer-events: none). */
+.lh-cell a[href] { transition: transform .15s ease, box-shadow .15s ease; }
+@media (hover: hover) {
+  .lh-cell a[href]:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(26,27,28,0.10); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lh-cell a[href] { transition: none; }
+  .lh-cell a[href]:hover { transform: none; }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { PLAN_LIMITS, blockRequiresPro, type Block, type Plan } from '@/types'
 import type { TablesUpdate, Json } from '@/lib/supabase/database.types'
-import { HEX_COLOR, sanitizeBlocks } from '@/lib/security'
+import { HEX_COLOR, sanitizeBlocks, sanitizeSettings } from '@/lib/security'
 
 const MAX_BLOCKS = 100
 const MAX_BODY_BYTES = 512 * 1024
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest) {
   const update: TablesUpdate<'pages'> = {}
   // Unsafe URL schemes (javascript:, data:...) are stripped before persisting.
   if (blocks !== undefined) update.blocks = sanitizeBlocks(blocks as Block[]) as unknown as Json
-  if (settings !== undefined) update.settings = settings as Json
+  if (settings !== undefined) update.settings = sanitizeSettings(settings as Parameters<typeof sanitizeSettings>[0]) as unknown as Json
   if (name !== undefined) update.name = (name as string).trim()
   if (published !== undefined) update.published = published
 

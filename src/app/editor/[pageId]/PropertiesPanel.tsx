@@ -2,12 +2,12 @@
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
-import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
+import { COLOR_SCHEMES, ICON_BG_PRESETS, BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
 import { uploadPageImage } from '@/lib/imageUpload'
-import { Settings, Layout, Globe, Upload, Loader2, Plus, X } from 'lucide-react'
+import { Settings, Globe, Upload, Loader2, Plus, X, ChevronLeft, Trash2, Copy as CopyIcon } from 'lucide-react'
 
 const ALL_LANGS: { code: Lang; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -20,51 +20,68 @@ const ALL_LANGS: { code: Lang; label: string }[] = [
 
 interface Props { plan: Plan }
 
-type Tab = 'block' | 'page' | 'seo'
+type PageTab = 'design' | 'seo'
 
+// The inspector is contextual: with a block selected it edits that block;
+// otherwise it edits the page itself (design / languages / SEO). No empty
+// "select something" state, no tab to hunt for.
 export function PropertiesPanel({ plan }: Props) {
-  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang } = useEditorStore()
-  const [tab, setTab] = useState<Tab>('block')
+  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang, selectBlock, duplicateBlock, removeBlock } = useEditorStore()
+  const [tab, setTab] = useState<PageTab>('design')
   const limits = PLAN_LIMITS[plan]
 
   if (!page) return null
 
   const selectedBlock = selectedBlockId ? page.blocks.find(b => b.id === selectedBlockId) : null
+  const def = selectedBlock ? BLOCK_BY_TYPE[selectedBlock.type] : null
 
   return (
-    <div className="flex flex-col h-full bg-white border-l overflow-hidden"
+    <div className="flex flex-col h-full bg-white border-l overflow-hidden w-full"
       style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
 
-      {/* Tabs */}
-      <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
-        {([
-          { id: 'block', icon: <Layout size={14} />, label: 'Bloque' },
-          { id: 'page', icon: <Settings size={14} />, label: 'Página' },
-          { id: 'seo', icon: <Globe size={14} />, label: 'SEO' },
-        ] as { id: Tab; icon: React.ReactNode; label: string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[13px] font-semibold transition-colors"
-            style={{
-              borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
-              color: tab === t.id ? '#E8150A' : '#9A9D9F',
-            }}>
-            {t.icon}{t.label}
+      {selectedBlock ? (
+        <div className="flex items-center gap-2 px-4 h-14 border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
+          <button onClick={() => selectBlock(null)} title="Volver a ajustes de la página" aria-label="Volver a ajustes de la página"
+            className="p-1.5 -ml-1.5 rounded-lg hover:bg-[#F2F3F4]" style={{ color: '#5A5D60' }}>
+            <ChevronLeft size={18} />
           </button>
-        ))}
-      </div>
+          <span className="text-lg" aria-hidden>{def?.icon}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold truncate" style={{ color: '#1A1B1C' }}>{def?.label ?? selectedBlock.type}</p>
+            {limits.multiLanguage && page.settings.enabledLangs.length > 1 && (
+              <p className="text-[11px]" style={{ color: '#9A9D9F' }}>Editando en {previewLang.toUpperCase()}</p>
+            )}
+          </div>
+          <button onClick={() => duplicateBlock(selectedBlock.id)} title="Duplicar bloque" aria-label="Duplicar bloque"
+            className="p-1.5 rounded-lg hover:bg-[#F2F3F4]" style={{ color: '#5A5D60' }}><CopyIcon size={16} /></button>
+          <button onClick={() => removeBlock(selectedBlock.id)} title="Eliminar bloque" aria-label="Eliminar bloque"
+            className="p-1.5 rounded-lg hover:bg-[#FEF0EF]" style={{ color: '#E8150A' }}><Trash2 size={16} /></button>
+        </div>
+      ) : (
+        <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
+          {([
+            { id: 'design', icon: <Settings size={14} />, label: 'Diseño y ajustes' },
+            { id: 'seo', icon: <Globe size={14} />, label: 'SEO' },
+          ] as { id: PageTab; icon: React.ReactNode; label: string }[]).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex-1 flex items-center justify-center gap-1.5 h-14 text-[13px] font-semibold transition-colors"
+              style={{
+                borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
+                color: tab === t.id ? '#E8150A' : '#9A9D9F',
+              }}>
+              {t.icon}{t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-5">
-        {tab === 'block' && (
-          selectedBlock
-            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
-                onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
-            : <div className="text-center py-14">
-                <div className="text-4xl mb-3">👆</div>
-                <p className="text-sm" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
-              </div>
-        )}
-        {tab === 'page' && <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />}
-        {tab === 'seo' && <SeoEditor seo={page.settings.seo} onUpdate={updateSeo} />}
+      <div className="flex-1 overflow-y-auto p-5" key={selectedBlock?.id ?? tab}>
+        {selectedBlock
+          ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
+              onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
+          : tab === 'design'
+            ? <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />
+            : <SeoEditor seo={page.settings.seo} slug={page.slug} onUpdate={updateSeo} />}
       </div>
     </div>
   )
@@ -97,6 +114,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'order_menu': editor = <OrderMenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
   }
@@ -652,6 +670,102 @@ function MenuEditor({ block, lang, onUpdate }: {
   )
 }
 
+// ─── Order menu (mini tienda / pedidos por WhatsApp) ──────────────
+function OrderMenuEditor({ block, lang, onUpdate }: {
+  block: OrderMenuBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<OrderMenuBlock['data']>) => void
+}) {
+  const d = block.data
+  const t = d.translations[lang] || d.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, { translations: { ...d.translations, [lang]: { ...t, [key]: val } } })
+  const blankLangs = <T,>(v: T) => Object.fromEntries(ALL_LANGS.map(l => [l.code, v])) as Record<Lang, T>
+  const num = (v: string) => Math.max(0, Number(v.replace(',', '.')) || 0)
+
+  function setCategories(categories: OrderMenuBlock['data']['categories']) { onUpdate(block.id, { categories }) }
+  function patchItem(catId: string, itemId: string, fn: (it: OrderMenuBlock['data']['categories'][number]['items'][number]) => OrderMenuBlock['data']['categories'][number]['items'][number]) {
+    setCategories(d.categories.map(c => c.id !== catId ? c : { ...c, items: c.items.map(i => i.id === itemId ? fn(i) : i) }))
+  }
+
+  return (
+    <div className="space-y-5">
+      <Section label="Tu tienda">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Hacé tu pedido" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Horario de entrega, zona..." /></Field>
+        <Field label="WhatsApp donde recibís los pedidos">
+          <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
+          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Con código de país. El cliente arma el pedido y se abre un chat con este número.</p>
+        </Field>
+        <Field label="Moneda">
+          <select value={d.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            {['ARS', 'MXN', 'CLP', 'COP', 'UYU', 'PEN', 'BRL', 'USD', 'EUR'].map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </Section>
+
+      <Section label="Entrega">
+        <Toggle label="Envío a domicilio" value={d.delivery} onChange={v => onUpdate(block.id, { delivery: v || !d.pickup ? v : d.delivery, pickup: v ? d.pickup : true })} />
+        <Toggle label="Retiro en el local" value={d.pickup} onChange={v => onUpdate(block.id, { pickup: v, delivery: v ? d.delivery : true })} />
+        {d.delivery && (
+          <Field label="Costo de envío (0 = sin cargo)">
+            <Input value={String(d.deliveryFee)} onChange={v => onUpdate(block.id, { deliveryFee: num(v) })} />
+          </Field>
+        )}
+        <Field label="Pedido mínimo (0 = sin mínimo)">
+          <Input value={String(d.minOrder)} onChange={v => onUpdate(block.id, { minOrder: num(v) })} />
+        </Field>
+      </Section>
+
+      <Section label={`Catálogo (${d.categories.reduce((n, c) => n + c.items.length, 0)} productos)`}>
+        {d.categories.map((cat, ci) => {
+          const ct = cat.translations[lang] || cat.translations['es'] || { name: '' }
+          return (
+            <div key={cat.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {ci + 1}</span>
+                <RemoveButton onClick={() => setCategories(d.categories.filter(c => c.id !== cat.id))} />
+              </div>
+              <Field label="Nombre">
+                <Input value={ct.name} placeholder="Hamburguesas, Bebidas..."
+                  onChange={v => setCategories(d.categories.map(c => c.id === cat.id ? { ...c, translations: { ...c.translations, [lang]: { name: v } } } : c))} />
+              </Field>
+              <div className="mt-2.5 space-y-2">
+                {cat.items.map((item, ii) => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <RemoveButton onClick={() => setCategories(d.categories.map(c => c.id === cat.id ? { ...c, items: c.items.filter(i => i.id !== item.id) } : c))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Field label="Nombre"><Input value={it.name} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, translations: { ...i.translations, [lang]: { ...it, name: v } } }))} /></Field>
+                        <Field label="Descripción (opcional)"><Input value={it.description || ''} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, translations: { ...i.translations, [lang]: { ...it, description: v } } }))} /></Field>
+                        <Field label={`Precio (${d.currency})`}><Input value={String(item.price)} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, price: num(v) }))} /></Field>
+                        <Toggle label="Disponible" value={item.available} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, available: v }))} />
+                        {item.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" className="rounded-lg" style={{ width: 56, height: 56, objectFit: 'cover' }} />
+                        )}
+                        <ImageUploadButton onUploaded={url => patchItem(cat.id, item.id, i => ({ ...i, imageUrl: url }))} />
+                      </div>
+                    </div>
+                  )
+                })}
+                <AddButton dashed label="Añadir producto" onClick={() => setCategories(d.categories.map(c => c.id === cat.id
+                  ? { ...c, items: [...c.items, { id: generateId(), translations: blankLangs({ name: '', description: '' }), price: 0, available: true }] }
+                  : c))} />
+              </div>
+            </div>
+          )
+        })}
+        <AddButton label="Añadir categoría" onClick={() => setCategories([...d.categories, { id: generateId(), translations: blankLangs({ name: '' }), items: [] }])} />
+      </Section>
+    </div>
+  )
+}
+
 // ─── Payment Button Editor ────────────────────────────────────────
 const MP_CURRENCIES = ['ARS', 'MXN', 'CLP', 'COP', 'PEN', 'UYU', 'BRL']
 
@@ -916,6 +1030,35 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 }) {
   return (
     <div className="space-y-5">
+      <Section label="Cabecera de la página">
+        <Field label="Frase o descripción corta">
+          <Input value={settings.profile?.tagline ?? ''} placeholder="Hamburguesas artesanales · Palermo"
+            onChange={v => onUpdate({ profile: { ...settings.profile, tagline: v.slice(0, 160) } })} />
+        </Field>
+        <Field label="Logo o foto">
+          {settings.profile?.avatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.profile.avatarUrl} alt="" className="rounded-full mb-2" style={{ width: 56, height: 56, objectFit: 'cover' }} />
+          )}
+          <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, avatarUrl: url } })} />
+          {settings.profile?.avatarUrl && (
+            <button className="text-xs underline mt-1.5" style={{ color: '#9A9D9F' }}
+              onClick={() => onUpdate({ profile: { ...settings.profile, avatarUrl: '' } })}>Quitar</button>
+          )}
+        </Field>
+        <Field label="Imagen de portada">
+          {settings.profile?.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.profile.coverUrl} alt="" className="rounded-lg mb-2 w-full" style={{ height: 72, objectFit: 'cover' }} />
+          )}
+          <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, coverUrl: url } })} />
+          {settings.profile?.coverUrl && (
+            <button className="text-xs underline mt-1.5" style={{ color: '#9A9D9F' }}
+              onClick={() => onUpdate({ profile: { ...settings.profile, coverUrl: '' } })}>Quitar</button>
+          )}
+        </Field>
+      </Section>
+
       <Section label="Color principal">
         <div className="flex flex-wrap gap-2">
           {['#E8150A', '#FF8C00', '#185FA5', '#16A34A', '#7C3AED', '#1A1B1C', '#DB2777', '#0891B2'].map(c => (
@@ -1011,7 +1154,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 }
 
 // ─── SEO Editor ──────────────────────────────────────────────────
-function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
+function SeoEditor({ seo, slug, onUpdate }: { seo: PageSettings['seo']; slug: string; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
   return (
     <div className="space-y-5">
       <Section label="SEO & Metadatos">
@@ -1034,7 +1177,7 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
       <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
         <p className="text-xs font-semibold mb-1" style={{ color: '#5A5D60' }}>Vista previa Google</p>
         <p className="text-sm font-medium" style={{ color: '#1a0dab' }}>{seo.title || 'Título de tu página'}</p>
-        <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/tu-slug</p>
+        <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/{slug}</p>
         <p className="text-xs mt-0.5" style={{ color: '#545454' }}>{seo.description || 'Descripción de tu página...'}</p>
       </div>
     </div>

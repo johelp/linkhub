@@ -16,7 +16,7 @@ export function buildDemoPage(businessName?: string, generic = false): Page {
   const name = businessName?.trim() || 'Sierra Nevada Ski'
   return {
     id: 'demo', user_id: 'demo', slug: 'sierra-nevada-ski',
-    name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
+    name, published: true, qr_url: null, custom_domain: null, views: 0,
     created_at: '', updated_at: '',
     settings: {
       defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',

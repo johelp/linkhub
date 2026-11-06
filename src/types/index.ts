@@ -19,6 +19,7 @@ export type BlockType =
   | 'loyalty_card'
   | 'text'
   | 'menu'
+  | 'order_menu'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -85,6 +86,13 @@ export interface PageSettings {
     title: string
     description: string
     ogImage: string | null
+  }
+  // Header of the public page (hero card). All optional: without them the
+  // page shows the name over a brand-colored gradient with an initial avatar.
+  profile?: {
+    avatarUrl?: string
+    coverUrl?: string
+    tagline?: string
   }
   pixels?: {
     ga4Id?: string        // "G-XXXXXXXXXX"
@@ -321,11 +329,42 @@ export interface MenuBlock extends BlockBase {
   }
 }
 
+// Mini tienda / pedidos: the visitor builds a cart on the page and sends the
+// order to the owner's WhatsApp (no payment processed by LinkHub).
+export interface OrderItem {
+  id: string
+  translations: Record<Lang, { name: string; description?: string }>
+  price: number
+  imageUrl?: string
+  available: boolean
+}
+
+export interface OrderCategory {
+  id: string
+  translations: Record<Lang, { name: string }>
+  items: OrderItem[]
+}
+
+export interface OrderMenuBlock extends BlockBase {
+  type: 'order_menu'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    currency: string
+    whatsapp: string            // owner's number, any format; digits are extracted
+    categories: OrderCategory[]
+    delivery: boolean
+    pickup: boolean
+    deliveryFee: number         // 0 = free / not charged
+    minOrder: number            // 0 = no minimum
+    notesPlaceholder: string
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

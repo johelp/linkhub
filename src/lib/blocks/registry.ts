@@ -375,6 +375,48 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'order_menu',
+    label: 'Pedidos / Mini tienda',
+    description: 'Catálogo con carrito: el cliente arma su pedido y te lo envía por WhatsApp',
+    icon: '🛒',
+    category: 'content',
+    createDefault: () => {
+      const langs = ['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]
+      const per = <T,>(es: T, blank: T) => Object.fromEntries(langs.map(l => [l, l === 'es' ? es : blank])) as Record<Lang, T>
+      return {
+        id: generateId(),
+        type: 'order_menu',
+        order: 0,
+        visible: true,
+        seasonFilter: 'always',
+        data: {
+          translations: per({ title: 'Hacé tu pedido', description: 'Armá tu pedido y envialo por WhatsApp' }, { title: '', description: '' }),
+          currency: 'ARS',
+          whatsapp: '',
+          delivery: true,
+          pickup: true,
+          deliveryFee: 0,
+          minOrder: 0,
+          notesPlaceholder: 'Aclaraciones (sin cebolla, timbre, etc.)',
+          categories: [
+            {
+              id: generateId(),
+              translations: per({ name: 'Destacados' }, { name: '' }),
+              items: [
+                {
+                  id: generateId(),
+                  translations: per({ name: 'Producto 1', description: '' }, { name: '', description: '' }),
+                  price: 0,
+                  available: true,
+                },
+              ],
+            },
+          ],
+        },
+      } as Block
+    },
+  },
+  {
     type: 'menu',
     label: 'Menú / Carta',
     description: 'Categorías, productos y precios -- o un link a tu PDF si ya lo tenés armado',
@@ -516,3 +558,11 @@ export const ICON_BG_PRESETS: Record<string, string> = {
   gray:   '#F2F3F4',
   dark:   '#1A1B1C',
 }
+
+// Shown on an empty canvas: the handful of blocks nearly every page starts with.
+export const QUICK_START_BLOCKS: Array<{ type: BlockType; label: string; icon: string }> = [
+  { type: 'link', label: 'Enlace', icon: '🔗' },
+  { type: 'contact_card', label: 'WhatsApp y contacto', icon: '💬' },
+  { type: 'social_grid', label: 'Redes', icon: '📱' },
+  { type: 'business_hours', label: 'Horarios', icon: '🕒' },
+]
