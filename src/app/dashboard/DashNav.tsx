@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
-import { LayoutDashboard, BarChart3, Users, CreditCard, Sparkles, Settings, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Users, CreditCard, Sparkles, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
 
 const R = '#E8150A'
@@ -27,6 +27,8 @@ const SECTIONS: { title: string; items: Item[] }[] = [
   ] },
 ]
 const MOBILE_ITEMS = SECTIONS.flatMap(s => s.items)
+// Desktop only (the mobile bottom bar already has 6 targets): on mobile it is linked from Ajustes.
+const DEVELOPERS_ITEM: Item = { href: '/dashboard/developers', label: 'Desarrolladores', hint: 'API keys y MCP', icon: Code2 }
 
 // Collapsed/expanded preference, remembered per browser. External-store
 // pattern: the server (and first paint) always renders expanded.
@@ -38,9 +40,9 @@ function setCollapsed(v: boolean) {
   window.dispatchEvent(new Event('lh-dash-collapse'))
 }
 
-interface Props { name: string; initial: string; plan: string; isAdmin: boolean }
+interface Props { name: string; initial: string; plan: string; isAdmin: boolean; developers?: boolean }
 
-export function DashNav({ name, initial, plan, isAdmin }: Props) {
+export function DashNav({ name, initial, plan, isAdmin, developers = false }: Props) {
   const pathname = usePathname()
   const collapsed = useSyncExternalStore(subscribe, read, () => false)
   const active = (href: string, exact?: boolean) => (exact ? pathname === href : pathname === href || pathname.startsWith(href + '/'))
@@ -85,7 +87,7 @@ export function DashNav({ name, initial, plan, isAdmin }: Props) {
               {collapsed
                 ? <div className="mx-3 mb-2 h-px" style={{ background: 'rgba(26,27,28,0.08)' }} aria-hidden />
                 : <p className="px-3 mb-1.5 text-[11px] font-bold uppercase tracking-[.08em]" style={{ color: SUB }}>{sec.title}</p>}
-              <div className="flex flex-col gap-0.5">{sec.items.map(link)}</div>
+              <div className="flex flex-col gap-0.5">{(developers && sec.title === 'Cuenta' ? [...sec.items, DEVELOPERS_ITEM] : sec.items).map(link)}</div>
             </div>
           ))}
           {isAdmin && (

@@ -1,46 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { PLAN_LIMITS, blockRequiresPro, type Block, type Plan } from '@/types'
-import type { TablesUpdate, Json } from '@/lib/supabase/database.types'
-import { HEX_COLOR, sanitizeBlocks, sanitizeSettings } from '@/lib/security'
+import type { Block, Plan } from '@/types'
+import type { TablesUpdate } from '@/lib/supabase/database.types'
 import { getFlagsForUser } from '@/lib/flags.server'
-import { BLOCK_FLAG } from '@/lib/flags'
-
-const MAX_BLOCKS = 100
-const MAX_BODY_BYTES = 512 * 1024
-const MAX_NAME = 80
-
-function isObject(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === 'object' && !Array.isArray(v)
-}
-
-// Server-side shape check: the editor is just one client of this endpoint,
-// so nothing it sends is trusted. Returns an error string or null.
-function validateBlocks(blocks: unknown): string | null {
-  if (!Array.isArray(blocks)) return 'blocks debe ser una lista'
-  if (blocks.length > MAX_BLOCKS) return `Máximo ${MAX_BLOCKS} bloques por página`
-  const ids = new Set<string>()
-  for (const b of blocks) {
-    if (!isObject(b) || typeof b.id !== 'string' || typeof b.type !== 'string' || !isObject(b.data)) {
-      return 'Bloque con formato inválido'
-    }
-    if (ids.has(b.id)) return 'IDs de bloque duplicados'
-    ids.add(b.id)
-  }
-  return null
-}
-
-function validateSettings(settings: unknown): string | null {
-  if (!isObject(settings)) return 'settings inválido'
-  for (const key of ['primaryColor', 'backgroundColor'] as const) {
-    const v = settings[key]
-    if (v !== undefined && !(typeof v === 'string' && HEX_COLOR.test(v))) return `${key} debe ser un color hex (#RRGGBB)`
-  }
-  if (settings.fontFamily !== undefined && !(typeof settings.fontFamily === 'string' && /^[\w\s-]{1,40}$/.test(settings.fontFamily))) {
-    return 'fontFamily inválido'
-  }
-  return null
-}
+// Validation, plan limits, flags and sanitizers live in lib/pageWrite.ts so the
+// MCP server and this route share exactly the same rules.
+import { MAX_BODY_BYTES, evaluatePageWrite, isObject, pageWriteError, validatePageInput } from '@/lib/pageWrite'
 
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient()
@@ -60,20 +25,8 @@ export async function PATCH(request: NextRequest) {
 
   const { pageId, blocks, settings, name, published } = body
   if (typeof pageId !== 'string' || !pageId) return NextResponse.json({ error: 'pageId required' }, { status: 400 })
-  if (name !== undefined && (typeof name !== 'string' || !name.trim() || name.length > MAX_NAME)) {
-    return NextResponse.json({ error: 'Nombre inválido' }, { status: 400 })
-  }
-  if (published !== undefined && typeof published !== 'boolean') {
-    return NextResponse.json({ error: 'published debe ser boolean' }, { status: 400 })
-  }
-  if (blocks !== undefined) {
-    const err = validateBlocks(blocks)
-    if (err) return NextResponse.json({ error: err }, { status: 400 })
-  }
-  if (settings !== undefined) {
-    const err = validateSettings(settings)
-    if (err) return NextResponse.json({ error: err }, { status: 400 })
-  }
+  const inputError = validatePageInput({ name, published, blocks, settings })
+  if (inputError) return NextResponse.json({ error: inputError }, { status: 400 })
 
   // Verify ownership
   const { data: page } = await supabase
@@ -86,34 +39,14 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  if (blocks !== undefined) {
-    const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-    const plan = (profile?.plan || 'free') as Plan
-    const limits = PLAN_LIMITS[plan]
-    if (!limits.advancedBlocks) {
-      const lockedBlock = (blocks as Block[]).find(b => blockRequiresPro(b.type))
-      if (lockedBlock) {
-        return NextResponse.json({ error: `El bloque "${lockedBlock.type}" requiere plan Pro` }, { status: 403 })
-      }
-    }
-  }
-
-  // Staged rollout: a customer can't ADD a block type whose feature isn't enabled
-  // for them (the UI hides it, this closes the API). Types the page already had
-  // stay editable, so turning a flag off never locks anyone out of their page.
-  if (blocks !== undefined) {
-    const flags = await getFlagsForUser(user.id, user.email)
-    const had = new Set(((page.blocks as unknown as Block[]) ?? []).map(b => b.type))
-    const blocked = (blocks as Block[]).find(b => { const f = BLOCK_FLAG[b.type]; return f && !flags[f] && !had.has(b.type) })
-    if (blocked) return NextResponse.json({ error: 'Esta función todavía no está disponible para tu cuenta' }, { status: 403 })
-  }
-
-  const update: TablesUpdate<'pages'> = {}
-  // Unsafe URL schemes (javascript:, data:...) are stripped before persisting.
-  if (blocks !== undefined) update.blocks = sanitizeBlocks(blocks as Block[]) as unknown as Json
-  if (settings !== undefined) update.settings = sanitizeSettings(settings as Parameters<typeof sanitizeSettings>[0]) as unknown as Json
-  if (name !== undefined) update.name = (name as string).trim()
-  if (published !== undefined) update.published = published
+  // Plan limits, staged-rollout flags and sanitizers (shared with the MCP server).
+  const result = await evaluatePageWrite({ blocks, settings, name, published }, {
+    existingBlocks: (page.blocks as unknown as Block[]) ?? [],
+    getPlan: async () => ((await supabase.from('profiles').select('plan').eq('id', user.id).single()).data?.plan || 'free') as Plan,
+    getFlags: () => getFlagsForUser(user.id, user.email),
+  })
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status })
+  const update = result.update as TablesUpdate<'pages'>
 
   const { error } = await supabase
     .from('pages')
@@ -122,11 +55,8 @@ export async function PATCH(request: NextRequest) {
 
   if (error) {
     console.error('pages PATCH error', error)
-    const planLimit = error.message?.includes('plan_limit_exceeded')
-    return NextResponse.json(
-      { error: planLimit ? 'Tu plan no permite este contenido' : 'No se pudo guardar' },
-      { status: planLimit ? 403 : 500 }
-    )
+    const mapped = pageWriteError(error)
+    return NextResponse.json({ error: mapped.error }, { status: mapped.status })
   }
 
   return NextResponse.json({ ok: true })

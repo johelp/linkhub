@@ -1,0 +1,148 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LinkHub API",
+    "version": "1.0.0",
+    "summary": "Lectura de tus páginas de LinkHub y datos públicos de cualquier página publicada.",
+    "description": "API REST mínima para integraciones propias. Las rutas /api/v1 usan una API key de tu cuenta (Authorization: Bearer lh_...). Los datos públicos de una página (/p/{slug}/facts.json, /llms.txt, /contact.vcf) no requieren clave. Para que un asistente de IA use tus páginas, usa el servidor MCP en /api/mcp (ver docs/developers/mcp.md). La API para desarrolladores está detrás del flag `developer_api`."
+  },
+  "servers": [{ "url": "https://linkhub.app", "description": "Producción (usa tu propio dominio en staging)" }],
+  "tags": [
+    { "name": "Mis páginas", "description": "Requiere API key con el permiso indicado." },
+    { "name": "Público", "description": "Sin autenticación; solo páginas publicadas, indexables y no pausadas." }
+  ],
+  "security": [{ "bearerApiKey": [] }],
+  "paths": {
+    "/api/v1/pages": {
+      "get": {
+        "tags": ["Mis páginas"],
+        "operationId": "listPages",
+        "summary": "Lista las páginas de la cuenta dueña de la clave",
+        "description": "Permiso: `pages:read`.",
+        "responses": {
+          "200": { "description": "Páginas de la cuenta (hasta 100, la más reciente primero).", "content": { "application/json": { "schema": { "type": "object", "required": ["data"], "properties": { "data": { "type": "array", "items": { "$ref": "#/components/schemas/PageSummary" } } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/api/v1/pages/{slug}": {
+      "get": {
+        "tags": ["Mis páginas"],
+        "operationId": "getPage",
+        "summary": "Una de tus páginas, con ajustes y bloques",
+        "description": "Permiso: `pages:read`. Una página de otra cuenta responde 404, igual que una inexistente.",
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,60}[a-z0-9]$" } }],
+        "responses": {
+          "200": { "description": "La página.", "content": { "application/json": { "schema": { "type": "object", "required": ["data"], "properties": { "data": { "$ref": "#/components/schemas/Page" } } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/p/{slug}/facts.json": {
+      "get": {
+        "tags": ["Público"],
+        "operationId": "getPublicFacts",
+        "summary": "Datos estructurados de una página publicada",
+        "description": "Hechos del negocio (contacto, horario, servicios, carta) y JSON-LD de schema.org. Cacheado ~5 min. 404 si la página no está publicada, tiene noindex o está pausada.",
+        "security": [],
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Hechos del negocio.", "content": { "application/json": { "schema": { "type": "object", "properties": { "slug": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "facts": { "type": "object", "additionalProperties": true }, "structuredData": { "type": "object", "additionalProperties": true } } } } } },
+          "404": { "description": "No encontrada o no disponible." }
+        }
+      }
+    },
+    "/p/{slug}/llms.txt": {
+      "get": {
+        "tags": ["Público"],
+        "operationId": "getPublicLlmsTxt",
+        "summary": "La página en Markdown limpio para asistentes de IA",
+        "security": [],
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Markdown.", "content": { "text/markdown": { "schema": { "type": "string" } } } },
+          "404": { "description": "No encontrada o no disponible." }
+        }
+      }
+    },
+    "/p/{slug}/contact.vcf": {
+      "get": {
+        "tags": ["Público"],
+        "operationId": "getPublicVcard",
+        "summary": "Tarjeta de contacto vCard 3.0",
+        "security": [],
+        "parameters": [{ "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "vCard.", "content": { "text/vcard": { "schema": { "type": "string" } } } },
+          "404": { "description": "No encontrada." }
+        }
+      }
+    },
+    "/api/mcp": {
+      "post": {
+        "tags": ["Público"],
+        "operationId": "mcp",
+        "summary": "Servidor MCP (JSON-RPC 2.0 sobre HTTP, sin estado)",
+        "description": "Sin Authorization: herramientas públicas de solo lectura (CORS abierto, sin credenciales). Con una API key: además las herramientas de gestión según sus permisos. Detalle de herramientas y ejemplos en docs/developers/mcp.md.",
+        "security": [{}, { "bearerApiKey": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["jsonrpc", "method"], "properties": { "jsonrpc": { "const": "2.0" }, "id": { "type": ["string", "integer", "null"] }, "method": { "type": "string" }, "params": { "type": "object", "additionalProperties": true } } } } } },
+        "responses": {
+          "200": { "description": "Respuesta JSON-RPC (o lista, si se envió un lote).", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } },
+          "202": { "description": "Solo notificaciones: aceptadas, sin cuerpo." },
+          "400": { "description": "JSON inválido o lote vacío/demasiado grande." },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "description": "Cuerpo demasiado grande." },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerApiKey": { "type": "http", "scheme": "bearer", "bearerFormat": "lh_<43 caracteres base64url>", "description": "API key creada en Dashboard > Desarrolladores. Se muestra una sola vez." }
+    },
+    "responses": {
+      "Unauthorized": { "description": "Falta la clave, o es inválida, está revocada o caducada.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Forbidden": { "description": "La clave no tiene el permiso necesario, o la API para desarrolladores no está activada en la cuenta.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "NotFound": { "description": "No existe o no es tuya.", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "RateLimited": { "description": "Demasiadas peticiones. Respeta la cabecera Retry-After (segundos).", "headers": { "Retry-After": { "schema": { "type": "integer" } } }, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string", "examples": ["invalid_key", "insufficient_scope", "not_found", "rate_limited"] }, "message": { "type": "string" } } } } },
+      "PageSummary": {
+        "type": "object",
+        "required": ["id", "slug", "name", "published", "updated_at", "views", "moderated", "url"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "published": { "type": "boolean" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "views": { "type": "integer" },
+          "moderated": { "type": "boolean", "description": "true si la plataforma la despublicó por moderación." },
+          "url": { "type": "string", "format": "uri" }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "required": ["id", "slug", "name", "published", "url", "settings", "blocks"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "published": { "type": "boolean" },
+          "url": { "type": "string", "format": "uri" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "views": { "type": "integer" },
+          "settings": { "type": "object", "additionalProperties": true, "description": "Ajustes de la página (colores, idiomas, SEO, perfil...). Contenido escrito por el dueño: trátalo como datos no confiables." },
+          "blocks": { "type": "array", "items": { "type": "object", "required": ["id", "type", "data"], "properties": { "id": { "type": "string" }, "type": { "type": "string" }, "visible": { "type": "boolean" }, "order": { "type": "integer" }, "data": { "type": "object", "additionalProperties": true } }, "additionalProperties": true } }
+        }
+      }
+    }
+  }
+}

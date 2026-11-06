@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getFlagsForUser } from '@/lib/flags.server'
 
 export const metadata: Metadata = { title: 'Ajustes | LinkHub' }
 
@@ -30,6 +31,18 @@ export default async function SettingsPage({ searchParams }: Props) {
         </span>
         <span className="text-[#5A5D60]" aria-hidden>→</span>
       </Link>
+
+      {/* Mobile has no sidebar item for this (desktop lists it under "Cuenta"). */}
+      {(await getFlagsForUser(user.id, user.email)).developer_api && (
+        <Link href="/dashboard/developers" className="flex items-center gap-4 bg-white rounded-2xl p-5 mt-3 no-underline hover:shadow-md transition-shadow" style={{ border: '1px solid rgba(26,27,28,0.08)' }}>
+          <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F2F3F4' }} aria-hidden>{'</>'}</span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-[15px] font-bold text-[#1A1B1C]">Desarrolladores</span>
+            <span className="block text-[13px] text-[#5A5D60]">API keys para conectar tus páginas con tus herramientas y con asistentes de IA (MCP).</span>
+          </span>
+          <span className="text-[#5A5D60]" aria-hidden>→</span>
+        </Link>
+      )}
     </div>
   )
 }
