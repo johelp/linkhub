@@ -62,7 +62,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
     fontFamily: 'inherit', color: INK, background: '#fff', outline: 'none', boxSizing: 'border-box',
   }
   const chip = (active: boolean): React.CSSProperties => ({
-    padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+    padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, transition: 'background .15s, color .15s, border-color .15s, transform .1s',
     border: `1.5px solid ${active ? pc : BORDER}`, background: active ? pc : '#fff', color: active ? '#fff' : INK,
   })
   const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.8px', textTransform: 'uppercase', margin: '14px 0 6px' }
@@ -84,7 +84,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
                 if (!n) return null
                 const active = s.id === service?.id
                 return (
-                  <button key={s.id} type="button" role="radio" aria-checked={active} onClick={() => pickService(s.id)}
+                  <button className="lh-press" key={s.id} type="button" role="radio" aria-checked={active} onClick={() => pickService(s.id)}
                     style={{ ...chip(active), textAlign: 'left', display: 'flex', justifyContent: 'space-between', gap: 8, width: '100%' }}>
                     <span>{n}</span>
                     <span style={{ fontWeight: 500, opacity: 0.85 }}>{s.durationMin} min{s.price ? ` · ${formatMoney(s.price, d.currency)}` : ''}</span>
@@ -101,7 +101,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
         ) : (
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} role="radiogroup" aria-label="Día">
             {days.map(x => (
-              <button key={x.key} type="button" role="radio" aria-checked={x.key === dayKey} onClick={() => pickDay(x.key)} style={chip(x.key === dayKey)}>{x.label}</button>
+              <button className="lh-press" key={x.key} type="button" role="radio" aria-checked={x.key === dayKey} onClick={() => pickDay(x.key)} style={chip(x.key === dayKey)}>{x.label}</button>
             ))}
           </div>
         )}
@@ -111,14 +111,14 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
             <div style={label}>Horario</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }} role="radiogroup" aria-label="Horario">
               {day.slots.map(s => (
-                <button key={s} type="button" role="radio" aria-checked={s === time} onClick={() => { setTime(s); setError(null) }} style={chip(s === time)}>{s}</button>
+                <button className="lh-press" key={s} type="button" role="radio" aria-checked={s === time} onClick={() => { setTime(s); setError(null) }} style={chip(s === time)}>{s}</button>
               ))}
             </div>
           </>
         )}
 
         {time && (
-          <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+          <div className="lh-expand" style={{ display: 'grid', gap: 8, marginTop: 14 }}>
             <div style={{ fontSize: 13, color: MUTED }}>
               {service?.translations[lang]?.name || service?.translations.es?.name} · <b style={{ color: INK }}>{longDayLabel(dayKey, lang)}, {time}</b>
             </div>
@@ -126,7 +126,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
             <input aria-label="Tu teléfono (opcional)" placeholder="Tu teléfono (opcional)" inputMode="tel" value={phone} maxLength={30} onChange={e => setPhone(e.target.value)} style={field} />
             <textarea aria-label="Notas" placeholder="Algo que debamos saber (opcional)" value={notes} maxLength={200} rows={2} onChange={e => setNotes(e.target.value)} style={{ ...field, resize: 'none' }} />
             {error && <div role="alert" style={{ fontSize: 12.5, color: '#B50F07' }}>{error}</div>}
-            <button type="button" onClick={send}
+            <button className="lh-press" type="button" onClick={send}
               style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               💬 Solicitar turno por WhatsApp
             </button>

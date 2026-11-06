@@ -1279,7 +1279,9 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
         )}
       </Section>
 
-      <Section label="General">
+ <Section label="General">
+        <Toggle label="Animaciones al hacer scroll" value={settings.animations !== false}
+          onChange={v => onUpdate({ animations: v })} />
         <Toggle label="Mostrar 'Creado con LinkHub'" value={settings.showPoweredBy}
           onChange={v => onUpdate({ showPoweredBy: v })} />
       </Section>

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock } from '@/types'
@@ -63,7 +63,61 @@ const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   failed: 'No se pudo iniciar el pago. Intentá de nuevo en un momento.',
 }
 
+// ─── Public-page motion ──────────────────────────────────────────
+// One IntersectionObserver reveals `.lh-reveal` cells as they enter the
+// viewport; a rAF-throttled scroll listener feeds `--lh-y` (cover parallax).
+// Everything is gated by `enabled` (off in the editor and in demo mockups) and
+// the CSS only animates when the visitor hasn't asked for reduced motion.
+function useMotion(root: React.RefObject<HTMLDivElement | null>, enabled: boolean, dep: unknown) {
+  useEffect(() => {
+    const el = root.current
+    if (!enabled || !el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' })
+    el.querySelectorAll('.lh-reveal:not(.in)').forEach(n => io.observe(n))
+    return () => io.disconnect()
+  }, [root, enabled, dep])
+
+  useEffect(() => {
+    const el = root.current
+    if (!enabled || !el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let frame = 0
+    const update = () => { frame = 0; el.style.setProperty('--lh-y', String(Math.min(window.scrollY, 800))) }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', onScroll); if (frame) cancelAnimationFrame(frame) }
+  }, [root, enabled])
+}
+
+// Slim bar that slides in once the profile card has scrolled away, so the
+// page's identity stays visible on long pages.
+function MiniBar({ target, name, avatarUrl, initial, pc }: { target: React.RefObject<HTMLElement | null>; name: string; avatarUrl?: string; initial: string; pc: string }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const el = target.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [target])
+  return (
+    <div aria-hidden={!show} className="lh-minibar" data-show={show}>
+      <button type="button" tabIndex={show ? 0 : -1} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Volver arriba">
+        {avatarUrl
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={avatarUrl} alt="" width={28} height={28} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+          : <span style={{ width: 28, height: 28, borderRadius: '50%', background: pc, color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>}
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6B6E71' }}>↑</span>
+      </button>
+    </div>
+  )
+}
+
 export function PageView({ page, editing = false, controls }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
   const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)
   // In the editor the language is driven from outside, so the canvas always
   // shows the language whose fields the inspector is editing.
@@ -159,6 +213,9 @@ export function PageView({ page, editing = false, controls }: Props) {
   const showLangBar = enabledLangs.length > 1
 
   const profile = page.settings.profile
+  // Motion: on by default; off in the editor canvas, in landing demos, or when the owner turns it off.
+  const fx = !editing && !page.id.startsWith('demo') && page.settings.animations !== false
+  useMotion(rootRef, fx, visibleBlocks.length)
   const initial = (page.name.trim()[0] || '•').toUpperCase()
   // Simple link cards sit two-per-row on wide layouts; everything richer
   // (menus, stores, video, accordions...) spans the full row.
@@ -185,7 +242,9 @@ export function PageView({ page, editing = false, controls }: Props) {
     // `@container`: the layout reacts to the width of THIS box, not the
     // browser window, so the editor's phone/tablet/desktop preview frames and
     // the real public page share one set of rules.
-    <div className="@container lh-root" style={{ background: bg, minHeight: editing ? 420 : '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div ref={rootRef} className={`@container lh-root${fx ? ' lh-fx' : ''}`} style={{ background: bg, minHeight: editing ? 420 : '100vh', position: 'relative', overflow: 'hidden' }}>
+      {fx && <MiniBar target={heroRef} name={page.name} avatarUrl={profile?.avatarUrl} initial={initial} pc={pc} />}
+
       {/* Soft brand glow behind everything -- gives wide screens depth instead of a flat grey field */}
       <div aria-hidden style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -195,26 +254,27 @@ export function PageView({ page, editing = false, controls }: Props) {
       <div className="relative mx-auto w-full max-w-[520px] px-4 pb-16 @2xl:max-w-[720px] @2xl:px-8 @4xl:grid @4xl:max-w-[1120px] @4xl:grid-cols-[340px_minmax(0,1fr)] @4xl:items-start @4xl:gap-14 @4xl:px-10 @4xl:pt-14 @4xl:pb-24">
 
         {/* Hero / profile: stacked on top for phones & tablets, sticky left panel on desktop */}
-        <header className="pt-5 @4xl:sticky @4xl:top-10 @4xl:pt-0">
+        <header ref={heroRef} className="pt-5 @4xl:sticky @4xl:top-10 @4xl:pt-0">
           <div style={{ borderRadius: 24, overflow: 'hidden', background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 10px 30px rgba(26,27,28,0.07)' }}>
-            <div className="h-28 @2xl:h-36 @4xl:h-44" style={{
+            <div className="h-28 @2xl:h-36 @4xl:h-44 lh-cover" style={{
               background: profile?.coverUrl
                 ? `center / cover no-repeat url("${profile.coverUrl.replace(/"/g, '%22')}")`
                 : `linear-gradient(135deg, ${pc}, ${pc}99 55%, ${pc}55)`,
+              ...(profile?.coverUrl ? { backgroundPosition: 'center calc(50% + var(--lh-y, 0) * 0.05%)' } : {}),
             }} />
             <div style={{ padding: '0 20px 22px', textAlign: 'center' }}>
               {profile?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.avatarUrl} alt="" width={88} height={88}
+                <img className="lh-avatar" src={profile.avatarUrl} alt="" width={88} height={88}
                   style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', marginTop: -44, background: '#fff', boxShadow: '0 4px 14px rgba(26,27,28,0.15)' }} />
               ) : (
-                <div aria-hidden style={{
+                <div aria-hidden className="lh-avatar" style={{
                   width: 88, height: 88, borderRadius: '50%', margin: '-44px auto 0', border: '4px solid #fff', background: pc, color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, fontWeight: 700, boxShadow: '0 4px 14px rgba(26,27,28,0.15)',
                 }}>{initial}</div>
               )}
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: '#1A1B1C', marginTop: 12, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{page.name}</h1>
-              {profile?.tagline && <p style={{ fontSize: 14, color: '#5A5D60', marginTop: 6, lineHeight: 1.5 }}>{profile.tagline}</p>}
+              <h1 className="lh-hero-text" style={{ fontSize: 22, fontWeight: 800, color: '#1A1B1C', marginTop: 12, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{page.name}</h1>
+              {profile?.tagline && <p className="lh-hero-text lh-d2" style={{ fontSize: 14, color: '#5A5D60', marginTop: 6, lineHeight: 1.5 }}>{profile.tagline}</p>}
               {langBar && <div style={{ marginTop: 14 }}>{langBar}</div>}
             </div>
           </div>
@@ -270,7 +330,8 @@ export function PageView({ page, editing = false, controls }: Props) {
               <div className="@2xl:col-span-2"><InsertSlot index={0} onInsertAt={controls.onInsertAt} alwaysVisible={visibleBlocks.length === 0} /></div>
             )}
             {visibleBlocks.map((block, i) => {
-              const cell = SINGLE_CELL.includes(block.type) ? 'lh-cell' : 'lh-cell @2xl:col-span-2'
+              const motion = fx ? (i < 3 ? ` lh-enter lh-e${i}` : ` lh-reveal lh-r${i % 2}`) : ''
+              const cell = (SINGLE_CELL.includes(block.type) ? 'lh-cell' : 'lh-cell @2xl:col-span-2') + motion
               const rendered = (
                 <BlockRenderer
                   block={block}
@@ -568,7 +629,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpan
             <div style={{ fontSize: 11, color: '#9A9D9F', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
           </div>
           {isOpen && (
-            <div style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div className="lh-expand" style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {b.data.children.map(child => {
                 const ct = child.translations[lang] || child.translations['es'] || { label: '' }
                 return (

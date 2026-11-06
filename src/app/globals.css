@@ -122,3 +122,44 @@ html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 
 /* Dashboard: visible keyboard focus on every navigation target. */
 .dash-link:focus-visible { outline: 2px solid #1A1B1C; outline-offset: 2px; border-radius: 10px; }
+
+/* ─── Public client pages: motion ─────────────────────────────────
+   Only animates with JS available AND no reduced-motion preference; everything
+   else renders statically. Hero + first blocks animate by CSS alone (no JS wait,
+   keeps LCP fast); the rest reveal as they scroll into view. */
+@keyframes lhUp { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+@keyframes lhPop { from { opacity: 0; transform: scale(.6) } 60% { transform: scale(1.06) } to { opacity: 1; transform: none } }
+@keyframes lhZoom { from { transform: scale(1.12) } to { transform: scale(1) } }
+@keyframes lhBump { 0% { transform: scale(1) } 40% { transform: scale(1.35) } 100% { transform: scale(1) } }
+@keyframes lhSlideUp { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: none } }
+@keyframes lhDrop { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }
+
+.lh-press:active { transform: scale(.96); }
+.lh-press { transition: transform .12s ease, filter .15s ease; }
+@media (hover: hover) { .lh-press:hover { filter: brightness(1.04); } }
+.lh-cell a[href]:active { transform: scale(.985); }
+.lh-cell a[href] > :last-child { transition: transform .18s ease; }
+@media (hover: hover) { .lh-cell a[href]:hover > :last-child { transform: translateX(4px); } }
+
+.lh-minibar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transform: translateY(-110%); transition: transform .28s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.lh-minibar[data-show="true"] { transform: none; pointer-events: auto; }
+.lh-minibar button { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 720px; margin: 0 auto; padding: 10px 18px; border: 0; background: rgba(255,255,255,.86); backdrop-filter: saturate(180%) blur(14px); -webkit-backdrop-filter: saturate(180%) blur(14px); box-shadow: 0 1px 0 rgba(26,27,28,.08), 0 8px 24px rgba(26,27,28,.06); cursor: pointer; font-family: inherit; text-align: left; border-radius: 0 0 16px 16px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lh-expand { animation: lhSlideUp .22s ease both; }
+  .lh-bump { animation: lhBump .25s ease; display: inline-block; }
+  .lh-pop { animation: lhSlideUp .25s ease both; }
+  .lh-cell a[href]:hover { transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s; }
+}
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .lh-fx .lh-cover { animation: lhZoom 1.4s cubic-bezier(.2,.7,.2,1) both; }
+  .lh-fx .lh-avatar { animation: lhPop .7s cubic-bezier(.2,.9,.3,1.2) .15s both; }
+  .lh-fx .lh-hero-text { animation: lhUp .6s ease .3s both; }
+  .lh-fx .lh-hero-text.lh-d2 { animation-delay: .4s; }
+  .lh-fx .lh-enter { animation: lhUp .6s cubic-bezier(.2,.7,.2,1) both; }
+  .lh-fx .lh-e0 { animation-delay: .35s; } .lh-fx .lh-e1 { animation-delay: .45s; } .lh-fx .lh-e2 { animation-delay: .55s; }
+  .lh-fx .lh-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1); }
+  .lh-fx .lh-reveal.lh-r1 { transition-delay: 70ms; }
+  .lh-fx .lh-reveal.in { opacity: 1; transform: none; }
+}

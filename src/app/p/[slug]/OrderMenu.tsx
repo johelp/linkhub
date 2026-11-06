@@ -97,14 +97,14 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
                         <div style={{ fontSize: 13, fontWeight: 700, color: pc, marginTop: 2 }}>{formatMoney(item.price, d.currency)}</div>
                       </div>
                       {item.available && (q === 0 ? (
-                        <button type="button" onClick={() => setQty(item.id, 1)} aria-label={`Agregar ${it?.name}`}
+                        <button className="lh-press" type="button" onClick={() => setQty(item.id, 1)} aria-label={`Agregar ${it?.name}`}
                           style={{ width: 34, height: 34, borderRadius: 17, border: 'none', background: pc, color: '#fff', fontSize: 20, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>+</button>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-                          <button type="button" onClick={() => setQty(item.id, q - 1)} aria-label="Quitar uno"
+                          <button className="lh-press" type="button" onClick={() => setQty(item.id, q - 1)} aria-label="Quitar uno"
                             style={{ width: 30, height: 30, borderRadius: 15, border: `1.5px solid ${BORDER}`, background: '#fff', fontSize: 18, lineHeight: 1, cursor: 'pointer', color: INK }}>−</button>
-                          <span style={{ minWidth: 24, textAlign: 'center', fontSize: 14, fontWeight: 700, color: INK }} aria-live="polite">{q}</span>
-                          <button type="button" onClick={() => setQty(item.id, q + 1)} aria-label="Agregar uno más"
+                          <span key={q} className="lh-bump" style={{ minWidth: 24, textAlign: 'center', fontSize: 14, fontWeight: 700, color: INK }} aria-live="polite">{q}</span>
+                          <button className="lh-press" type="button" onClick={() => setQty(item.id, q + 1)} aria-label="Agregar uno más"
                             style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: pc, color: '#fff', fontSize: 18, lineHeight: 1, cursor: 'pointer' }}>+</button>
                         </div>
                       ))}
@@ -116,7 +116,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
           })}
 
           {resolved.count > 0 && (
-            <button type="button" onClick={() => setStep('checkout')}
+            <button className="lh-press lh-pop" type="button" onClick={() => setStep('checkout')}
               style={{ marginTop: 14, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: pc, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontFamily: 'inherit' }}>
               <span>Ver mi pedido ({resolved.count})</span>
               <span>{formatMoney(resolved.subtotal, d.currency)}</span>
@@ -126,8 +126,8 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
       )}
 
       {step === 'checkout' && (
-        <div style={{ padding: '8px 16px 16px' }}>
-          <button type="button" onClick={() => setStep('browse')}
+        <div className="lh-expand" style={{ padding: '8px 16px 16px' }}>
+          <button className="lh-press" type="button" onClick={() => setStep('browse')}
             style={{ border: 'none', background: 'none', color: MUTED, fontSize: 13, cursor: 'pointer', padding: '4px 0 8px', fontFamily: 'inherit' }}>← Seguir pidiendo</button>
 
           {resolved.lines.map(l => (
@@ -144,7 +144,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
             {d.delivery && d.pickup && (
               <div role="radiogroup" aria-label="Forma de entrega" style={{ display: 'flex', gap: 6 }}>
                 {(['delivery', 'pickup'] as const).map(m => (
-                  <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setFulfillment(m)}
+                  <button className="lh-press" key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setFulfillment(m)}
                     style={{ flex: 1, padding: '9px 8px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                       border: `1.5px solid ${mode === m ? pc : BORDER}`, background: mode === m ? pc : '#fff', color: mode === m ? '#fff' : INK }}>
                     {m === 'delivery' ? '🛵 Envío' : '🏪 Retiro'}
@@ -162,7 +162,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
 
           {error && <div role="alert" style={{ marginTop: 8, fontSize: 12.5, color: '#B50F07' }}>{error}</div>}
 
-          <button type="button" onClick={send}
+          <button className="lh-press" type="button" onClick={send}
             style={{ marginTop: 12, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             💬 Enviar pedido por WhatsApp
           </button>

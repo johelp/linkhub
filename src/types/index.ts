@@ -83,6 +83,7 @@ export interface PageSettings {
   backgroundColor: string
   fontFamily: string
   showPoweredBy: boolean
+  animations?: boolean   // public-page motion (reveal, parallax, micro-interactions); default on
   seo: {
     title: string
     description: string
