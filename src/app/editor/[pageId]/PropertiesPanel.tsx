@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS, BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 import { generateId } from '@/lib/utils'
@@ -114,6 +114,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'appointment_request': editor = <AppointmentEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'order_menu': editor = <OrderMenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
@@ -665,6 +666,110 @@ function MenuEditor({ block, lang, onUpdate }: {
         <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>
           Se muestra como un link &quot;Ver carta completa&quot; debajo de las categorías -- útil si además tenés un PDF ya diseñado.
         </p>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Appointment request (solicitud de citas, fase 1) ─────────────
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+function AppointmentEditor({ block, lang, onUpdate }: {
+  block: AppointmentRequestBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<AppointmentRequestBlock['data']>) => void
+}) {
+  const d = block.data
+  const t = d.translations[lang] || d.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, { translations: { ...d.translations, [lang]: { ...t, [key]: val } } })
+  const blankLangs = <T,>(v: T) => Object.fromEntries(ALL_LANGS.map(l => [l.code, v])) as Record<Lang, T>
+  const intOr = (v: string, min: number, max: number, fallback: number) => {
+    const n = parseInt(v, 10)
+    return Number.isFinite(n) ? Math.min(Math.max(n, min), max) : fallback
+  }
+  const patchService = (id: string, fn: (s: AppointmentRequestBlock['data']['services'][number]) => AppointmentRequestBlock['data']['services'][number]) =>
+    onUpdate(block.id, { services: d.services.map(s => s.id === id ? fn(s) : s) })
+  const patchDay = (day: number, patch: Partial<AppointmentRequestBlock['data']['schedule'][number]>) =>
+    onUpdate(block.id, { schedule: d.schedule.map(x => x.day === day ? { ...x, ...patch } : x) })
+
+  return (
+    <div className="space-y-5">
+      <Section label="Tu agenda">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Reservá tu turno" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Elegí servicio, día y horario" /></Field>
+        <Field label="WhatsApp donde recibís las solicitudes">
+          <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
+          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Es una solicitud: vos confirmás la disponibilidad por chat.</p>
+        </Field>
+        <Field label="Zona horaria">
+          <Input value={d.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
+        </Field>
+      </Section>
+
+      <Section label={`Servicios (${d.services.length})`}>
+        {d.services.map((svc, i) => {
+          const st = svc.translations[lang] || svc.translations['es'] || { name: '', description: '' }
+          return (
+            <div key={svc.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Servicio {i + 1}</span>
+                {d.services.length > 1 && <RemoveButton onClick={() => onUpdate(block.id, { services: d.services.filter(s => s.id !== svc.id) })} />}
+              </div>
+              <div className="space-y-2">
+                <Field label="Nombre"><Input value={st.name} placeholder="Corte, Consulta, Clase de yoga..."
+                  onChange={v => patchService(svc.id, s => ({ ...s, translations: { ...s.translations, [lang]: { ...st, name: v } } }))} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Duración (min)"><Input value={String(svc.durationMin)} onChange={v => patchService(svc.id, s => ({ ...s, durationMin: intOr(v, 5, 480, s.durationMin) }))} /></Field>
+                  <Field label={`Precio (${d.currency})`}><Input value={svc.price ? String(svc.price) : ''} placeholder="Opcional"
+                    onChange={v => patchService(svc.id, s => ({ ...s, price: Math.max(Number(v.replace(',', '.')) || 0, 0) || undefined }))} /></Field>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        <AddButton dashed label="Añadir servicio" onClick={() => onUpdate(block.id, {
+          services: [...d.services, { id: generateId(), translations: blankLangs({ name: '', description: '' }), durationMin: 60 }],
+        })} />
+      </Section>
+
+      <Section label="Días y horarios de atención">
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5, 6, 0].map(day => {
+            const row = d.schedule.find(x => x.day === day) ?? { day, closed: true, open: '09:00', close: '18:00' }
+            return (
+              <div key={day} className="flex items-center gap-2">
+                <label className="flex items-center gap-2 w-[104px] flex-shrink-0 text-[13px]" style={{ color: '#1A1B1C' }}>
+                  <input type="checkbox" checked={!row.closed}
+                    onChange={e => d.schedule.some(x => x.day === day)
+                      ? patchDay(day, { closed: !e.target.checked })
+                      : onUpdate(block.id, { schedule: [...d.schedule, { ...row, closed: !e.target.checked }] })} />
+                  {DAY_NAMES[day]}
+                </label>
+                {row.closed
+                  ? <span className="text-xs" style={{ color: '#9A9D9F' }}>No atiende</span>
+                  : <div className="flex items-center gap-1.5">
+                      <input type="time" value={row.open} onChange={e => patchDay(day, { open: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
+                      <span className="text-xs" style={{ color: '#9A9D9F' }}>a</span>
+                      <input type="time" value={row.close} onChange={e => patchDay(day, { close: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
+                    </div>}
+              </div>
+            )
+          })}
+        </div>
+      </Section>
+
+      <Section label="Reglas">
+        <Field label="Cada cuántos minutos ofrecer un turno">
+          <select value={d.slotMinutes} onChange={e => onUpdate(block.id, { slotMinutes: Number(e.target.value) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', fontFamily: 'inherit' }}>
+            {[15, 20, 30, 45, 60, 90, 120].map(m => <option key={m} value={m}>{m} minutos</option>)}
+          </select>
+        </Field>
+        <Field label="Hasta cuántos días adelante se puede reservar">
+          <Input value={String(d.daysAhead)} onChange={v => onUpdate(block.id, { daysAhead: intOr(v, 1, 60, d.daysAhead) })} />
+        </Field>
+        <Field label="Aviso mínimo (horas)">
+          <Input value={String(d.minNoticeHours)} onChange={v => onUpdate(block.id, { minNoticeHours: intOr(v, 0, 168, d.minNoticeHours) })} />
+        </Field>
       </Section>
     </div>
   )

@@ -375,6 +375,45 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'appointment_request',
+    label: 'Solicitud de citas',
+    description: 'El cliente elige servicio, día y hora y te pide el turno por WhatsApp',
+    icon: '📅',
+    category: 'content',
+    createDefault: () => {
+      const langs = ['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]
+      const per = <T,>(es: T, blank: T) => Object.fromEntries(langs.map(l => [l, l === 'es' ? es : blank])) as Record<Lang, T>
+      return {
+        id: generateId(),
+        type: 'appointment_request',
+        order: 0,
+        visible: true,
+        seasonFilter: 'always',
+        data: {
+          translations: per({ title: 'Reservá tu turno', description: 'Elegí servicio, día y horario' }, { title: '', description: '' }),
+          whatsapp: '',
+          timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'America/Argentina/Buenos_Aires',
+          currency: 'ARS',
+          services: [
+            { id: generateId(), translations: per({ name: 'Consulta', description: '' }, { name: '', description: '' }), durationMin: 60 },
+          ],
+          schedule: [
+            { day: 0, closed: true, open: '09:00', close: '18:00' },
+            { day: 1, closed: false, open: '09:00', close: '18:00' },
+            { day: 2, closed: false, open: '09:00', close: '18:00' },
+            { day: 3, closed: false, open: '09:00', close: '18:00' },
+            { day: 4, closed: false, open: '09:00', close: '18:00' },
+            { day: 5, closed: false, open: '09:00', close: '18:00' },
+            { day: 6, closed: true, open: '10:00', close: '14:00' },
+          ],
+          slotMinutes: 60,
+          daysAhead: 14,
+          minNoticeHours: 2,
+        },
+      } as Block
+    },
+  },
+  {
     type: 'order_menu',
     label: 'Pedidos / Mini tienda',
     description: 'Catálogo con carrito: el cliente arma su pedido y te lo envía por WhatsApp',

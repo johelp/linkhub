@@ -2,12 +2,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
 import { sanitizeBlocks } from '@/lib/security'
 import { OrderMenu } from './OrderMenu'
+import { AppointmentRequest } from './AppointmentRequest'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
@@ -449,6 +450,12 @@ function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpan
           <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
         </a>
       )
+    }
+
+    case 'appointment_request': {
+      const b = block as AppointmentRequestBlock
+      return <AppointmentRequest block={b} lang={lang} pc={pc} pageName={pageName} editing={editing}
+        onSent={url => onTrackClick(b.id, 'appointment_request', url)} />
     }
 
     case 'order_menu': {

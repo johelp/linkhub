@@ -97,7 +97,7 @@ export function NewPageButton({ canCreate, plan, asCard }: Props) {
 
       {open && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.45)' }}>
-          <div style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: step === 'pick' ? 460 : 380, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 24, width: '100%', maxWidth: step === 'pick' ? 460 : 380, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             {step === 'pick' ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>

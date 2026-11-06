@@ -96,7 +96,7 @@ export const VERTICALS: VerticalConfig[] = [
       'Botón de WhatsApp con mensaje predefinido ("Hola, quiero reservar un turno") para pedir cita con un toque',
       'Horarios de atención que muestran "abierto ahora" o "cerrado" solos',
       'Servicios y tarifas ordenados con el bloque de menú o de pedidos, incluso con precios por sesión o clase',
-      'Solicitud de citas desde la página: próximamente',
+      'Solicitud de citas: tus clientes eligen servicio, día y hora libres, y te piden el turno por WhatsApp',
     ],
     accent: '#7C3AED',
     demoPage: () => buildDemoPage('Estudio Aurora', true),

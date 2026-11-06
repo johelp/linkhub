@@ -58,6 +58,8 @@ export function summarizeBlock(block: Block, lang: Lang): BlockSummary {
       return { title: pick(block.data.translations, lang, 'title') || 'Tarjeta de sellos', detail: `${block.data.targetStamps} sellos` }
     case 'menu':
       return { title: pick(block.data.translations, lang, 'title') || 'Menú', detail: `${block.data.sections.length} categorías` }
+    case 'appointment_request':
+      return { title: pick(block.data.translations, lang, 'title') || 'Citas', detail: `${block.data.services.length} servicios · WhatsApp` }
     case 'order_menu': {
       const count = block.data.categories.reduce((n, c) => n + c.items.length, 0)
       return { title: pick(block.data.translations, lang, 'title') || 'Pedidos', detail: `${count} productos · WhatsApp` }
@@ -79,6 +81,9 @@ export function findBlockIssues(blocks: Block[], lang: Lang): BlockIssue[] {
     const name = summarizeBlock(b, lang).title
     if (b.type === 'link' || b.type === 'featured') {
       if (PLACEHOLDER_URL.test(b.data.url.trim())) issues.push({ blockId: b.id, message: `“${name}” no tiene un enlace` })
+    }
+    if (b.type === 'appointment_request' && b.data.whatsapp.replace(/\D/g, '').length < 8) {
+      issues.push({ blockId: b.id, message: `“${name}” necesita tu número de WhatsApp para recibir solicitudes` })
     }
     if (b.type === 'order_menu' && b.data.whatsapp.replace(/\D/g, '').length < 8) {
       issues.push({ blockId: b.id, message: `“${name}” necesita tu número de WhatsApp para recibir pedidos` })

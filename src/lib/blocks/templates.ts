@@ -1,6 +1,7 @@
 import type { Block, Lang } from '@/types'
 import { blockRequiresPro } from '@/types'
 import { generateId } from '@/lib/utils'
+import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 
 const LANGS: Lang[] = ['es', 'en', 'pt', 'fr', 'de', 'it']
 
@@ -155,6 +156,29 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         id: generateId(), type: 'contact_card', order: 4, visible: true, seasonFilter: 'always',
         data: { phone: '', email: '', address: '', mapUrl: '', whatsapp: '' },
       },
+    ],
+  },
+  {
+    id: 'appointments',
+    label: 'Agenda de turnos',
+    description: 'Profesionales, peluquerías y clases: servicios, horarios y turnos por WhatsApp',
+    icon: '📅',
+    buildBlocks: () => [
+      { ...BLOCK_BY_TYPE.text.createDefault(), order: 0, data: { translations: esOnly({ content: 'Pedí tu turno online: elegí servicio, día y horario.' }), align: 'center', size: 'md' } } as Block,
+      { ...BLOCK_BY_TYPE.appointment_request.createDefault(), order: 1 },
+      { ...BLOCK_BY_TYPE.business_hours.createDefault(), order: 2 },
+      { ...BLOCK_BY_TYPE.contact_card.createDefault(), order: 3 },
+    ],
+  },
+  {
+    id: 'delivery',
+    label: 'Pedidos y delivery',
+    description: 'Catálogo con carrito: el pedido te llega ordenado por WhatsApp',
+    icon: '🛒',
+    buildBlocks: () => [
+      { ...BLOCK_BY_TYPE.order_menu.createDefault(), order: 0 },
+      { ...BLOCK_BY_TYPE.business_hours.createDefault(), order: 1 },
+      { ...BLOCK_BY_TYPE.social_grid.createDefault(), order: 2 },
     ],
   },
 ]

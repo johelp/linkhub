@@ -119,3 +119,6 @@ body {
 @media (prefers-reduced-motion: reduce) { .hero-chip { animation: none; } }
 html { scroll-behavior: smooth; scroll-padding-top: 72px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Dashboard: visible keyboard focus on every navigation target. */
+.dash-link:focus-visible { outline: 2px solid #1A1B1C; outline-offset: 2px; border-radius: 10px; }

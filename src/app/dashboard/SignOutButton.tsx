@@ -12,8 +12,8 @@ export function SignOutButton() {
     router.refresh()
   }
   return (
-    <button onClick={signOut}
-      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, padding: '8px 10px', borderRadius: 10, color: '#9A9D9F', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+    <button onClick={signOut} className="dash-link hover:bg-[#F2F3F4]"
+      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '8px 10px', borderRadius: 10, color: '#4A4D50', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
       <LogOut size={13} /> Cerrar sesión
     </button>
   )

@@ -48,7 +48,7 @@ const features = [
   { icon: '📱', title: 'QR incluido', desc: 'Cada página genera un QR listo para imprimir o compartir en redes.' },
   { icon: '📊', title: 'Analíticas', desc: 'Vistas, clics por bloque, dispositivos y países en tiempo real.' },
   { icon: '🌨️', title: 'Filtros de temporada', desc: 'Mostrá bloques solo en invierno, verano u off. Automático.' },
-  { icon: '📅', title: 'Solicitud de citas — próximamente', desc: 'Para profesionales, peluquerías y clases: tus clientes piden turno desde tu página. Estamos terminándolo.' },
+  { icon: '📅', title: 'Solicitud de citas', desc: 'Para profesionales, peluquerías y clases: tus clientes eligen servicio, día y hora, y te piden el turno por WhatsApp.' },
   { icon: '⚡', title: 'Rápida y optimizada para SEO', desc: 'SSG + ISR. Carga instantánea y pensada para buscadores e IA.' },
 ]
 

@@ -20,6 +20,7 @@ export type BlockType =
   | 'text'
   | 'menu'
   | 'order_menu'
+  | 'appointment_request'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -360,11 +361,36 @@ export interface OrderMenuBlock extends BlockBase {
   }
 }
 
+// Solicitud de citas (fase 1): the visitor picks a service, a day and a time
+// slot generated from the weekly schedule, and sends the request to the
+// owner's WhatsApp. It is a request -- the owner confirms by chat.
+export interface AppointmentService {
+  id: string
+  translations: Record<Lang, { name: string; description?: string }>
+  durationMin: number
+  price?: number          // optional, shown next to the service
+}
+
+export interface AppointmentRequestBlock extends BlockBase {
+  type: 'appointment_request'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    whatsapp: string
+    timezone: string          // IANA tz of the business
+    currency: string
+    services: AppointmentService[]
+    schedule: DaySchedule[]   // weekly availability, same shape as business_hours
+    slotMinutes: number       // step between offered start times
+    daysAhead: number         // how many days into the future can be requested
+    minNoticeHours: number    // no slots sooner than this from now
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {
