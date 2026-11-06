@@ -9,7 +9,7 @@
 -- server with the service role.
 
 alter table public.custom_domains add column if not exists status text not null default 'pending';
-alter table public.custom_domains add column if not exists token text not null default encode(gen_random_bytes(16), 'hex');
+alter table public.custom_domains add column if not exists token text not null default replace(gen_random_uuid()::text, '-', '');
 alter table public.custom_domains add column if not exists verified_at timestamptz;
 alter table public.custom_domains add column if not exists activated_at timestamptz;
 alter table public.custom_domains add column if not exists last_checked_at timestamptz;

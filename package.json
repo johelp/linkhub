@@ -10,7 +10,8 @@
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "emails:build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build-email-templates.mjs",
-    "emails:push": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/push-email-templates.mjs"
+    "emails:push": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/push-email-templates.mjs",
+    "sql:bundle": "node scripts/bundle-migrations.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

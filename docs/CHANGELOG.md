@@ -2,6 +2,12 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Script único de migraciones 011–021
+
+**Añadido**
+- `supabase/bundles/011-021.sql` y `npm run sql:bundle`: migraciones 011–021 en una transacción, con comprobación de 001–010 y verificación final.
+- La migración 021 genera el token con `gen_random_uuid()` en lugar de `gen_random_bytes` (no depende de pgcrypto).
+
 ## 2026-11-06 — Dominio propio (activación manual)
 
 **Añadido**

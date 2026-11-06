@@ -57,3 +57,7 @@ Plantilla: `.env.local.example`. En Vercel/Railway se cargan en el panel del pro
 | `VERCEL_ENV`, `VERCEL_GIT_COMMIT_SHA` | Las pone Vercel | Entorno y commit mostrados por `/api/health` |
 
 El MCP, la API de claves y `/api/v1` **no añaden variables nuevas**: usan las de Supabase y `NEXT_PUBLIC_APP_URL`. Redsys no necesita variables de plataforma (credenciales por vendedor).
+
+
+## Script único 011–021
+`supabase/bundles/011-021.sql` reúne las migraciones 011 a 021 en una sola transacción, con comprobación previa de 001–010 y consulta de verificación final. Se regenera con `npm run sql:bundle` (no editar a mano). Para pegarlo en el SQL Editor de **staging**.
