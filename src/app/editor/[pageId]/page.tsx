@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { Page } from '@/types'
 import { EditorShell } from './EditorShell'
+import { getConnections } from '@/lib/payments'
+import type { PaymentProvider } from '@/types'
 
 export const metadata: Metadata = { title: 'Editor | LinkHub' }
 
@@ -23,11 +25,13 @@ export default async function EditorPage({ params }: Props) {
   ])
 
   if (!page) notFound()
+  const connected = (await getConnections(user.id)).map(c => c.provider as PaymentProvider)
 
   return (
     <EditorShell
       page={page as unknown as Page}
       plan={profile?.plan || 'free'}
+      connectedProviders={connected}
     />
   )
 }

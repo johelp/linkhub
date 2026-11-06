@@ -22,7 +22,7 @@ export function BlockListPanel({ onAddBlock }: Props) {
   )
 
   if (!page) return null
-  const issueIds = new Set(findBlockIssues(page.blocks, previewLang).map(i => i.blockId))
+  const issueIds = new Set(findBlockIssues(page.blocks, previewLang, useEditorStore.getState().connectedProviders).map(i => i.blockId))
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event

@@ -285,9 +285,12 @@ export interface EmailCaptureBlock extends BlockBase {
   }
 }
 
+export type PaymentProvider = 'mercadopago' | 'stripe' | 'redsys'
+
 export interface PaymentButtonBlock extends BlockBase {
   type: 'payment_button'
   data: {
+    provider?: PaymentProvider | 'auto'   // which connected gateway charges; default: the seller's only/first one
     translations: Record<Lang, { title: string; description: string }>
     price: number
     currency: string   // ISO currency code Mercado Pago accepts, e.g. 'ARS', 'MXN', 'CLP'
@@ -303,6 +306,7 @@ export interface TicketTier {
 export interface EventTicketsBlock extends BlockBase {
   type: 'event_tickets'
   data: {
+    provider?: PaymentProvider | 'auto'
     translations: Record<Lang, { title: string; description: string }>
     tiers: TicketTier[]
     currency: string

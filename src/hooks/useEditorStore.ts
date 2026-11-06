@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode, BlockCondition } from '@/types'
+import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode, BlockCondition, PaymentProvider } from '@/types'
 import { generateId } from '@/lib/utils'
 import { BLOCK_BY_TYPE, normalizeBlock } from '@/lib/blocks/registry'
 
@@ -12,6 +12,7 @@ interface Snapshot { blocks: Block[]; settings: PageSettings; name: string }
 interface EditorState {
   page: Page | null
   selectedBlockId: string | null
+  connectedProviders: PaymentProvider[]
   previewLang: Lang
   previewDevice: 'mobile' | 'tablet' | 'desktop'
   isDirty: boolean
@@ -108,6 +109,7 @@ export const useEditorStore = create<EditorState>()(
   immer((set, get) => ({
     page: null,
     selectedBlockId: null,
+    connectedProviders: [],
     previewLang: 'es',
     previewDevice: 'mobile',
     isDirty: false,

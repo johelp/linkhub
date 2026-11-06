@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Layers, Eye, Settings2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Page, Plan, BlockType } from '@/types'
+import type { Page, Plan, BlockType, PaymentProvider } from '@/types'
 import { PLAN_LIMITS, blockRequiresPro } from '@/types'
 import { BlockListPanel } from './BlockListPanel'
 import { PropertiesPanel } from './PropertiesPanel'
@@ -11,8 +11,9 @@ import { EditorPreview } from './EditorPreview'
 import { EditorTopBar } from './EditorTopBar'
 import { AddBlockModal } from './AddBlockModal'
 import { PublishDialog } from './PublishDialog'
+import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 
-interface Props { page: Page; plan: Plan }
+interface Props { page: Page; plan: Plan; connectedProviders: PaymentProvider[] }
 
 type MobileTab = 'blocks' | 'preview' | 'properties'
 
@@ -24,7 +25,7 @@ function isTypingTarget(t: EventTarget | null) {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 
-export function EditorShell({ page, plan }: Props) {
+export function EditorShell({ page, plan, connectedProviders }: Props) {
   const ready = useEditorStore(s => s.page !== null)
   const isDirty = useEditorStore(s => s.isDirty)
   const isSaving = useEditorStore(s => s.isSaving)
@@ -38,7 +39,17 @@ export function EditorShell({ page, plan }: Props) {
   const limits = PLAN_LIMITS[plan]
   const savingRef = useRef(false)
 
-  useEffect(() => { useEditorStore.getState().setPage(page) }, [page])
+  useEffect(() => {
+    useEditorStore.getState().setPage(page)
+    useEditorStore.setState({ connectedProviders })
+    // Deep link from the Cobros assistant: /editor/<id>?add=payment_button
+    const add = new URLSearchParams(window.location.search).get('add')
+    if (add && BLOCK_BY_TYPE[add as BlockType]) {
+      if (blockRequiresPro(add as BlockType) && !PLAN_LIMITS[plan].advancedBlocks) toast.error('Este bloque requiere plan Pro')
+      else useEditorStore.getState().addBlock(add as BlockType)
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [page, connectedProviders, plan])
 
   // On small screens, jump to the editing tab as soon as a block is selected.
   useEffect(() => {

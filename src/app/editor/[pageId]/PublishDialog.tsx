@@ -32,7 +32,7 @@ export function PublishDialog({ open, onClose, onSetPublished }: Props) {
 
   if (!open || !page) return null
 
-  const issues = findBlockIssues(page.blocks, lang)
+  const issues = findBlockIssues(page.blocks, lang, useEditorStore.getState().connectedProviders)
   const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/p/${page.slug}`
   const live = page.published
 

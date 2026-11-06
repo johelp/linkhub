@@ -5,6 +5,7 @@ import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS, BLOCK_BY_TYPE } from '@/lib/blocks/registry'
+import { PROVIDER_BY_ID } from '@/lib/payments/meta'
 import { generateId } from '@/lib/utils'
 import { uploadPageImage } from '@/lib/imageUpload'
 import { Settings, Globe, Upload, Loader2, Plus, X, ChevronLeft, Trash2, Copy as CopyIcon } from 'lucide-react'
@@ -127,11 +128,39 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
 
   return (
     <div className="space-y-5">
+      {(block.type === 'payment_button' || block.type === 'event_tickets') && <GatewayField block={block} onUpdate={onUpdate} />}
       {editor}
       {limits.advancedBlocks && sources.length > 0 && (
         <ConditionField block={block} sources={sources} onUpdate={onUpdateCondition} />
       )}
     </div>
+  )
+}
+
+// ─── Which gateway charges this block (payment blocks only) ──────
+function GatewayField({ block, onUpdate }: { block: PaymentButtonBlock | EventTicketsBlock; onUpdate: (id: string, d: Partial<Block['data']>) => void }) {
+  const connected = useEditorStore(s => s.connectedProviders)
+  if (connected.length === 0) {
+    return (
+      <div className="rounded-2xl p-4" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }} role="note">
+        <p className="text-[13.5px] font-bold" style={{ color: '#9A3412' }}>Todavía no conectaste una pasarela de cobro</p>
+        <p className="text-xs mt-1" style={{ color: '#9A3412' }}>Sin eso, el botón no puede cobrar. Son 3 pasos guiados.</p>
+        <a href="/dashboard/payments" className="inline-block mt-2.5 text-[13px] font-semibold px-3.5 py-2 rounded-lg text-white" style={{ background: '#9A3412' }}>Configurar cobros →</a>
+      </div>
+    )
+  }
+  if (connected.length === 1) return null
+  const value = block.data.provider ?? 'auto'
+  return (
+    <Section label="Cobrar con">
+      <Field label="Pasarela">
+        <select value={value} onChange={e => onUpdate(block.id, { provider: e.target.value } as Partial<Block['data']>)}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          <option value="auto">Automática (la mejor para la moneda)</option>
+          {connected.map(id => <option key={id} value={id}>{PROVIDER_BY_ID[id].name}</option>)}
+        </select>
+      </Field>
+    </Section>
   )
 }
 

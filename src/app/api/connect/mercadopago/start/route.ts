@@ -11,7 +11,7 @@ export async function GET() {
   if (!user) return NextResponse.redirect(absoluteUrl('/auth'))
 
   if (!process.env.MERCADOPAGO_CLIENT_ID) {
-    return NextResponse.redirect(absoluteUrl('/dashboard/settings?mp=not_configured'))
+    return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=not_configured&provider=mercadopago'))
   }
 
   const state = crypto.randomBytes(24).toString('hex')

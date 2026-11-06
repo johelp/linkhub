@@ -76,10 +76,16 @@ export function PageView({ page, editing = false, controls }: Props) {
   // useSearchParams() would force it into a Suspense-wrapped client-only
   // subtree just to show a one-off banner after a failed payment redirect.
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [paid, setPaid] = useState(false)
   useEffect(() => {
-    const err = new URLSearchParams(window.location.search).get('payment_error')
-    if (err) {
+    const qs = new URLSearchParams(window.location.search)
+    const err = qs.get('payment_error')
+    if (qs.get('paid') === '1') {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
+      setPaid(true)
+      const u = new URL(window.location.href); u.searchParams.delete('paid'); window.history.replaceState(null, '', u.toString())
+    }
+    if (err) {
       setPaymentError(err)
       // Drop it from the URL so reloading/sharing the link doesn't re-show it.
       const url = new URL(window.location.href)
@@ -240,6 +246,13 @@ export function PageView({ page, editing = false, controls }: Props) {
         </header>
 
         <main className="min-w-0">
+          {paid && (
+            <div role="status" style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#ECFDF3', border: '1px solid #BBF7D0', display: 'flex', gap: 10, alignItems: 'center' }}>
+              <p style={{ fontSize: 13, color: '#14532D', lineHeight: 1.5, flex: 1 }}>¡Gracias por tu compra! Si compraste entradas, te llegan por email en unos minutos.</p>
+              <button onClick={() => setPaid(false)} aria-label="Cerrar" style={{ border: 'none', background: 'none', color: '#14532D', fontSize: 14, cursor: 'pointer', padding: 2 }}>✕</button>
+            </div>
+          )}
+
           {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
           {paymentError && (
             <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -676,7 +689,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpan
       const b = block as PaymentButtonBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
       return (
-        <a href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}`}
+        <a href={`/api/pay?pageId=${pageId}&blockId=${b.id}`}
           style={{ ...card, background: pc, border: 'none', color: '#fff' }}>
           <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
             💳
@@ -702,7 +715,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageName, expandedId, setExpan
             </div>
           )}
           {b.data.tiers.map(tier => (
-            <a key={tier.id} href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
+            <a key={tier.id} href={`/api/pay?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
               style={{ ...card, background: pc, border: 'none', color: '#fff', marginBottom: 6 }}>
               <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
                 🎫

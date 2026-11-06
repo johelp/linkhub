@@ -9,7 +9,7 @@ const baseHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
-  { key: 'Content-Security-Policy', value: "base-uri 'self'; object-src 'none'; form-action 'self' https://*.mercadopago.com https://*.mercadopago.com.ar https://checkout.stripe.com" },
+  { key: 'Content-Security-Policy', value: "base-uri 'self'; object-src 'none'; form-action 'self' https://*.mercadopago.com https://*.mercadopago.com.ar https://checkout.stripe.com https://sis.redsys.es https://sis-t.redsys.es:25443" },
 ]
 
 // Private areas must never be framed (clickjacking on admin / billing actions).

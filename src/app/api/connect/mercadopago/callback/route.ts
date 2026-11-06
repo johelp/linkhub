@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   cookieStore.delete('mp_oauth_state')
 
   if (!code || !state || !expectedState || state !== expectedState) {
-    return NextResponse.redirect(absoluteUrl('/dashboard/settings?mp=error'))
+    return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=error&provider=mercadopago'))
   }
 
   try {
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
     }, { onConflict: 'user_id,provider' })
     if (error) throw error
 
-    return NextResponse.redirect(absoluteUrl('/dashboard/settings?mp=connected'))
+    return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=connected&provider=mercadopago'))
   } catch (err) {
     console.error('Mercado Pago OAuth callback error', err)
-    return NextResponse.redirect(absoluteUrl('/dashboard/settings?mp=error'))
+    return NextResponse.redirect(absoluteUrl('/dashboard/payments?result=error&provider=mercadopago'))
   }
 }

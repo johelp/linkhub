@@ -75,12 +75,15 @@ const PLACEHOLDER_URL = /^(https?:\/\/)?#?$/
 
 // Problems worth flagging before publishing: links that still point nowhere,
 // and empty titles. Pure and cheap, so it also drives the live badges.
-export function findBlockIssues(blocks: Block[], lang: Lang): BlockIssue[] {
+export function findBlockIssues(blocks: Block[], lang: Lang, connectedProviders?: readonly string[]): BlockIssue[] {
   const issues: BlockIssue[] = []
   for (const b of blocks) {
     const name = summarizeBlock(b, lang).title
     if (b.type === 'link' || b.type === 'featured') {
       if (PLACEHOLDER_URL.test(b.data.url.trim())) issues.push({ blockId: b.id, message: `“${name}” no tiene un enlace` })
+    }
+    if ((b.type === 'payment_button' || b.type === 'event_tickets') && connectedProviders && connectedProviders.length === 0) {
+      issues.push({ blockId: b.id, message: `“${name}” necesita una pasarela de cobro conectada (Cobros)` })
     }
     if (b.type === 'appointment_request' && b.data.whatsapp.replace(/\D/g, '').length < 8) {
       issues.push({ blockId: b.id, message: `“${name}” necesita tu número de WhatsApp para recibir solicitudes` })

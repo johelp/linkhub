@@ -142,12 +142,13 @@ export type Database = {
           public_key: string | null
           live_mode: boolean
           connected_at: string
+          config: Json
         }
         Insert: {
           id?: string; user_id: string; provider?: string; provider_user_id: string
-          access_token: string; refresh_token: string; public_key?: string | null; live_mode?: boolean
+          access_token: string; refresh_token: string; public_key?: string | null; live_mode?: boolean; config?: Json
         }
-        Update: { access_token?: string; refresh_token?: string; public_key?: string | null; live_mode?: boolean }
+        Update: { access_token?: string; refresh_token?: string; public_key?: string | null; live_mode?: boolean; config?: Json; provider_user_id?: string }
         Relationships: []
       }
       payments: {
