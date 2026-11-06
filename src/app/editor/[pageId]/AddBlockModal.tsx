@@ -7,7 +7,7 @@ import { BLOCK_CATEGORIES, CATEGORY_META, type BlockDef } from '@/lib/blocks/reg
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
-const LIGHT = '#9A9D9F'
+const LIGHT = '#6B6E71'
 const BORDER = 'rgba(26,27,28,0.09)'
 
 interface Props {

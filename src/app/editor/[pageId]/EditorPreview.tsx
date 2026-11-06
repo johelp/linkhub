@@ -55,7 +55,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
           {page.blocks.length === 0 && (
             <div className="px-5 pb-8 -mt-2 text-center">
               <p className="text-sm font-semibold" style={{ color: '#1A1B1C' }}>Empezá por lo esencial</p>
-              <p className="text-xs mb-3" style={{ color: '#9A9D9F' }}>Un toque y se agrega a tu página</p>
+              <p className="text-xs mb-3" style={{ color: '#6B6E71' }}>Un toque y se agrega a tu página</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {QUICK_START_BLOCKS.map(q => (
                   <button key={q.type} onClick={() => store.addBlock(q.type)}
@@ -74,7 +74,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
           style={{ background: '#fff', color: '#E8150A', border: '1.5px dashed #E8150A' }}>
           <Plus size={15} /> Añadir bloque
         </button>
-        <p className="py-3 text-xs" style={{ color: '#9A9D9F' }}>linkhub.app/p/{page.slug}</p>
+        <p className="py-3 text-xs" style={{ color: '#6B6E71' }}>linkhub.app/p/{page.slug}</p>
       </div>
     </div>
   )

@@ -14,14 +14,14 @@
 | SEC-010 | P2 | Corregido | `.mcp.json` daba al agente acceso de escritura al proyecto Supabase de producción | `read_only=true` |
 | SEC-011 | P2 | Corregido (migración pendiente) | Trigger de plan solo bloqueaba 6 bloques; la lista real de bloques Pro es mayor | `011_…sql` |
 | SEC-012 | **P0 (acción tuya)** | Abierto | Claves de Supabase filtradas en el historial de Git | historial |
-| SEC-013 | P2 | Abierto | Tokens OAuth de Mercado Pago en texto plano en `payment_connections` (solo service-role puede leerlos; falta cifrado de campo/Vault) | migración 007 |
-| SEC-014 | P2 | Abierto | Sin rate limiting en login (OTP), suscripción, `/api/pay`, subida de imágenes | — |
-| SEC-015 | P2 | Abierto | Sin CSP con `script-src` (requiere nonces → render dinámico). Se aplicaron directivas sin riesgo (`base-uri`, `object-src`, `form-action`) | `next.config.ts` |
-| SEC-016 | P2 | Abierto | Admin definido por email en `ADMIN_EMAILS` sin MFA obligatorio; sin log de acciones admin | `src/lib/admin.ts` |
-| SEC-017 | P3 | Abierto | Webhook de Stripe sin idempotencia por `event.id`; sin tests de seguridad/regresión ni CI | — |
-| SEC-018 | P3 | Abierto | `published` editable por el dueño anula la moderación del admin | `pages` RLS |
+| SEC-013 | P2 | Corregido (activar clave) | Tokens OAuth de Mercado Pago en texto plano en `payment_connections` (solo service-role puede leerlos). **Corregido:** cifrado AES-256-GCM con `TOKEN_ENCRYPTION_KEY`, retrocompatible; script `scripts/encrypt-existing-tokens.mjs` | `src/lib/crypto.ts` |
+| SEC-014 | P2 | Corregido (migración 013 pendiente) | Sin rate limiting en login (OTP), suscripción, `/api/pay`, subida de imágenes | — |
+| SEC-015 | P2 | Parcial | CSP estricta con nonce en `/dashboard`, `/editor`, `/admin`, `/auth` (verificada, 0 violaciones). Páginas públicas: ver EX-002 | `next.config.ts` |
+| SEC-016 | P2 | Parcial (migración 013 pendiente) | Admin definido por email en `ADMIN_EMAILS` sin MFA obligatorio; sin log de acciones admin | `src/lib/admin.ts` |
+| SEC-017 | P3 | Corregido | Webhook de Stripe sin idempotencia por `event.id`; sin tests ni CI. **Corregido:** tabla `processed_webhook_events`, 16 tests (`npm test`), CI con typecheck, lint, tests, audit, build y gitleaks | `.github/workflows/ci.yml` |
+| SEC-018 | P3 | Corregido (migración 013 pendiente) | `published` editable por el dueño anula la moderación del admin | `pages` RLS |
 | SEC-019 | P3 | Abierto | Defecto no relacionado con seguridad pero grave: el reset CSS global anulaba todas las utilidades de padding/margen de Tailwind | `globals.css` — **corregido** |
 
 **NO VERIFICADO:** configuración real de Supabase (Auth, SMTP, OTP, MFA de organización, PITR/backups), variables y roles en Vercel, historial completo de commits con secretos, TLS/cabeceras en producción.
 
-Pruebas de regresión: el repositorio no tiene framework de tests; se verificó manualmente (editor con Supabase simulado + Playwright). Recomendado agregar tests para `sanitizeBlocks`, `safeNextPath`, `buildOrderMessage`.
+Pruebas de regresión: `npm test` (Node test runner, 16 casos: saneo de URLs/redirecciones/ajustes, pedidos, citas y zonas horarias, cifrado, agregación de métricas). Verificación funcional manual con Supabase simulado + Playwright. Pendiente: tests de RLS contra una base real.

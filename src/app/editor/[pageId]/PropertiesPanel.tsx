@@ -49,7 +49,7 @@ export function PropertiesPanel({ plan }: Props) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold truncate" style={{ color: '#1A1B1C' }}>{def?.label ?? selectedBlock.type}</p>
             {limits.multiLanguage && page.settings.enabledLangs.length > 1 && (
-              <p className="text-[11px]" style={{ color: '#9A9D9F' }}>Editando en {previewLang.toUpperCase()}</p>
+              <p className="text-[11px]" style={{ color: '#6B6E71' }}>Editando en {previewLang.toUpperCase()}</p>
             )}
           </div>
           <button onClick={() => duplicateBlock(selectedBlock.id)} title="Duplicar bloque" aria-label="Duplicar bloque"
@@ -67,7 +67,7 @@ export function PropertiesPanel({ plan }: Props) {
               className="flex-1 flex items-center justify-center gap-1.5 h-14 text-[13px] font-semibold transition-colors"
               style={{
                 borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
-                color: tab === t.id ? '#E8150A' : '#9A9D9F',
+                color: tab === t.id ? '#E8150A' : '#6B6E71',
               }}>
               {t.icon}{t.label}
             </button>
@@ -117,7 +117,7 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'appointment_request': editor = <AppointmentEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'order_menu': editor = <OrderMenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
-    default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
+    default: editor = <p className="text-xs" style={{ color: '#6B6E71' }}>Sin opciones para este bloque.</p>
   }
 
   // "business_hours" itself is the only source type today, so it can't condition on another one.
@@ -555,7 +555,7 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
         <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
     </div>
   )
 }
@@ -643,7 +643,7 @@ function MenuEditor({ block, lang, onUpdate }: {
                   return (
                     <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <span className="text-[11px] font-semibold" style={{ color: '#6B6E71' }}>Producto {ii + 1}</span>
                         <RemoveButton onClick={() => removeItem(section.id, item.id)} />
                       </div>
                       <Field label="Nombre"><Input value={it.name} onChange={v => updateItem(section.id, item.id, 'name', v)} /></Field>
@@ -663,7 +663,7 @@ function MenuEditor({ block, lang, onUpdate }: {
         <Field label="Link a un PDF con la carta completa">
           <Input value={block.data.pdfUrl || ''} onChange={v => onUpdate(block.id, { pdfUrl: v })} placeholder="https://..." />
         </Field>
-        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>
+        <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>
           Se muestra como un link &quot;Ver carta completa&quot; debajo de las categorías -- útil si además tenés un PDF ya diseñado.
         </p>
       </Section>
@@ -698,7 +698,7 @@ function AppointmentEditor({ block, lang, onUpdate }: {
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Elegí servicio, día y horario" /></Field>
         <Field label="WhatsApp donde recibís las solicitudes">
           <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Es una solicitud: vos confirmás la disponibilidad por chat.</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Es una solicitud: vos confirmás la disponibilidad por chat.</p>
         </Field>
         <Field label="Zona horaria">
           <Input value={d.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
@@ -745,10 +745,10 @@ function AppointmentEditor({ block, lang, onUpdate }: {
                   {DAY_NAMES[day]}
                 </label>
                 {row.closed
-                  ? <span className="text-xs" style={{ color: '#9A9D9F' }}>No atiende</span>
+                  ? <span className="text-xs" style={{ color: '#6B6E71' }}>No atiende</span>
                   : <div className="flex items-center gap-1.5">
                       <input type="time" value={row.open} onChange={e => patchDay(day, { open: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
-                      <span className="text-xs" style={{ color: '#9A9D9F' }}>a</span>
+                      <span className="text-xs" style={{ color: '#6B6E71' }}>a</span>
                       <input type="time" value={row.close} onChange={e => patchDay(day, { close: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
                     </div>}
               </div>
@@ -798,7 +798,7 @@ function OrderMenuEditor({ block, lang, onUpdate }: {
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Horario de entrega, zona..." /></Field>
         <Field label="WhatsApp donde recibís los pedidos">
           <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Con código de país. El cliente arma el pedido y se abre un chat con este número.</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Con código de país. El cliente arma el pedido y se abre un chat con este número.</p>
         </Field>
         <Field label="Moneda">
           <select value={d.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
@@ -841,7 +841,7 @@ function OrderMenuEditor({ block, lang, onUpdate }: {
                   return (
                     <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <span className="text-[11px] font-semibold" style={{ color: '#6B6E71' }}>Producto {ii + 1}</span>
                         <RemoveButton onClick={() => setCategories(d.categories.map(c => c.id === cat.id ? { ...c, items: c.items.filter(i => i.id !== item.id) } : c))} />
                       </div>
                       <div className="space-y-2">
@@ -903,7 +903,7 @@ function PaymentButtonEditor({ block, lang, onUpdate }: {
           </select>
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a> para que este bloque cobre de verdad.
       </p>
     </div>
@@ -968,7 +968,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
         ))}
         {tiers.length < 3 && <AddButton onClick={addTier} label="Añadir tipo de entrada" />}
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
         Cada entrada vendida manda un email con QR de validación, y las podés validar en la puerta desde el ícono 🎫 del dashboard.
       </p>
@@ -1002,7 +1002,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
       </Section>
       <Section label="Zona horaria">
         <Input value={block.data.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
-        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
+        <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
       </Section>
       <p className="text-xs rounded-xl p-2.5" style={{ color: '#5A5D60', background: '#F6F6F5' }}>
         💡 Con este bloque en la página, cualquier otro bloque puede configurarse para mostrarse solo cuando estés abierto o cerrado (sección &quot;Visibilidad condicional&quot; en su editor).
@@ -1025,7 +1025,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
                   <input type="time" value={d.open} onChange={e => updateDay(day, { open: e.target.value })}
                     className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
-                  <span style={{ color: '#9A9D9F' }}>—</span>
+                  <span style={{ color: '#6B6E71' }}>—</span>
                   <input type="time" value={d.close} onChange={e => updateDay(day, { close: e.target.value })}
                     className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
@@ -1075,7 +1075,7 @@ function GoogleReviewsEditor({ block, lang, onUpdate }: {
           <Input value={block.data.placeId || ''} onChange={v => onUpdate(block.id, { placeId: v })} placeholder="ChIJ..." />
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Google no permite incrustar reseñas reales sin una API paga, así que el puntaje lo cargás vos a mano (actualizalo cada tanto).
         Buscá tu Place ID gratis en el{' '}
         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="underline">Place ID Finder de Google</a>.
@@ -1119,7 +1119,7 @@ function LoyaltyCardEditor({ block, lang, onUpdate }: {
             placeholder="Un producto gratis" />
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Cada visitante obtiene su propia tarjeta con un código único. Vos le sumás los sellos desde{' '}
         <span className="font-semibold">Dashboard → 🎟️ (esta página)</span> escaneando o tipeando su código.
       </p>
@@ -1147,7 +1147,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
           )}
           <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, avatarUrl: url } })} />
           {settings.profile?.avatarUrl && (
-            <button className="text-xs underline mt-1.5" style={{ color: '#9A9D9F' }}
+            <button className="text-xs underline mt-1.5" style={{ color: '#6B6E71' }}
               onClick={() => onUpdate({ profile: { ...settings.profile, avatarUrl: '' } })}>Quitar</button>
           )}
         </Field>
@@ -1158,7 +1158,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
           )}
           <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, coverUrl: url } })} />
           {settings.profile?.coverUrl && (
-            <button className="text-xs underline mt-1.5" style={{ color: '#9A9D9F' }}
+            <button className="text-xs underline mt-1.5" style={{ color: '#6B6E71' }}
               onClick={() => onUpdate({ profile: { ...settings.profile, coverUrl: '' } })}>Quitar</button>
           )}
         </Field>
@@ -1265,7 +1265,7 @@ function SeoEditor({ seo, slug, onUpdate }: { seo: PageSettings['seo']; slug: st
       <Section label="SEO & Metadatos">
         <Field label="Título SEO">
           <Input value={seo.title} onChange={v => onUpdate({ title: v })} placeholder="Nombre de tu negocio" />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>{seo.title.length}/60 caracteres</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>{seo.title.length}/60 caracteres</p>
         </Field>
         <Field label="Descripción">
           <textarea value={seo.description} rows={3}
@@ -1273,7 +1273,7 @@ function SeoEditor({ seo, slug, onUpdate }: { seo: PageSettings['seo']; slug: st
             placeholder="Breve descripción de tu negocio o página..."
             className="w-full px-3 py-2 rounded-xl text-sm resize-none outline-none"
             style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>{seo.description.length}/160 caracteres</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>{seo.description.length}/160 caracteres</p>
         </Field>
         <Field label="Imagen OG (URL)">
           <Input value={seo.ogImage || ''} onChange={v => onUpdate({ ogImage: v || null })} placeholder="https://..." />
@@ -1298,7 +1298,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   return (
     <div className="rounded-2xl p-4"
       style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)', boxShadow: '0 1px 2px rgba(26,27,28,0.03), 0 1px 10px rgba(26,27,28,0.03)' }}>
-      <p className="text-xs font-bold uppercase tracking-wider mb-3.5 pb-3" style={{ color: '#9A9D9F', borderBottom: '1px solid rgba(26,27,28,0.07)' }}>{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wider mb-3.5 pb-3" style={{ color: '#6B6E71', borderBottom: '1px solid rgba(26,27,28,0.07)' }}>{label}</p>
       <div className="space-y-4">{children}</div>
     </div>
   )
@@ -1378,10 +1378,10 @@ function ImageUploadButton({ onUploaded }: { onUploaded: (url: string) => void }
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-        style={{ background: '#F6F6F5', border: '1.5px dashed rgba(26,27,28,0.18)', color: uploading ? '#9A9D9F' : '#1A1B1C', cursor: uploading ? 'wait' : 'pointer' }}>
+        style={{ background: '#F6F6F5', border: '1.5px dashed rgba(26,27,28,0.18)', color: uploading ? '#6B6E71' : '#1A1B1C', cursor: uploading ? 'wait' : 'pointer' }}>
         {uploading ? <><Loader2 size={14} className="animate-spin" /> Subiendo...</> : <><Upload size={14} /> Elegir imagen</>}
       </button>
-      <p className="text-xs mt-1.5" style={{ color: '#9A9D9F' }}>Se optimiza sola al subir — hasta 15 MB, JPG/PNG/WebP.</p>
+      <p className="text-xs mt-1.5" style={{ color: '#6B6E71' }}>Se optimiza sola al subir — hasta 15 MB, JPG/PNG/WebP.</p>
     </div>
   )
 }

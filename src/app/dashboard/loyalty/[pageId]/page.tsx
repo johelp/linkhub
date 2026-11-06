@@ -47,9 +47,9 @@ export default async function LoyaltyPage({ params }: Props) {
 
   return (
     <div className="p-6 max-w-2xl">
-      <Link href="/dashboard" className="text-sm" style={{ color: '#9A9D9F' }}>← Dashboard</Link>
+      <Link href="/dashboard" className="text-sm" style={{ color: '#6B6E71' }}>← Dashboard</Link>
       <h1 className="text-2xl font-bold mt-4 mb-2" style={{ color: '#1A1B1C' }}>Tarjeta de sellos</h1>
-      <p className="text-sm mb-6" style={{ color: '#9A9D9F' }}>{page.name}</p>
+      <p className="text-sm mb-6" style={{ color: '#6B6E71' }}>{page.name}</p>
 
       {/* A query error here (as opposed to a real 0) almost always means the
           `loyalty_cards` table/migration 009 hasn't been applied to this
@@ -66,22 +66,22 @@ export default async function LoyaltyPage({ params }: Props) {
       <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
         <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(26,27,28,0.09)' }}>
           <p style={{ fontSize: 22, fontWeight: 700, color: '#1A1B1C' }}>{cards ?? 0}</p>
-          <p style={{ fontSize: 12, color: '#9A9D9F' }}>Tarjetas activas</p>
+          <p style={{ fontSize: 12, color: '#6B6E71' }}>Tarjetas activas</p>
         </div>
         <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(26,27,28,0.09)' }}>
           <p style={{ fontSize: 22, fontWeight: 700, color: '#1A1B1C' }}>{redeemed ?? 0}</p>
-          <p style={{ fontSize: 12, color: '#9A9D9F' }}>Premios canjeados</p>
+          <p style={{ fontSize: 12, color: '#6B6E71' }}>Premios canjeados</p>
         </div>
       </div>
 
       <StampForm pageId={pageId} />
 
       <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1A1B1C', marginTop: 32, marginBottom: 12 }}>
-        Clientes con tarjeta {customers && customers.length > 0 && <span style={{ color: '#9A9D9F', fontWeight: 500 }}>({customers.length}{customers.length === CUSTOMER_LIST_LIMIT ? '+' : ''})</span>}
+        Clientes con tarjeta {customers && customers.length > 0 && <span style={{ color: '#6B6E71', fontWeight: 500 }}>({customers.length}{customers.length === CUSTOMER_LIST_LIMIT ? '+' : ''})</span>}
       </h2>
 
       {!customers || customers.length === 0 ? (
-        <p style={{ fontSize: 13, color: '#9A9D9F' }}>
+        <p style={{ fontSize: 13, color: '#6B6E71' }}>
           {cardsError ? 'No pudimos cargar la lista.' : 'Todavía nadie sacó una tarjeta de sellos en esta página.'}
         </p>
       ) : (
@@ -89,10 +89,10 @@ export default async function LoyaltyPage({ params }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ background: '#F6F6F5' }}>
-                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9A9D9F', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Código</th>
-                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9A9D9F', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Sellos</th>
-                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9A9D9F', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Estado</th>
-                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#9A9D9F', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Desde</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#6B6E71', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Código</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#6B6E71', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Sellos</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#6B6E71', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Estado</th>
+                <th style={{ textAlign: 'left', padding: '10px 14px', color: '#6B6E71', fontWeight: 600, fontSize: 11.5, textTransform: 'uppercase' }}>Desde</th>
               </tr>
             </thead>
             <tbody>
@@ -110,14 +110,14 @@ export default async function LoyaltyPage({ params }: Props) {
                     <td style={{ padding: '10px 14px', color: '#1A1B1C', fontWeight: 600 }}>{c.stamps_count} / {target}</td>
                     <td style={{ padding: '10px 14px' }}>
                       {c.last_redeemed_at ? (
-                        <span style={{ color: '#9A9D9F' }}>Canjeada</span>
+                        <span style={{ color: '#6B6E71' }}>Canjeada</span>
                       ) : earned ? (
                         <span style={{ color: '#16A34A', fontWeight: 600 }}>Lista para canjear</span>
                       ) : (
                         <span style={{ color: '#5A5D60' }}>Activa</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px 14px', color: '#9A9D9F' }}>
+                    <td style={{ padding: '10px 14px', color: '#6B6E71' }}>
                       {new Date(c.created_at).toLocaleDateString('es-AR')}
                     </td>
                   </tr>

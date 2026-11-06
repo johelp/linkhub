@@ -69,7 +69,7 @@ export default async function DashboardPage() {
             <h2 id="plan-h" className="text-[15px] font-bold text-[#1A1B1C] mb-3">Tu plan: <span style={{ color: plan === 'pro' ? '#E8150A' : '#5A5D60' }}>{plan === 'pro' ? 'Pro' : 'Free'}</span></h2>
             <p className="text-xs text-[#7A7D80] mb-1.5">Páginas usadas</p>
             <div className="h-1.5 rounded-full bg-[#F2F3F4] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min((list.length / Math.min(limits.pages, 10)) * 100, 100)}%`, background: '#1A1B1C' }} /></div>
-            <p className="text-xs text-[#9A9D9F] mt-1.5">{list.length} de {plan === 'pro' ? 'ilimitadas' : limits.pages}</p>
+            <p className="text-xs text-[#6B6E71] mt-1.5">{list.length} de {plan === 'pro' ? 'ilimitadas' : limits.pages}</p>
             {plan !== 'pro' && (
               <Link href="/dashboard/upgrade" className="mt-4 flex items-center justify-center h-10 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}>Ver Pro · €19/mes</Link>
             )}
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
           {rows.length === 0 ? <EmptyState canCreate={canCreate} plan={plan} /> : <PagesGrid pages={rows} canCreate={canCreate} plan={plan} showClicks={fullAnalytics} />}
           <div className="xl:hidden mt-6">{planCard}</div>
           {stats.approximate && rows.length > 0 && (
-            <p className="text-xs text-[#9A9D9F] mt-5">Las métricas son una muestra reciente. Aplicá la migración <code>012_dashboard_stats.sql</code> para ver el total exacto.</p>
+            <p className="text-xs text-[#6B6E71] mt-5">Las métricas son una muestra reciente. Aplicá la migración <code>012_dashboard_stats.sql</code> para ver el total exacto.</p>
           )}
         </div>
 
@@ -108,12 +108,12 @@ export default async function DashboardPage() {
             <section className="bg-white rounded-2xl p-5" style={{ border: '1px solid rgba(26,27,28,0.08)' }} aria-labelledby="steps-h">
               <div className="flex items-center justify-between mb-1">
                 <h2 id="steps-h" className="text-[15px] font-bold text-[#1A1B1C]">Primeros pasos</h2>
-                <span className="text-xs font-semibold text-[#9A9D9F]">{doneCount}/{steps.length}</span>
+                <span className="text-xs font-semibold text-[#6B6E71]">{doneCount}/{steps.length}</span>
               </div>
               <div className="h-1.5 rounded-full bg-[#F2F3F4] my-3 overflow-hidden"><div className="h-full rounded-full" style={{ width: `${(doneCount / steps.length) * 100}%`, background: 'linear-gradient(90deg,#E8150A,#FF8C00)' }} /></div>
               <ol className="space-y-2.5">
                 {steps.map(s => (
-                  <li key={s.label} className="flex items-start gap-2.5 text-[13px]" style={{ color: s.done ? '#9A9D9F' : '#1A1B1C' }}>
+                  <li key={s.label} className="flex items-start gap-2.5 text-[13px]" style={{ color: s.done ? '#6B6E71' : '#1A1B1C' }}>
                     <span className="mt-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: s.done ? '#16A34A' : '#fff', border: s.done ? 'none' : '1.5px solid rgba(26,27,28,0.2)' }}>
                       {s.done && <Check size={11} color="#fff" strokeWidth={3} />}
                     </span>
@@ -150,7 +150,7 @@ function Kpi({ label, value, delta: d, spark, color, hint, locked, href }: {
             {d >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{Math.abs(d)}%
           </span>
         )}
-        <span className="text-[11.5px] text-[#9A9D9F]">{d != null ? 'vs. 30 días previos' : hint ?? ''}</span>
+        <span className="text-[11.5px] text-[#6B6E71]">{d != null ? 'vs. 30 días previos' : hint ?? ''}</span>
       </div>
       {spark.length > 1 && <div className="mt-2"><Sparkline values={spark} color={color} /></div>}
     </div>

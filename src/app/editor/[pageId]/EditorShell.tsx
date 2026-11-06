@@ -157,7 +157,7 @@ export function EditorShell({ page, plan }: Props) {
   if (!ready) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: '#F6F6F5' }}>
-        <p className="text-sm" style={{ color: '#9A9D9F' }}>Cargando editor...</p>
+        <p className="text-sm" style={{ color: '#6B6E71' }}>Cargando editor...</p>
       </div>
     )
   }
@@ -189,7 +189,7 @@ export function EditorShell({ page, plan }: Props) {
         ]).map(t => (
           <button key={t.id} onClick={() => setMobileTab(t.id)}
             className="flex-1 flex flex-col items-center gap-1 py-2.5 text-xs font-medium"
-            style={{ color: mobileTab === t.id ? '#E8150A' : '#9A9D9F' }}>
+            style={{ color: mobileTab === t.id ? '#E8150A' : '#6B6E71' }}>
             {t.icon}{t.label}
           </button>
         ))}

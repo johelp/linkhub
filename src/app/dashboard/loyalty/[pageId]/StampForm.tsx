@@ -61,7 +61,7 @@ export function StampForm({ pageId }: { pageId: string }) {
         style={{ marginTop: 8, width: '100%', padding: '12px 0', borderRadius: 12, border: '1.5px solid rgba(26,27,28,0.12)', background: '#fff', color: '#1A1B1C', fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         <Gift size={15} /> Canjear premio y reiniciar
       </button>
-      <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 8 }}>
+      <p style={{ fontSize: 12, color: '#6B6E71', marginTop: 8 }}>
         Funciona con cualquier lector de QR externo (apuntá el código de la tarjeta, el texto que lee lo pegás acá) o tipeando el código a mano.
       </p>
 

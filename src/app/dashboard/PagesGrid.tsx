@@ -37,7 +37,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
         {pages.length > 3 && (
           <label className="relative">
             <span className="sr-only">Buscar página</span>
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A9D9F]" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B6E71]" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar…" className="pl-8 pr-3 py-2 rounded-xl text-sm outline-none bg-white w-40 sm:w-52" style={{ border: '1.5px solid rgba(26,27,28,0.09)' }} />
           </label>
         )}
@@ -60,7 +60,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
             </div>
             <div className="px-4 pt-8 pb-4">
               <h3 className="text-[15px] font-bold text-[#1A1B1C] truncate">{p.name}</h3>
-              <p className="text-xs text-[#9A9D9F] truncate">linkhub.app/p/{p.slug}</p>
+              <p className="text-xs text-[#6B6E71] truncate">linkhub.app/p/{p.slug}</p>
 
               <dl className="grid grid-cols-3 gap-2 my-4 text-center">
                 {[
@@ -70,7 +70,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-xl py-2" style={{ background: '#F8F8F7' }}>
                     <dd className="text-[15px] font-bold text-[#1A1B1C] tabular-nums">{v}</dd>
-                    <dt className="text-[10.5px] text-[#9A9D9F] font-medium">{k}</dt>
+                    <dt className="text-[10.5px] text-[#6B6E71] font-medium">{k}</dt>
                   </div>
                 ))}
               </dl>
@@ -95,7 +95,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
       </div>
 
       {shown.length === 0 && (
-        <p className="text-center text-sm text-[#9A9D9F] py-10">Ninguna página coincide con ese filtro.</p>
+        <p className="text-center text-sm text-[#6B6E71] py-10">Ninguna página coincide con ese filtro.</p>
       )}
     </section>
   )

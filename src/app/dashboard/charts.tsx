@@ -36,11 +36,11 @@ export function AreaChart({ days, series, height = 220 }: { days: string[]; seri
       {ticks.map(t => (
         <g key={t}>
           <line x1={padL} x2={W - 6} y1={y(t)} y2={y(t)} stroke="rgba(26,27,28,0.07)" />
-          <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize="10" fill="#9A9D9F">{t}</text>
+          <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" fontSize="10" fill="#6B6E71">{t}</text>
         </g>
       ))}
       {days.map((d, i) => i % labelEvery === 0 && (
-        <text key={d} x={x(i)} y={height - 6} textAnchor="middle" fontSize="10" fill="#9A9D9F">{d.slice(8)}/{d.slice(5, 7)}</text>
+        <text key={d} x={x(i)} y={height - 6} textAnchor="middle" fontSize="10" fill="#6B6E71">{d.slice(8)}/{d.slice(5, 7)}</text>
       ))}
       {series.map((s, si) => {
         const line = s.values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')

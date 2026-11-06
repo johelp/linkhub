@@ -7,7 +7,7 @@ import { SignOutButton } from './SignOutButton'
 
 const R = '#E8150A'
 const INK = '#1A1B1C'
-// #6B6E71 on white is 5.2:1 (AA for small text); the old #9A9D9F was 2.8:1.
+// #6B6E71 on white is 5.2:1 (AA for small text); the old #6B6E71 was 2.8:1.
 const SUB = '#6B6E71'
 
 interface Item { href: string; label: string; hint: string; icon: typeof LayoutDashboard; exact?: boolean }

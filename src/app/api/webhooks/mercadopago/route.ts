@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getMercadoPagoPayment, verifyMercadoPagoSignature } from '@/lib/mercadopago'
 import { sendTicketEmail, emailConfigured } from '@/lib/email'
 import { absoluteUrl, generateId } from '@/lib/utils'
+import { decryptSecret } from '@/lib/crypto'
 
 const STATUS_MAP: Record<string, 'approved' | 'rejected' | 'pending' | 'refunded'> = {
   approved: 'approved',
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
   let newStatus: 'approved' | 'rejected' | 'pending' | 'refunded'
   let payerEmail: string | null
   try {
-    const payment = await getMercadoPagoPayment(connection.access_token, dataId)
+    const payment = await getMercadoPagoPayment(decryptSecret(connection.access_token), dataId)
 
     // `ref` (which payments row we're about to update) comes from the query
     // string, not from anything Mercado Pago signed -- so before trusting

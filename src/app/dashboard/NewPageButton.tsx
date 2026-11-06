@@ -102,11 +102,11 @@ export function NewPageButton({ canCreate, plan, asCard }: Props) {
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                   <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1B1C' }}>Nueva página</h2>
-                  <button onClick={close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A9D9F', padding: 4 }}>
+                  <button onClick={close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6E71', padding: 4 }}>
                     <X size={18} />
                   </button>
                 </div>
-                <p style={{ fontSize: 13, color: '#9A9D9F', marginBottom: 16 }}>Empezá en blanco o arrancá con una plantilla</p>
+                <p style={{ fontSize: 13, color: '#6B6E71', marginBottom: 16 }}>Empezá en blanco o arrancá con una plantilla</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <TemplateCard icon="✨" label="Vacía" description="Página en blanco" onClick={() => pick(null)} />
                   {PAGE_TEMPLATES.map(t => (
@@ -119,15 +119,15 @@ export function NewPageButton({ canCreate, plan, asCard }: Props) {
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <button onClick={() => setStep('pick')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A9D9F', padding: 4, display: 'flex' }}>
+                  <button onClick={() => setStep('pick')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6E71', padding: 4, display: 'flex' }}>
                     <ArrowLeft size={18} />
                   </button>
                   <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1A1B1C' }}>Nueva página</h2>
-                  <button onClick={close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9A9D9F', padding: 4 }}>
+                  <button onClick={close} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6E71', padding: 4 }}>
                     <X size={18} />
                   </button>
                 </div>
-                <p style={{ fontSize: 13, color: '#9A9D9F', marginBottom: 16 }}>Dale un nombre a tu página de enlaces</p>
+                <p style={{ fontSize: 13, color: '#6B6E71', marginBottom: 16 }}>Dale un nombre a tu página de enlaces</p>
                 <input
                   autoFocus type="text" value={name}
                   onChange={e => setName(e.target.value)}
@@ -173,7 +173,7 @@ function TemplateCard({ icon, label, description, locked, onClick }: { icon: str
       )}
       <span style={{ fontSize: 20 }}>{icon}</span>
       <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1B1C' }}>{label}</span>
-      <span style={{ fontSize: 11, color: '#9A9D9F', lineHeight: 1.3 }}>{description}</span>
+      <span style={{ fontSize: 11, color: '#6B6E71', lineHeight: 1.3 }}>{description}</span>
     </button>
   )
 }

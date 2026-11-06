@@ -79,6 +79,7 @@ export function PageView({ page, editing = false, controls }: Props) {
   useEffect(() => {
     const err = new URLSearchParams(window.location.search).get('payment_error')
     if (err) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
       setPaymentError(err)
       // Drop it from the URL so reloading/sharing the link doesn't re-show it.
       const url = new URL(window.location.href)
@@ -100,6 +101,7 @@ export function PageView({ page, editing = false, controls }: Props) {
     for (const b of page.blocks) {
       if (b.type === 'business_hours') map[b.id] = getBusinessOpenStatus(b.data.timezone, b.data.schedule).isOpen
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
     setBusinessStatus(map)
   }, [page.blocks])
 
@@ -829,6 +831,7 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
 
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
       setCode(localStorage.getItem(storageKey))
     } catch {
       // Private browsing / blocked storage -- just can't remember the card, no big deal.
@@ -893,6 +896,7 @@ function BusinessHoursCard({ title, timezone, schedule, pc }: {
   const [status, setStatus] = useState<{ isOpen: boolean; today: DaySchedule | null } | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
     setStatus(getBusinessOpenStatus(timezone, schedule))
   }, [timezone, schedule])
 

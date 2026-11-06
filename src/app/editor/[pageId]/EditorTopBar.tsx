@@ -7,7 +7,7 @@ import type { Lang } from '@/types'
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
-const LIGHT = '#9A9D9F'
+const LIGHT = '#6B6E71'
 const BORDER = 'rgba(26,27,28,0.08)'
 
 const LANG_NAMES: Record<Lang, string> = { es: 'ES', en: 'EN', pt: 'PT', fr: 'FR', de: 'DE', it: 'IT' }

@@ -27,6 +27,15 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient()
 
+  // Idempotency: Stripe retries deliveries, and events can arrive twice. The
+  // unique primary key on event id makes the second delivery a no-op. If the
+  // table isn't there yet (migration 013 pending) we fail open, as before.
+  const { error: dupError } = await supabase.from('processed_webhook_events' as never).insert({ id: event.id, provider: 'stripe' } as never)
+  if (dupError) {
+    if ((dupError as { code?: string }).code === '23505') return NextResponse.json({ received: true, duplicate: true })
+    if ((dupError as { code?: string }).code !== '42P01') console.error('webhook idempotency check failed', dupError)
+  }
+
   try {
     switch (event.type) {
       // First payment confirmed — activate Pro and remember the Stripe IDs
@@ -66,6 +75,8 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error('Stripe webhook handler error', err)
+    // Release the idempotency key so Stripe's retry is processed, not skipped.
+    await supabase.from('processed_webhook_events' as never).delete().eq('id' as never, event.id as never)
     return NextResponse.json({ error: 'Error procesando el evento' }, { status: 500 })
   }
 

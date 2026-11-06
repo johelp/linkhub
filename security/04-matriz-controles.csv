@@ -4,13 +4,15 @@ Autorización por objeto (ownership) en rutas API,CUMPLE,CC6.3,8.3,V8,rutas veri
 Aislamiento multi-tenant RLS,PARCIAL,CC6.1,8.3,V8,migraciones 001-010; 011 pendiente de aplicar,owner,2027-02-06
 Validación de entrada en servidor,CUMPLE,CC6.1,8.28,V2,/api/pages valida forma y sanea URLs,owner,2027-02-06
 Escape de salida / XSS,CUMPLE,CC6.6,8.28,V3,JSON-LD escapado; URLs saneadas; React escapa texto,owner,2027-02-06
-Cabeceras de seguridad,PARCIAL,CC6.6,8.9,V3,next.config.ts; falta CSP script-src,owner,2027-02-06
+Cabeceras de seguridad,PARCIAL,CC6.6,8.9,V3,next.config.ts + CSP con nonce en areas privadas (src/proxy.ts); publicas: EX-002,owner,2027-02-06
 Gestión de secretos,NO CUMPLE,CC6.1,8.9,V13,claves en historial Git sin rotar,owner,inmediata
-Cifrado de datos sensibles (tokens MP),NO CUMPLE,C1.1,8.24,V11,texto plano en payment_connections,owner,2027-01-06
+Cifrado de datos sensibles (tokens MP),PARCIAL,C1.1,8.24,V11,AES-256-GCM implementado; falta definir TOKEN_ENCRYPTION_KEY en Vercel y ejecutar el script,owner,2026-12-06
 Dependencias sin vulnerabilidades,CUMPLE,CC7.1,8.8,V15,npm audit = 0 (2026-11-06),owner,2026-12-06
 Webhooks firmados,CUMPLE,CC6.6,8.26,V4,Stripe y Mercado Pago verifican firma,owner,2027-02-06
-Idempotencia de webhooks,PARCIAL,PI1.2,8.28,V4,MP sí; Stripe no,owner,2027-02-06
+Idempotencia de webhooks,CUMPLE,PI1.2,8.28,V4,MP y Stripe (migración 013 aplicada = requisito),owner,2027-02-06
 Registro y alertas,NO VERIFICADO,CC7.2,8.15,V16,no hay logging centralizado en el repo,owner,2027-01-06
 Backups y restauración probada,NO VERIFICADO,A1.2,8.13,—,depende de Supabase PITR,owner,2027-01-06
-Proceso de cambios (PR + revisión + CI),NO CUMPLE,CC8.1,8.32,V15,sin CI ni tests; un solo mantenedor,owner,2027-01-06
+Proceso de cambios (PR + revisión + CI),PARCIAL,CC8.1,8.32,V15,CI + tests + Dependabot agregados; falta proteger main y exigir revisión,owner,2027-01-06
 Agentes de desarrollo con mínimo privilegio,PARCIAL,CC6.1,8.28,—,.mcp.json read_only=true,owner,2027-02-06
+Trazabilidad de acciones de administrador,PARCIAL,CC7.2,8.15,V16,tabla admin_audit_log (migración 013),owner,2027-02-06
+Límite de abuso en inserciones públicas,PARCIAL,CC6.6,8.20,V4,triggers de límite por página (migración 013),owner,2027-02-06

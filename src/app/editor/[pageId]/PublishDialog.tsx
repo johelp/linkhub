@@ -58,7 +58,7 @@ export function PublishDialog({ open, onClose, onSetPublished }: Props) {
               {live ? 'Los cambios se publican al instante cada vez que se guardan.' : 'Cualquiera con el enlace podrá verla.'}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg" style={{ color: '#9A9D9F' }}><X size={18} /></button>
+          <button onClick={onClose} aria-label="Cerrar" className="p-1.5 rounded-lg" style={{ color: '#6B6E71' }}><X size={18} /></button>
         </div>
 
         {issues.length > 0 ? (

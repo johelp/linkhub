@@ -1,5 +1,5 @@
 import type { AppointmentRequestBlock, DaySchedule, Lang } from '@/types'
-import { formatMoney } from '@/lib/orders'
+import { formatMoney } from './orders.ts'
 
 type Data = AppointmentRequestBlock['data']
 

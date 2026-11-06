@@ -34,5 +34,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No se pudo actualizar el plan' }, { status: 500 })
   }
 
+  await admin.from('admin_audit_log' as never).insert({ actor_email: user.email, action: 'plan.set', target: userId, detail: { plan } } as never)
   return NextResponse.json({ ok: true })
 }

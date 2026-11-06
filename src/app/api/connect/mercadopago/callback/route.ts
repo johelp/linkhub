@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { exchangeMercadoPagoCode } from '@/lib/mercadopago'
 import { absoluteUrl } from '@/lib/utils'
+import { encryptSecret } from '@/lib/crypto'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -29,8 +30,8 @@ export async function GET(request: NextRequest) {
       user_id: user.id,
       provider: 'mercadopago',
       provider_user_id: String(token.user_id),
-      access_token: token.access_token,
-      refresh_token: token.refresh_token,
+      access_token: encryptSecret(token.access_token),
+      refresh_token: encryptSecret(token.refresh_token),
       public_key: token.public_key,
       live_mode: token.live_mode,
     }, { onConflict: 'user_id,provider' })

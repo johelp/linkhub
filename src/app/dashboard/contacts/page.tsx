@@ -69,16 +69,16 @@ export default async function ContactsPage({ searchParams }: Props) {
         </div>
       ) : (
         <div className="bg-white rounded-2xl overflow-hidden" style={card}>
-          <p className="px-5 py-3 text-xs text-[#9A9D9F] border-b" style={{ borderColor: 'rgba(26,27,28,0.06)' }}>{total} {total === 1 ? 'contacto' : 'contactos'}{total > LIMIT ? ` · mostrando los ${LIMIT} más recientes` : ''}</p>
+          <p className="px-5 py-3 text-xs text-[#6B6E71] border-b" style={{ borderColor: 'rgba(26,27,28,0.06)' }}>{total} {total === 1 ? 'contacto' : 'contactos'}{total > LIMIT ? ` · mostrando los ${LIMIT} más recientes` : ''}</p>
           <ul>
             {subs.map(s => (
               <li key={s.id} className="flex items-center gap-3 px-5 py-3 border-b last:border-0" style={{ borderColor: 'rgba(26,27,28,0.06)' }}>
                 <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: '#F2F3F4', color: '#5A5D60' }}>{s.email[0]?.toUpperCase()}</span>
                 <div className="min-w-0 flex-1">
                   <a href={`mailto:${s.email}`} className="block text-[13.5px] font-medium text-[#1A1B1C] truncate no-underline hover:underline">{s.email}</a>
-                  <p className="text-xs text-[#9A9D9F] truncate">{names.get(s.page_id) ?? 'Página'} · {(s.lang ?? 'es').toUpperCase()}</p>
+                  <p className="text-xs text-[#6B6E71] truncate">{names.get(s.page_id) ?? 'Página'} · {(s.lang ?? 'es').toUpperCase()}</p>
                 </div>
-                <span className="text-xs text-[#9A9D9F] flex-shrink-0">{formatDate(s.created_at)}</span>
+                <span className="text-xs text-[#6B6E71] flex-shrink-0">{formatDate(s.created_at)}</span>
               </li>
             ))}
           </ul>

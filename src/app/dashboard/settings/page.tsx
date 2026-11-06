@@ -35,9 +35,9 @@ export default async function SettingsPage({ searchParams }: Props) {
 
   return (
     <div className="p-6 max-w-2xl">
-      <Link href="/dashboard" className="text-sm" style={{ color: '#9A9D9F' }}>← Dashboard</Link>
+      <Link href="/dashboard" className="text-sm" style={{ color: '#6B6E71' }}>← Dashboard</Link>
       <h1 className="text-2xl font-bold mt-4 mb-2" style={{ color: '#1A1B1C' }}>Ajustes</h1>
-      <p className="text-sm mb-8" style={{ color: '#9A9D9F' }}>Conectá los servicios que usan tus bloques.</p>
+      <p className="text-sm mb-8" style={{ color: '#6B6E71' }}>Conectá los servicios que usan tus bloques.</p>
 
       {status && (
         <div className="rounded-xl p-3 mb-6 text-sm font-medium" style={{ background: '#F6F6F5', color: status.color }}>

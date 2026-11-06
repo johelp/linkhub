@@ -28,7 +28,7 @@ export function MercadoPagoConnect({ connected }: { connected: boolean }) {
           ● Conectado
         </span>
         <button onClick={disconnect} disabled={loading}
-          className="text-xs font-semibold underline disabled:opacity-50" style={{ color: '#9A9D9F' }}>
+          className="text-xs font-semibold underline disabled:opacity-50" style={{ color: '#6B6E71' }}>
           {loading ? 'Desconectando...' : 'Desconectar'}
         </button>
       </div>

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createMercadoPagoPreference } from '@/lib/mercadopago'
 import { absoluteUrl } from '@/lib/utils'
+import { decryptSecret } from '@/lib/crypto'
 import type { Page, PaymentButtonBlock, EventTicketsBlock } from '@/types'
 
 // Public route: a visitor clicks a "payment_button" or "event_tickets"
@@ -113,7 +114,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const preference = await createMercadoPagoPreference({
-      accessToken: connection.access_token,
+      accessToken: decryptSecret(connection.access_token),
       title,
       price,
       currency,

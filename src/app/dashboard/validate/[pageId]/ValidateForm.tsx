@@ -55,7 +55,7 @@ export function ValidateForm({ pageId }: { pageId: string }) {
           <ScanLine size={16} /> Validar
         </button>
       </form>
-      <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 8 }}>
+      <p style={{ fontSize: 12, color: '#6B6E71', marginTop: 8 }}>
         Funciona con cualquier lector de QR externo (apuntá el código del ticket, el texto que lee lo pegás acá) o tipeando el código a mano.
       </p>
 

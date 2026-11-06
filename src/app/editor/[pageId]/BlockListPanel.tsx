@@ -39,7 +39,7 @@ export function BlockListPanel({ onAddBlock }: Props) {
 
       <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0"
         style={{borderColor:'rgba(26,27,28,0.09)'}}>
-        <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#9A9D9F'}}>
+        <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#6B6E71'}}>
           Estructura · {page.blocks.length}
         </span>
         <button onClick={onAddBlock}
@@ -58,13 +58,13 @@ export function BlockListPanel({ onAddBlock }: Props) {
           <span className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ width: 32, height: 32, background: '#F2F3F4', color: '#5A5D60' }}><Settings2 size={15} /></span>
           <span className="min-w-0">
             <span className="block text-sm font-medium" style={{ color: '#1A1B1C' }}>Diseño y ajustes</span>
-            <span className="block text-xs" style={{ color: '#9A9D9F' }}>Color, idiomas, SEO</span>
+            <span className="block text-xs" style={{ color: '#6B6E71' }}>Color, idiomas, SEO</span>
           </span>
         </button>
         {page.blocks.length === 0 ? (
           <div className="text-center py-14">
             <p className="text-sm font-medium" style={{color:'#5A5D60'}}>Tu página está vacía</p>
-            <p className="text-xs mt-1" style={{color:'#9A9D9F'}}>Añadí tu primer bloque para empezar</p>
+            <p className="text-xs mt-1" style={{color:'#6B6E71'}}>Añadí tu primer bloque para empezar</p>
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -128,7 +128,7 @@ function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDele
             impossible to find on tablet/mobile. */}
         <div {...attributes} {...listeners}
           className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
-          style={{color:'#9A9D9F'}}>
+          style={{color:'#6B6E71'}}>
           <GripVertical size={16}/>
         </div>
 
@@ -141,10 +141,10 @@ function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDele
 
         {/* Label */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#9A9D9F'}}>
+          <p className="text-sm font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#6B6E71'}}>
             {summary.title}
           </p>
-          <p className="text-xs truncate" style={{color:'#9A9D9F'}}>
+          <p className="text-xs truncate" style={{color:'#6B6E71'}}>
             {def?.label}{summary.detail ? ` · ${summary.detail}` : ''}
           </p>
         </div>
@@ -179,7 +179,7 @@ function ActionBtn({ onClick, title, danger, children }: {
   return (
     <button onClick={onClick} title={title}
       className="p-1.5 rounded-md transition-colors"
-      style={{color: danger ? '#E8150A' : '#9A9D9F'}}
+      style={{color: danger ? '#E8150A' : '#6B6E71'}}
       onMouseEnter={e => (e.currentTarget.style.background = danger ? '#FEF0EF' : '#F2F3F4')}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
       {children}

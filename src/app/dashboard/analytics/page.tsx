@@ -90,20 +90,20 @@ export default async function AnalyticsPage({ searchParams }: Props) {
               </div>
             </div>
             <AreaChart days={cur} series={[{ label: 'Visitas', values: views.slice(rangeDays), color: '#E8150A' }, ...(full ? [{ label: 'Clics', values: clicks.slice(rangeDays), color: '#185FA5' }] : [])]} />
-            {v === 0 && <p className="text-center text-sm text-[#9A9D9F] mt-2">Aún no hay visitas en este período. Compartí tu enlace o tu QR.</p>}
+            {v === 0 && <p className="text-center text-sm text-[#6B6E71] mt-2">Aún no hay visitas en este período. Compartí tu enlace o tu QR.</p>}
           </section>
 
           <div className="grid gap-5 lg:grid-cols-2">
             <section className="bg-white rounded-2xl p-5 relative" style={card} aria-labelledby="top-h">
               <h2 id="top-h" className="text-[15px] font-bold text-[#1A1B1C] mb-4">Bloques más clicados</h2>
               {!full ? <ProLock text="Descubrí qué enlaces y productos reciben más clics." /> : top.length === 0 ? (
-                <p className="text-sm text-[#9A9D9F]">Sin clics todavía.</p>
+                <p className="text-sm text-[#6B6E71]">Sin clics todavía.</p>
               ) : (
                 <ol className="space-y-3">
                   {top.map(b => (
                     <li key={`${b.page_id}${b.block_id}`}>
                       <div className="flex justify-between gap-3 text-[13px] mb-1">
-                        <span className="truncate text-[#1A1B1C] font-medium">{blockName.get(`${b.page_id}|${b.block_id}`) ?? b.block_type ?? 'Bloque'}{!pid && list.length > 1 && <span className="text-[#9A9D9F] font-normal"> · {pageName.get(b.page_id)}</span>}</span>
+                        <span className="truncate text-[#1A1B1C] font-medium">{blockName.get(`${b.page_id}|${b.block_id}`) ?? b.block_type ?? 'Bloque'}{!pid && list.length > 1 && <span className="text-[#6B6E71] font-normal"> · {pageName.get(b.page_id)}</span>}</span>
                         <span className="tabular-nums font-semibold">{b.clicks}</span>
                       </div>
                       <Bar value={b.clicks} max={topMax} color="#185FA5" />
@@ -116,7 +116,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
             <section className="bg-white rounded-2xl p-5" style={card} aria-labelledby="dev-h">
               <h2 id="dev-h" className="text-[15px] font-bold text-[#1A1B1C] mb-4">Dispositivos</h2>
               {!full ? <ProLock text="Mirá desde qué dispositivos te visitan." /> : stats.devices.length === 0 ? (
-                <p className="text-sm text-[#9A9D9F]">Sin datos todavía.</p>
+                <p className="text-sm text-[#6B6E71]">Sin datos todavía.</p>
               ) : (
                 <ul className="space-y-3">
                   {stats.devices.sort((a, b) => b.views - a.views).map(d => (
@@ -134,7 +134,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
             <section className="bg-white rounded-2xl p-5 mt-5 overflow-x-auto" style={card} aria-labelledby="pp-h">
               <h2 id="pp-h" className="text-[15px] font-bold text-[#1A1B1C] mb-3">Por página</h2>
               <table className="w-full text-[13px]">
-                <thead><tr className="text-left text-[#9A9D9F] text-xs"><th className="font-medium pb-2">Página</th><th className="font-medium pb-2 text-right">Visitas</th><th className="font-medium pb-2 text-right">Clics</th></tr></thead>
+                <thead><tr className="text-left text-[#6B6E71] text-xs"><th className="font-medium pb-2">Página</th><th className="font-medium pb-2 text-right">Visitas</th><th className="font-medium pb-2 text-right">Clics</th></tr></thead>
                 <tbody>
                   {list.map(p => (
                     <tr key={p.id} className="border-t" style={{ borderColor: 'rgba(26,27,28,0.06)' }}>
@@ -147,7 +147,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
               </table>
             </section>
           )}
-          {stats.approximate && <p className="text-xs text-[#9A9D9F] mt-5">Mostrando una muestra reciente. Aplicá la migración <code>012_dashboard_stats.sql</code> para ver los totales exactos.</p>}
+          {stats.approximate && <p className="text-xs text-[#6B6E71] mt-5">Mostrando una muestra reciente. Aplicá la migración <code>012_dashboard_stats.sql</code> para ver los totales exactos.</p>}
         </>
       )}
     </div>
