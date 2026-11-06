@@ -1,0 +1,7 @@
+# Extend the default ruleset; only allow-list the known false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures: fake Redsys order ids and random keys generated at runtime"
+paths = ['''^tests/payments\.test\.ts$''']
