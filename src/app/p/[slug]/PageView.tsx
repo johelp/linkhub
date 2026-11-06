@@ -403,7 +403,7 @@ function SelectableBlock({ block, index, total, controls, children }: {
 
   return (
     <div
-      role="button" tabIndex={0} aria-pressed={selected}
+      role="group" tabIndex={0} aria-current={selected ? 'true' : undefined} aria-roledescription="bloque editable"
       aria-label={`Seleccionar bloque ${index + 1}: ${summarizeBlock(block, controls.lang).title}`}
       data-block-id={block.id}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
