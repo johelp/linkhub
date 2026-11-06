@@ -13,7 +13,8 @@ export default async function UpgradePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth')
 
-  const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+  const lapsed = !!(profile as { billing_lapsed_at?: string | null; stripe_customer_id?: string | null } | null)?.billing_lapsed_at && !!(profile as { stripe_customer_id?: string | null } | null)?.stripe_customer_id
   const isPro = profile?.plan === 'pro'
   const region = regionById((await cookies()).get(REGION_COOKIE)?.value)
   const paymentsConfigured = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -45,7 +46,7 @@ export default async function UpgradePage() {
               '✓ Soporte prioritario',
             ].map(f => <li key={f}>{f}</li>)}
           </ul>
-          <UpgradeButton isPro={isPro} paymentsConfigured={paymentsConfigured} />
+          <UpgradeButton isPro={isPro} lapsed={lapsed} paymentsConfigured={paymentsConfigured} />
         </div>
       </div>
 
