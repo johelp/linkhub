@@ -2,6 +2,11 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Portada visible en el editor
+
+**Cambiado**
+- La foto de portada ya existía (Diseño y ajustes → Cabecera), pero estaba escondida. Ahora la cabecera del lienzo del editor muestra un botón «Añadir foto de portada» / «Cambiar portada» que abre ese campo (también en móvil).
+
 ## 2026-11-06 — Demo interactiva y pantalla de acceso nueva
 
 **Cambiado**

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import { Camera } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
@@ -37,6 +38,7 @@ export interface EditingControls {
   onDuplicate: (id: string) => void
   onToggleVisibility: (id: string) => void
   onDelete: (id: string) => void
+  onEditCover?: () => void   // opens the cover photo field of the page settings
 }
 
 interface Props { page: Page; editing?: boolean; controls?: EditingControls; knowledge?: KnowledgeEntry[] }
@@ -262,7 +264,15 @@ export function PageView({ page, editing = false, controls, knowledge = [] }: Pr
                 ? `center / cover no-repeat url("${profile.coverUrl.replace(/"/g, '%22')}")`
                 : `linear-gradient(135deg, ${pc}, ${pc}99 55%, ${pc}55)`,
               ...(profile?.coverUrl ? { backgroundPosition: 'center calc(50% + var(--lh-y, 0) * 0.05%)' } : {}),
-            }} />
+              position: 'relative',
+            }}>
+              {editing && controls?.onEditCover && (
+                <button type="button" onClick={e => { e.stopPropagation(); controls.onEditCover?.() }}
+                  style={{ position: 'absolute', right: 10, top: 10, display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,.95)', color: '#1A1B1C', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,.18)', fontFamily: 'inherit' }}>
+                  <Camera size={14} aria-hidden /> {profile?.coverUrl ? 'Cambiar portada' : 'Añadir foto de portada'}
+                </button>
+              )}
+            </div>
             <div style={{ padding: '0 20px 22px', textAlign: 'center' }}>
               {profile?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

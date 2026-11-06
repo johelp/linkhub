@@ -8,7 +8,7 @@ const WIDTHS = { mobile: 390, tablet: 768, desktop: 1100 } as const
 
 // The canvas: the real public page, but every block is clickable to select,
 // and "+" slots between blocks insert new ones exactly where you point.
-export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }) {
+export function EditorPreview({ onAddAt, onEditCover }: { onAddAt: (index?: number) => void; onEditCover?: () => void }) {
   const page = useEditorStore(s => s.page)
   const device = useEditorStore(s => s.previewDevice)
   const lang = useEditorStore(s => s.previewLang)
@@ -27,6 +27,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
     onDuplicate: id => useEditorStore.getState().duplicateBlock(id),
     onToggleVisibility: id => useEditorStore.getState().toggleBlockVisibility(id),
     onDelete: id => useEditorStore.getState().removeBlock(id),
+    onEditCover: () => { useEditorStore.getState().selectBlock(null); onEditCover?.() },
   }
 
   const framed = device !== 'desktop'

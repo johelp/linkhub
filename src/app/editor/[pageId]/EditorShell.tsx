@@ -184,7 +184,7 @@ export function EditorShell({ page, plan, connectedProviders, hiddenBlocks, know
         </div>
 
         <div className={`${mobileTab === 'preview' ? 'flex' : 'hidden'} lg:flex min-h-0 min-w-0 flex-col`}>
-          <EditorPreview onAddAt={openAdd} />
+          <EditorPreview onAddAt={openAdd} onEditCover={() => setMobileTab('properties')} />
         </div>
 
         <div className={`${mobileTab === 'properties' ? 'flex' : 'hidden'} lg:flex min-h-0 min-w-0 flex-col`}>
