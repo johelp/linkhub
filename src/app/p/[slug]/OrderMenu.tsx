@@ -12,8 +12,11 @@ interface Props {
   pc: string            // page primary color
   pageName: string
   editing: boolean
+  preview?: boolean       // example pages: show the WhatsApp message instead of opening a chat
   onSent?: (url: string) => void
 }
+
+import { PreviewNote } from './PreviewNote'
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
@@ -21,7 +24,7 @@ const BORDER = 'rgba(26,27,28,0.09)'
 
 // Public mini-store: browse by category, build a cart, review, and send the
 // order to the owner's WhatsApp. No payment is taken by LinkHub.
-export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props) {
+export function OrderMenu({ block, lang, pc, pageName, editing, preview, onSent }: Props) {
   const d = block.data
   const t = d.translations[lang]?.title ? d.translations[lang] : d.translations.es
   const [cart, setCart] = useState<CartLine[]>([])
@@ -31,6 +34,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
   const [address, setAddress] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [previewMsg, setPreviewMsg] = useState<string | null>(null)
 
   const resolved = useMemo(() => resolveCart(d, cart, lang), [d, cart, lang])
   const mode: Fulfillment = fulfillment === 'delivery' && !d.delivery ? 'pickup' : fulfillment === 'pickup' && !d.pickup ? 'delivery' : fulfillment
@@ -50,7 +54,9 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
     const customer = { name, fulfillment: mode, address, notes }
     const v = validateOrder(d, cart, customer, lang)
     if (!v.ok) { setError(v.error ?? null); return }
-    const url = whatsappOrderUrl(d.whatsapp, buildOrderMessage({ data: d, pageName, cart, customer, lang }))
+    const message = buildOrderMessage({ data: d, pageName, cart, customer, lang })
+    if (preview) { setPreviewMsg(message); return }
+    const url = whatsappOrderUrl(d.whatsapp, message)
     onSent?.(url)
     window.open(url, '_blank', 'noopener,noreferrer')
   }
@@ -64,7 +70,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
   return (
     <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 16, marginBottom: 8, overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px 6px' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>🛒 {t?.title || 'Hacé tu pedido'}</div>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: INK }}>🛒 {t?.title || 'Haz tu pedido'}</h2>
         {t?.description && <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>{t.description}</div>}
       </div>
 
@@ -166,6 +172,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, onSent }: Props)
             style={{ marginTop: 12, width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             💬 Enviar pedido por WhatsApp
           </button>
+          {previewMsg && <PreviewNote message={previewMsg} what="pedido" />}
           <div style={{ marginTop: 6, fontSize: 11, color: '#9A9D9F', textAlign: 'center' }}>Se abrirá WhatsApp con tu pedido listo para enviar</div>
         </div>
       )}

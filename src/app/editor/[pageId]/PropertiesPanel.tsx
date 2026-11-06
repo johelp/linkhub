@@ -2,10 +2,12 @@
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
 import { COLOR_SCHEMES, ICON_BG_PRESETS, BLOCK_BY_TYPE } from '@/lib/blocks/registry'
 import { PROVIDER_BY_ID } from '@/lib/payments/meta'
+import { SCHEMA_OPTIONS, inferSchemaType } from '@/lib/seo'
+import { mapEmbedUrl } from '@/lib/maps'
 import { generateId } from '@/lib/utils'
 import { uploadPageImage } from '@/lib/imageUpload'
 import { Settings, Globe, Upload, Loader2, Plus, X, ChevronLeft, Trash2, Copy as CopyIcon } from 'lucide-react'
@@ -82,7 +84,7 @@ export function PropertiesPanel({ plan }: Props) {
               onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
           : tab === 'design'
             ? <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />
-            : <SeoEditor seo={page.settings.seo} slug={page.slug} onUpdate={updateSeo} />}
+            : <SeoEditor seo={page.settings.seo} slug={page.slug} suggested={inferSchemaType(page)} onUpdate={updateSeo} />}
       </div>
     </div>
   )
@@ -115,6 +117,9 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'vcard': editor = <VCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'map_embed': editor = <MapEditor block={block} onUpdate={onUpdate} />; break
+    case 'faq': editor = <FaqEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'appointment_request': editor = <AppointmentEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'order_menu': editor = <OrderMenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
@@ -804,6 +809,67 @@ function AppointmentEditor({ block, lang, onUpdate }: {
   )
 }
 
+// ─── vCard / Map / FAQ ───────────────────────────────────────────
+function VCardEditor({ block, lang, onUpdate }: { block: VCardBlock; lang: Lang; onUpdate: (id: string, d: Partial<VCardBlock['data']>) => void }) {
+  const d = block.data
+  const label = d.translations[lang]?.label ?? ''
+  const set = (k: keyof VCardBlock['data'], v: string) => onUpdate(block.id, { [k]: v } as Partial<VCardBlock['data']>)
+  return (
+    <div className="space-y-5">
+      <Section label="Botón">
+        <Field label="Texto del botón"><Input value={label} onChange={v => onUpdate(block.id, { translations: { ...d.translations, [lang]: { label: v } } })} placeholder="Guardar en mis contactos" /></Field>
+        <p className="text-xs" style={{ color: '#6B6E71' }}>Descarga una tarjeta de contacto (.vcf) que se abre directamente en la agenda del teléfono.</p>
+      </Section>
+      <Section label="Datos de la tarjeta (opcional)">
+        <p className="text-xs -mt-1" style={{ color: '#6B6E71' }}>Si lo dejas vacío usamos el nombre de tu página y los datos de tu bloque de contacto.</p>
+        <Field label="Nombre completo"><Input value={d.fullName} onChange={v => set('fullName', v)} placeholder="Laura Gómez" /></Field>
+        <Field label="Cargo o profesión"><Input value={d.jobTitle} onChange={v => set('jobTitle', v)} placeholder="Psicóloga sanitaria" /></Field>
+        <Field label="Empresa o consulta"><Input value={d.organization} onChange={v => set('organization', v)} /></Field>
+        <Field label="Teléfono"><Input value={d.phone} onChange={v => set('phone', v)} placeholder="+34 600 000 000" /></Field>
+        <Field label="Email"><Input value={d.email} onChange={v => set('email', v)} /></Field>
+        <Field label="Dirección"><Input value={d.address} onChange={v => set('address', v)} /></Field>
+        <Field label="Nota"><Input value={d.note} onChange={v => set('note', v)} /></Field>
+      </Section>
+    </div>
+  )
+}
+
+function MapEditor({ block, onUpdate }: { block: MapEmbedBlock; onUpdate: (id: string, d: Partial<MapEmbedBlock['data']>) => void }) {
+  const ok = !block.data.query.trim() || !!mapEmbedUrl(block.data.query)
+  return (
+    <div className="space-y-5">
+      <Section label="Ubicación">
+        <Field label="Dirección o enlace de Google Maps">
+          <Input value={block.data.query} onChange={v => onUpdate(block.id, { query: v })} placeholder="Calle de Alcalá 120, Madrid" />
+          {!ok && <p role="alert" className="text-xs mt-1" style={{ color: '#B91C1C' }}>Solo admitimos direcciones o enlaces de Google Maps.</p>}
+          <p className="text-xs mt-1.5" style={{ color: '#6B6E71' }}>Escribe tu dirección, o en Google Maps pulsa <b>Compartir → Insertar un mapa</b> y pega el código.</p>
+        </Field>
+        <Field label="Altura del mapa">
+          <select value={block.data.height} onChange={e => onUpdate(block.id, { height: Number(e.target.value) })} className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', fontFamily: 'inherit' }}>
+            {[200, 260, 320, 400].map(h => <option key={h} value={h}>{h} px</option>)}
+          </select>
+        </Field>
+      </Section>
+    </div>
+  )
+}
+
+function FaqEditor({ block, lang, onUpdate }: { block: FaqBlock; lang: Lang; onUpdate: (id: string, d: Partial<FaqBlock['data']>) => void }) {
+  const count = useEditorStore(s => s.knowledge.filter(k => k.kind === 'faq').length)
+  return (
+    <div className="space-y-5">
+      <Section label="Título">
+        <Field label="Título del bloque"><Input value={block.data.translations[lang]?.title ?? ''} onChange={v => onUpdate(block.id, { translations: { ...block.data.translations, [lang]: { title: v } } })} placeholder="Preguntas frecuentes" /></Field>
+      </Section>
+      <div className="rounded-2xl p-4" style={{ background: '#F6F6F4', border: '1px solid rgba(26,27,28,0.07)' }}>
+        <p className="text-[13.5px] font-semibold" style={{ color: '#1A1B1C' }}>{count ? `${count} ${count === 1 ? 'pregunta pública' : 'preguntas públicas'}` : 'Todavía no hay preguntas'}</p>
+        <p className="text-xs mt-1" style={{ color: '#5A5D60' }}>Las preguntas se gestionan en tu base de conocimiento y se comparten entre todas tus páginas.</p>
+        <a href="/dashboard/knowledge" target="_blank" rel="noopener noreferrer" className="inline-block mt-2.5 text-[13px] font-semibold underline" style={{ color: '#1A1B1C' }}>Gestionar preguntas →</a>
+      </div>
+    </div>
+  )
+}
+
 // ─── Order menu (mini tienda / pedidos por WhatsApp) ──────────────
 function OrderMenuEditor({ block, lang, onUpdate }: {
   block: OrderMenuBlock; lang: Lang
@@ -1290,7 +1356,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 }
 
 // ─── SEO Editor ──────────────────────────────────────────────────
-function SeoEditor({ seo, slug, onUpdate }: { seo: PageSettings['seo']; slug: string; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
+function SeoEditor({ seo, slug, suggested, onUpdate }: { seo: PageSettings['seo']; slug: string; suggested: string; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
   return (
     <div className="space-y-5">
       <Section label="SEO & Metadatos">
@@ -1306,6 +1372,14 @@ function SeoEditor({ seo, slug, onUpdate }: { seo: PageSettings['seo']; slug: st
             style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
           <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>{seo.description.length}/160 caracteres</p>
         </Field>
+        <Field label="Tipo de negocio (datos estructurados)">
+          <select value={seo.schemaType ?? ''} onChange={e => onUpdate({ schemaType: e.target.value || undefined })} className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            <option value="">Automático ({SCHEMA_OPTIONS.find(o => o.value === suggested)?.label ?? suggested})</option>
+            {[...new Set(SCHEMA_OPTIONS.map(o => o.group))].map(g => <optgroup key={g} label={g}>{SCHEMA_OPTIONS.filter(o => o.group === g).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>)}
+          </select>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Ayuda a Google y a los asistentes de IA a entender qué eres (carta, servicios, horario, reservas…).</p>
+        </Field>
+        <Toggle label="Ocultar esta página de buscadores y asistentes de IA" value={!!seo.noindex} onChange={v => onUpdate({ noindex: v })} />
         <Field label="Imagen OG (URL)">
           <Input value={seo.ogImage || ''} onChange={v => onUpdate({ ogImage: v || null })} placeholder="https://..." />
         </Field>

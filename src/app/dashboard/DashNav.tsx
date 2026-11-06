@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSyncExternalStore } from 'react'
-import { LayoutDashboard, BarChart3, Users, CreditCard, Sparkles, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Users, CreditCard, BookOpen, Sparkles, Settings, ShieldCheck, Code2, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { SignOutButton } from './SignOutButton'
 
 const R = '#E8150A'
@@ -20,14 +20,17 @@ const SECTIONS: { title: string; items: Item[] }[] = [
     { href: '/dashboard/analytics', label: 'Analíticas', hint: 'Visitas y clics', icon: BarChart3 },
     { href: '/dashboard/contacts', label: 'Contactos', hint: 'Emails capturados', icon: Users },
     { href: '/dashboard/payments', label: 'Cobros', hint: 'Mercado Pago, Stripe, Redsys', icon: CreditCard },
+    { href: '/dashboard/knowledge', label: 'Conocimiento', hint: 'Preguntas y datos de tu negocio', icon: BookOpen },
   ] },
   { title: 'Cuenta', items: [
     { href: '/dashboard/upgrade', label: 'Planes', hint: 'Tu suscripción', icon: Sparkles },
     { href: '/dashboard/settings', label: 'Ajustes', hint: 'Pagos y conexiones', icon: Settings },
   ] },
 ]
-const MOBILE_ITEMS = SECTIONS.flatMap(s => s.items)
-// Desktop only (the mobile bottom bar already has 6 targets): on mobile it is linked from Ajustes.
+// The bottom bar keeps 5 big targets; the rest live in Ajustes (a hub of cards).
+const MOBILE_HREFS = ['/dashboard', '/dashboard/analytics', '/dashboard/payments', '/dashboard/knowledge', '/dashboard/settings']
+const MOBILE_ITEMS = MOBILE_HREFS.map(h => SECTIONS.flatMap(s => s.items).find(i => i.href === h)!)
+// Desktop only: on mobile it is linked from Ajustes.
 const DEVELOPERS_ITEM: Item = { href: '/dashboard/developers', label: 'Desarrolladores', hint: 'API keys y MCP', icon: Code2 }
 
 // Collapsed/expanded preference, remembered per browser. External-store
@@ -125,11 +128,11 @@ export function DashNav({ name, initial, plan, isAdmin, developers = false }: Pr
       </header>
 
       {/* Mobile bottom tabs: 5 targets of ≥48px, labels always visible */}
-      <nav aria-label="Menú principal del panel" className="lg:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-6 bg-white border-t pb-[env(safe-area-inset-bottom)]" style={{ borderColor: 'rgba(26,27,28,0.08)' }}>
+      <nav aria-label="Menú principal del panel" className="lg:hidden fixed bottom-0 inset-x-0 z-30 grid grid-cols-5 bg-white border-t pb-[env(safe-area-inset-bottom)]" style={{ borderColor: 'rgba(26,27,28,0.08)' }}>
         {MOBILE_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const on = active(href, exact)
           return (
-            <Link key={href} href={href} aria-current={on ? 'page' : undefined} className="dash-link relative flex flex-col items-center justify-center gap-1 min-h-[56px] text-[10.5px] font-semibold no-underline"
+            <Link key={href} href={href} aria-current={on ? 'page' : undefined} className="dash-link relative flex flex-col items-center justify-center gap-1 min-h-[56px] text-[11px] font-semibold no-underline"
               style={{ color: on ? R : '#4A4D50' }}>
               {on && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full" style={{ background: R }} />}
               <Icon size={20} strokeWidth={on ? 2.4 : 2} aria-hidden />{label}

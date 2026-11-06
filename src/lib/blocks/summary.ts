@@ -58,6 +58,8 @@ export function summarizeBlock(block: Block, lang: Lang): BlockSummary {
       return { title: pick(block.data.translations, lang, 'title') || 'Tarjeta de sellos', detail: `${block.data.targetStamps} sellos` }
     case 'menu':
       return { title: pick(block.data.translations, lang, 'title') || 'Menú', detail: `${block.data.sections.length} categorías` }
+    case 'faq':
+      return { title: pick(block.data.translations, lang, 'title') || 'Preguntas frecuentes', detail: 'Base de conocimiento' }
     case 'vcard':
       return { title: pick(block.data.translations, lang, 'label') || 'Guardar contacto', detail: 'vCard' }
     case 'map_embed':

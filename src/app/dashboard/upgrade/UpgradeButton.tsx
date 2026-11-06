@@ -11,10 +11,11 @@ declare global {
 
 interface Props {
   isPro: boolean
+  lapsed?: boolean        // subscription stopped being paid: send them to the billing portal to fix the card
   paymentsConfigured: boolean
 }
 
-export function UpgradeButton({ isPro, paymentsConfigured }: Props) {
+export function UpgradeButton({ isPro, lapsed, paymentsConfigured }: Props) {
   const [loading, setLoading] = useState(false)
 
   async function go(endpoint: '/api/checkout' | '/api/billing-portal') {
@@ -43,12 +44,12 @@ export function UpgradeButton({ isPro, paymentsConfigured }: Props) {
     )
   }
 
-  if (isPro) {
+  if (isPro || lapsed) {
     return (
       <button onClick={() => go('/api/billing-portal')} disabled={loading}
         className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-60"
         style={{ background: '#F2F3F4', color: '#1A1B1C' }}>
-        {loading ? 'Abriendo...' : 'Gestionar suscripción'}
+        {loading ? 'Abriendo...' : lapsed ? 'Actualizar método de pago' : 'Gestionar suscripción'}
       </button>
     )
   }

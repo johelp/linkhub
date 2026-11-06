@@ -1,0 +1,46 @@
+name: Migrations
+
+# Applies supabase/migrations to the matching Supabase project:
+#   push to `staging` -> staging project (automatic)
+#   push to `main`    -> production project (waits for approval: configure
+#                        required reviewers on the GitHub Environment "production")
+# UNVERIFIED in this repo: needs the secrets below and a first run on staging.
+on:
+  push:
+    branches: [staging, main]
+    paths: ['supabase/migrations/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - name: Apply migrations (staging)
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+  production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production   # required reviewers = manual approval gate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - name: Apply migrations (production)
+        run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}

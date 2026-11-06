@@ -13,6 +13,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
   const device = useEditorStore(s => s.previewDevice)
   const lang = useEditorStore(s => s.previewLang)
   const selectedBlockId = useEditorStore(s => s.selectedBlockId)
+  const knowledge = useEditorStore(s => s.knowledge)
 
   if (!page) return null
   const store = useEditorStore.getState()
@@ -50,7 +51,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
         onClick={e => { if (e.target === e.currentTarget) store.selectBlock(null) }}>
         <div className={`bg-white flex-shrink-0 overflow-hidden ${framed ? 'border-[8px] border-[#1A1B1C] rounded-[32px]' : 'border border-[rgba(26,27,28,0.12)] rounded-xl'} max-sm:border-0 max-sm:rounded-none`}
           style={{ width: WIDTHS[device], maxWidth: '100%', boxShadow: '0 12px 40px rgba(26,27,28,0.18)', transition: 'width .25s ease' }}>
-          <PageView page={page} editing controls={controls} />
+          <PageView page={page} editing controls={controls} knowledge={knowledge} />
 
           {page.blocks.length === 0 && (
             <div className="px-5 pb-8 -mt-2 text-center">

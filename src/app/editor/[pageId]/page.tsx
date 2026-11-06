@@ -6,6 +6,7 @@ import { EditorShell } from './EditorShell'
 import { getConnections } from '@/lib/payments'
 import { getFlagsForUser } from '@/lib/flags.server'
 import { hiddenBlockTypes } from '@/lib/flags'
+import { publicEntriesForPage, type KnowledgeEntry } from '@/lib/knowledge'
 import type { PaymentProvider } from '@/types'
 
 export const metadata: Metadata = { title: 'Editor | LinkHub' }
@@ -28,6 +29,8 @@ export default async function EditorPage({ params }: Props) {
 
   if (!page) notFound()
   const hiddenBlocks = hiddenBlockTypes(await getFlagsForUser(user.id, user.email))
+  const { data: kb } = await supabase.from('knowledge_entries').select('id, page_id, kind, title, content, visibility, position').order('position')
+  const knowledge = publicEntriesForPage((kb ?? []) as KnowledgeEntry[], pageId)
   const connected = (await getConnections(user.id)).map(c => c.provider as PaymentProvider)
 
   return (
@@ -36,6 +39,7 @@ export default async function EditorPage({ params }: Props) {
       plan={profile?.plan || 'free'}
       connectedProviders={connected}
       hiddenBlocks={hiddenBlocks}
+      knowledge={knowledge}
     />
   )
 }

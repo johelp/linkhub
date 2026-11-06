@@ -22,6 +22,7 @@ export type BlockType =
   | 'order_menu'
   | 'appointment_request'
   | 'vcard'
+  | 'faq'
   | 'map_embed'
 
 // Blocks available without paying
@@ -410,6 +411,12 @@ export interface VCardBlock extends BlockBase {
   }
 }
 
+// Frequently asked questions, fed from the owner's knowledge base (public entries).
+export interface FaqBlock extends BlockBase {
+  type: 'faq'
+  data: { translations: Record<Lang, { title: string }> }
+}
+
 // Google Maps embed (iframe) of the business location.
 export interface MapEmbedBlock extends BlockBase {
   type: 'map_embed'
@@ -423,7 +430,7 @@ export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock | VCardBlock | MapEmbedBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock | VCardBlock | MapEmbedBlock | FaqBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

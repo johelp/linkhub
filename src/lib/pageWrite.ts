@@ -7,6 +7,7 @@
 import { PLAN_LIMITS, blockRequiresPro, type Block, type Plan } from '../types/index.ts'
 import { HEX_COLOR, sanitizeBlocks, sanitizeSettings } from './security.ts'
 import { BLOCK_FLAG, type FlagMap } from './flags.ts'
+import { isSchemaType } from './seo.ts'
 
 export const MAX_BLOCKS = 100
 export const MAX_BODY_BYTES = 512 * 1024
@@ -45,6 +46,9 @@ export function validateSettings(settings: unknown): string | null {
   if (settings.fontFamily !== undefined && !(typeof settings.fontFamily === 'string' && /^[\w\s-]{1,40}$/.test(settings.fontFamily))) {
     return 'fontFamily inválido'
   }
+  const seo = settings.seo as Record<string, unknown> | undefined
+  if (seo?.schemaType !== undefined && !isSchemaType(seo.schemaType)) return 'Tipo de negocio no válido'
+  if (seo?.noindex !== undefined && typeof seo.noindex !== 'boolean') return 'noindex inválido'
   return null
 }
 
