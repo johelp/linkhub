@@ -13,7 +13,7 @@ export async function GET() {
     db = !error
   } catch { db = false }
   return NextResponse.json(
-    { status: db ? 'ok' : 'degraded', env: appEnv(), commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7), db },
+    { status: db ? 'ok' : 'degraded', env: appEnv(), auth: !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY), commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7), db },
     { status: db ? 200 : 503, headers: { 'Cache-Control': 'no-store' } }
   )
 }

@@ -2,6 +2,14 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Inicio de sesión: causa del fallo y diagnóstico
+
+**Causa** (primera prueba): el enlace mágico llevaba a `https://linkhub-pi.vercel.app/?code=…`. La URL de la preview no estaba en las *Redirect URLs* de Supabase, que cae al Site URL (producción, con el código viejo). Se arregla en Supabase; ver `docs/operacion/login.md`.
+
+**Añadido**
+- `/auth/callback` distingue caducado / otro navegador / denegado y lo muestra en `/auth`; nueva ruta `/auth/confirm` (verificación por `token_hash`, no depende del navegador de origen).
+- `proxy.ts` reenvía `/?code=…` a `/auth/callback` y no tumba el sitio si faltan las variables de Supabase. `GET /api/health` incluye `auth`.
+
 ## 2026-11-06 — Portada visible en el editor
 
 **Cambiado**

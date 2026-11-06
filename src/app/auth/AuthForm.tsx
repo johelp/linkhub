@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { AUTH_FAILURE_MESSAGES, isAuthFailure } from '@/lib/authErrors'
 import { ArrowRight, CalendarCheck, CreditCard, Mail, MessageCircle, ShieldCheck } from 'lucide-react'
 
 const INK = '#111314'
@@ -36,7 +37,8 @@ export function AuthForm() {
   const [cooldown, setCooldown] = useState(0)
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/dashboard'
-  const callbackFailed = searchParams.get('error') === 'callback'
+  const failure = searchParams.get('error')
+  const failureMessage = isAuthFailure(failure) ? AUTH_FAILURE_MESSAGES[failure] : null
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -119,10 +121,8 @@ export function AuthForm() {
               <h1 className="font-bold" style={{ fontSize: 32, lineHeight: 1.1, letterSpacing: '-0.03em' }}>Entra a LinkHub</h1>
               <p className="mt-3 text-[16px] leading-relaxed" style={{ color: BODY }}>Sin contraseña: te enviamos un enlace de acceso. Si aún no tienes cuenta, se crea al entrar.</p>
 
-              {callbackFailed && (
-                <p role="alert" className="mt-5 rounded-xl p-3.5 text-[14px] leading-relaxed" style={{ background: '#FEF0EF', color: '#B50F07' }}>
-                  El enlace no ha funcionado: puede haber caducado o haberse abierto en otro navegador. Pide uno nuevo y ábrelo en el mismo navegador desde el que lo solicitas.
-                </p>
+              {failureMessage && (
+                <p role="alert" className="mt-5 rounded-xl p-3.5 text-[14px] leading-relaxed" style={{ background: '#FEF0EF', color: '#B50F07' }}>{failureMessage}</p>
               )}
 
               <form onSubmit={e => { e.preventDefault(); send(email.trim()) }} className="mt-7" noValidate={false}>

@@ -42,7 +42,28 @@ export async function proxy(request: NextRequest) {
     if (csp) r.headers.set('Content-Security-Policy', csp)
     return r
   }
+  // Safety net: if Supabase sends the sign-in link to the Site URL root
+  // (`/?code=...`, e.g. when the exact redirect URL isn't in its allow-list),
+  // hand the code to the real callback instead of showing the landing.
+  if (pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/callback'
+    return NextResponse.redirect(url)
+  }
+
   let response = next()
+
+  // Without Supabase configured the session check cannot run. Don't take every
+  // page down with it: public pages keep working, private ones go to /auth.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    if (PROTECTED.some(r => pathname.startsWith(r))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth'
+      url.search = '?error=config'
+      return NextResponse.redirect(url)
+    }
+    return response
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
