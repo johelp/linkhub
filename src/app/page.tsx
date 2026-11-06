@@ -6,6 +6,7 @@ import { LivePreview } from './LivePreview'
 import { Reveal, LandingNav, StickyCta } from './landing/ScrollFx'
 import { HeroShowcase } from './HeroShowcase'
 import { ROADMAP } from '@/lib/roadmap'
+import { CONTACT_EMAIL } from '@/lib/contact'
 import { Pricing } from './landing/Pricing'
 import { QR_TOOLS } from '@/lib/qrTools'
 import { VERTICALS } from '@/lib/verticals'
@@ -32,7 +33,7 @@ const LINE = 'rgba(17,19,20,0.10)'
 const PAPER = '#FAFAF8'
 const ACCENT = '#E8150A'
 
-const LAUNCH_OFFER_HREF = 'mailto:hola@linkhub.app?subject=Acceso%20de%20lanzamiento%20LinkHub'
+const LAUNCH_OFFER_HREF = `mailto:${CONTACT_EMAIL}?subject=Acceso%20de%20lanzamiento%20LinkHub`
 
 const segments = [
   { icon: Stethoscope, title: 'Salud y bienestar', text: 'Consultas, terapias y fisioterapia con solicitud de cita y horarios claros.', href: '/para/profesionales-y-clases' },
@@ -52,8 +53,8 @@ const steps = [
 const faqs = [
   { q: '¿En qué se diferencia de un panel de enlaces o una tarjeta de visita?', a: 'Un panel de enlaces solo reúne enlaces. Con LinkHub tus clientes también reservan citas, hacen pedidos y pagan, y tu página incluye los datos que Google y los asistentes de IA necesitan para entender tu negocio. La tarjeta de contacto (vCard) es uno más de los módulos.' },
   { q: '¿Quién controla mi página y mis datos?', a: 'Tú. Editas todo cuando quieras, conectas tu propia pasarela de cobro y puedes exportar tus contactos y tus cobros. Si dejas LinkHub, te llevas tu información.' },
-  { q: '¿Me ayudáis a ponerlo en marcha?', a: 'Sí. La plataforma incluye un asistente paso a paso para crear tu página y conectar tus cobros, y puedes escribirnos a hola@linkhub.app si te atascas.' },
-  { q: '¿Necesito tener una página web?', a: 'No. LinkHub está pensado para quien trabaja desde Instagram, WhatsApp o el boca a boca: tu página reúne lo que ofreces y la compartes con un enlace o un código QR. Si más adelante quieres tu propio dominio, el plan Pro lo incluye.' },
+  { q: '¿Me ayudáis a ponerlo en marcha?', a: 'Sí. La plataforma incluye un asistente paso a paso para crear tu página y conectar tus cobros, y puedes escribirnos a ' + CONTACT_EMAIL + ' si te atascas.' },
+  { q: '¿Necesito tener una página web?', a: 'No. LinkHub está pensado para quien trabaja desde Instagram, WhatsApp o el boca a boca: tu página reúne lo que ofreces y la compartes con un enlace o un código QR. El dominio propio (tu-nombre.com) lo estamos estudiando: puedes votarlo desde tu panel.' },
   { q: '¿Cómo recibo los pagos?', a: 'Conectas tu propia cuenta (Mercado Pago, Stripe o el TPV de tu banco con Redsys) y el dinero va directo a ti. LinkHub no retiene fondos. Elige la pasarela que mejor encaje con tu país y tu banco.' },
   { q: '¿Cobráis comisión por las ventas, pedidos o citas?', a: 'Las citas y los pedidos llegan por WhatsApp y no pasan por nosotros. Por defecto LinkHub no aplica ninguna comisión sobre tus ventas; solo pagas la suscripción si eliges Pro. Las pasarelas de pago cobran sus propias tarifas.' },
   { q: '¿Qué pasa con los datos de mis clientes?', a: 'Los pedidos y las solicitudes de cita se envían directamente a tu WhatsApp. Solo guardamos los emails que tus visitantes dejen en un formulario de contacto, y las credenciales de cobro se almacenan cifradas.' },
@@ -129,6 +130,23 @@ export default function LandingPage() {
             </div>
             <HeroShowcase />
           </div>
+        </section>
+
+        {/* FACTS: only things that are literally true of the product today */}
+        <section aria-label="LinkHub en cifras" style={{ background: '#fff', borderBottom: `1px solid ${LINE}` }}>
+          <dl className="mx-auto max-w-[1160px] px-5 sm:px-8 py-8 grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-4 text-center lg:text-left">
+            {[
+              ['0 %', 'de comisión de LinkHub sobre tus ventas'],
+              ['3', 'pasarelas de cobro a elegir'],
+              ['12', 'ejemplos por sector para probar'],
+              ['6', 'idiomas para tu página'],
+            ].map(([n, t]) => (
+              <div key={t} className="lg:border-l lg:pl-6" style={{ borderColor: LINE }}>
+                <dt className="font-bold tabular-nums" style={{ fontSize: 'clamp(28px, 3.4vw, 40px)', letterSpacing: '-0.03em', color: INK }}>{n}</dt>
+                <dd className="mt-1 text-[14px]" style={{ color: MUTED }}>{t}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
         {/* WHO IT'S FOR */}
@@ -249,14 +267,14 @@ export default function LandingPage() {
         <section aria-labelledby="ejemplos-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-24">
           <Reveal>
             <div className="flex flex-wrap items-end justify-between gap-5">
-              <SectionHead id="ejemplos-h" eyebrow="Ejemplos" title="Mira páginas reales de tu sector" lead="Doce ejemplos interactivos con datos de España, Argentina y México. Pide una cita, arma un pedido, abre las preguntas." />
+              <SectionHead id="ejemplos-h" eyebrow="Ejemplos" title="Pruébalo con una página de tu sector" lead="Doce ejemplos interactivos con datos ficticios de España, Argentina y México. Pide una cita, arma un pedido, abre las preguntas." />
               <Link href="/ejemplos" className="inline-flex items-center gap-2 rounded-full px-6 text-[15px] font-semibold no-underline hover:bg-white" style={{ height: 48, border: `1.5px solid ${LINE}`, color: INK }}>Ver todos los ejemplos <ArrowRight size={16} aria-hidden /></Link>
             </div>
           </Reveal>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {NICHES.slice(0, 8).map(n => (
               <Link key={n.slug} href={`/ejemplos/${n.slug}`} className="group flex items-center justify-between gap-3 rounded-xl bg-white px-5 py-4 no-underline transition-colors hover:bg-[#FAFAF8]" style={{ border: `1px solid ${LINE}`, color: INK }}>
-                <span className="flex items-center gap-3 min-w-0"><span aria-hidden className="h-8 w-1.5 rounded-full flex-shrink-0" style={{ background: n.color }} /><span className="text-[15px] font-semibold truncate">{n.label}</span></span>
+                <span className="flex items-center gap-3 min-w-0"><span aria-hidden className="h-8 w-1.5 rounded-full flex-shrink-0" style={{ background: n.color }} /><span className="min-w-0"><span className="block text-[15px] font-semibold truncate">{n.label}</span><span className="block text-[12.5px] truncate" style={{ color: MUTED }}>{n.who}</span></span></span>
                 <ArrowRight size={15} aria-hidden className="flex-shrink-0 transition-transform group-hover:translate-x-1" />
               </Link>
             ))}
@@ -268,7 +286,7 @@ export default function LandingPage() {
           <Reveal><SectionHead id="control-h" eyebrow="Tú decides" title="Control total sobre tu página, desde el primer día" lead="Sin depender de un desarrollador ni de una agencia." /></Reveal>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {[
-              { icon: SlidersHorizontal, title: 'Control total sobre tu página', text: 'Editas contenido, diseño, idiomas y enlaces cuando quieras, sin pedir permiso. Tus contactos y tus datos son tuyos y puedes exportarlos.', items: ['Edición sin límites y guardado automático', 'Dominio propio en el plan Pro', 'Exporta tus contactos y tus cobros a CSV'] },
+              { icon: SlidersHorizontal, title: 'Tú mandas sobre tu página', text: 'Editas contenido, diseño, idiomas y enlaces cuando quieras, sin pedir permiso. Tus contactos y tus datos son tuyos y puedes exportarlos.', items: ['Edición sin límites y guardado automático', 'Exporta tus contactos y tus cobros a CSV'] },
               { icon: LifeBuoy, title: 'Puesta en marcha asistida', text: 'Un asistente te guía paso a paso para crear tu página y conectar tus cobros, y te acompañamos si te atascas.', items: ['Plantillas por tipo de negocio', 'Asistente de cobros en 3 pasos', 'Soporte por correo'] },
               { icon: Wallet, title: 'Cobros con tu pasarela', text: 'Cada cliente elige cómo cobrar. El dinero va directo a tu cuenta; LinkHub no retiene fondos.', items: ['Mercado Pago', 'Stripe', 'Redsys (TPV de tu banco)'] },
             ].map((c, i) => (
@@ -291,21 +309,32 @@ export default function LandingPage() {
         <LivePreview />
 
         {/* HOW IT WORKS */}
-        <section aria-labelledby="como-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-20 lg:pb-28">
-          <Reveal><SectionHead id="como-h" eyebrow="Cómo funciona" title="De cero a tu primera cita en una tarde" /></Reveal>
-          <ol className="mt-12 grid gap-10 md:grid-cols-3" style={{ listStyle: 'none', padding: 0 }}>
-            {steps.map((s, i) => (
-              <li key={s.n}>
-                <Reveal delay={i * 80}>
-                  <p className="text-[13px] font-semibold tabular-nums" style={{ color: MUTED }}>{s.n}</p>
-                  <div className="mt-3 pt-5" style={{ borderTop: `2px solid ${INK}` }}>
-                    <h3 className="text-[19px] font-semibold">{s.title}</h3>
-                    <p className="mt-2 text-[16px] leading-relaxed" style={{ color: BODY }}>{s.text}</p>
-                  </div>
-                </Reveal>
-              </li>
-            ))}
-          </ol>
+        <section aria-labelledby="como-h" style={{ background: INK, color: '#fff' }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28">
+            <Reveal>
+              <p className="text-[13px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'rgba(255,255,255,.6)' }}>Cómo funciona</p>
+              <h2 id="como-h" className="mt-3 font-bold max-w-[760px]" style={{ fontSize: 'clamp(30px, 4.4vw, 48px)', lineHeight: 1.08, letterSpacing: '-0.03em' }}>De cero a tu primera cita en una tarde</h2>
+            </Reveal>
+            <ol className="mt-14 grid gap-px md:grid-cols-3 rounded-2xl overflow-hidden" style={{ listStyle: 'none', padding: 0, background: 'rgba(255,255,255,.14)' }}>
+              {steps.map((s, i) => (
+                <li key={s.n} style={{ background: INK }}>
+                  <Reveal delay={i * 80}>
+                    <div className="p-8 lg:p-10 h-full">
+                      <p aria-hidden className="font-bold tabular-nums" style={{ fontSize: 'clamp(56px, 7vw, 88px)', lineHeight: 1, letterSpacing: '-0.05em', color: 'rgba(255,255,255,.14)' }}>{s.n}</p>
+                      <h3 className="mt-6 text-[21px] font-semibold">{s.title}</h3>
+                      <p className="mt-3 text-[16px] leading-relaxed" style={{ color: 'rgba(255,255,255,.78)' }}>{s.text}</p>
+                    </div>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
+            <Reveal delay={200}>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Link href="/auth" className="inline-flex items-center gap-2 rounded-full px-7 text-[16px] font-semibold no-underline" style={{ background: ACCENT, color: '#fff', height: 52 }}>Crear mi página gratis <ArrowRight size={17} aria-hidden /></Link>
+                <span className="text-[14px]" style={{ color: 'rgba(255,255,255,.65)' }}>Sin tarjeta. Publicada en minutos.</span>
+              </div>
+            </Reveal>
+          </div>
         </section>
 
         {/* MARKETS */}
@@ -411,7 +440,7 @@ export default function LandingPage() {
           </div>
           <FooterCol title="Producto" links={[['Funciones', '#funciones'], ['Precios', '#precios'], ['Preguntas frecuentes', '#faq'], ['Iniciar sesión', '/auth']]} />
           <FooterCol title="Para tu rubro" links={VERTICALS.map(v => [v.label, `/para/${v.slug}`] as [string, string])} />
-          <FooterCol title="Contacto" links={[['hola@linkhub.app', 'mailto:hola@linkhub.app'], ['Herramientas QR', '/herramientas']]} />
+          <FooterCol title="Contacto" links={[[CONTACT_EMAIL, `mailto:${CONTACT_EMAIL}`], ['Herramientas QR', '/herramientas']]} />
         </div>
         <p className="mx-auto max-w-[1160px] px-5 sm:px-8 pb-10 text-[13px] flex flex-wrap gap-x-5 gap-y-2" style={{ color: MUTED }}>
           <span>© {new Date().getFullYear()} LinkHub</span>

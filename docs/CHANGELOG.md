@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-06 — Landing v2
+
+**Cambiado**
+- Franja de cifras bajo el hero, banda oscura «Cómo funciona» y ejemplos con descripción. Documento `docs/estrategia/landing-v2.md` (posicionamiento y dirección de arte).
+- **Corregido:** la landing, los precios y la pantalla de plan prometían «dominio propio», que aún no existe; ahora figura como «en estudio». «Páginas reales» pasa a «ejemplos con datos ficticios».
+- El correo de contacto sale de `src/lib/contact.ts` (`NEXT_PUBLIC_SUPPORT_EMAIL`, por defecto `hola@linkhub.johelpastorino.com`) en lugar de `hola@linkhub.app`.
+
 ## 2026-11-06 — Próximamente y votos
 
 **Añadido**

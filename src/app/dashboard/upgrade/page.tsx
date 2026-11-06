@@ -1,3 +1,4 @@
+import { CONTACT_EMAIL } from '@/lib/contact'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
@@ -42,7 +43,6 @@ export default async function UpgradePage() {
               '✓ Filtros de temporada por bloque',
               '✓ QR personalizado SVG + PNG',
               '✓ Analíticas completas + export CSV',
-              '✓ Dominio propio',
               '✓ Soporte prioritario',
             ].map(f => <li key={f}>{f}</li>)}
           </ul>
@@ -52,7 +52,7 @@ export default async function UpgradePage() {
 
       <p className="text-xs text-center mt-6" style={{ color: '#6B6E71' }}>
         ¿Preguntas sobre tu cuenta? Escribinos a{' '}
-        <a href="mailto:hola@linkhub.app" className="underline">hola@linkhub.app</a>.
+        <a href={`mailto:${CONTACT_EMAIL}`} className="underline">{CONTACT_EMAIL}</a>.
       </p>
     </div>
   )

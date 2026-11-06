@@ -8,7 +8,7 @@ const INK = '#111314', BODY = '#3F4346', MUTED = '#5B6064', LINE = 'rgba(17,19,2
 
 const plans = [
   { name: 'Free', pro: false, note: 'Para empezar y probar', features: ['1 página', 'Enlaces y separadores', '1 idioma', 'Código QR básico', 'Analíticas de visitas'], cta: 'Empezar gratis' },
-  { name: 'Pro', pro: true, note: 'Para trabajar con clientes', features: ['Páginas ilimitadas', 'Todos los bloques: citas, pedidos, cobros, mapa', 'Varios idiomas', 'QR personalizado', 'Analíticas completas y exportación', 'Dominio propio', 'Soporte prioritario'], cta: 'Empezar con Pro' },
+  { name: 'Pro', pro: true, note: 'Para trabajar con clientes', features: ['Páginas ilimitadas', 'Todos los bloques: citas, pedidos, cobros, mapa', 'Varios idiomas', 'QR personalizado', 'Analíticas completas y exportación', 'Soporte prioritario'], cta: 'Empezar con Pro' },
 ]
 
 // Region: remembered choice > best guess from the browser > Spain. External
