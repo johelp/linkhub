@@ -375,6 +375,17 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'faq',
+    label: 'Preguntas frecuentes',
+    description: 'Muestra las preguntas de tu base de conocimiento (también mejora tu aparición en Google y en asistentes de IA)',
+    icon: '❓',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(), type: 'faq', order: 0, visible: true, seasonFilter: 'always',
+      data: { translations: Object.fromEntries((['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]).map(l => [l, { title: l === 'es' ? 'Preguntas frecuentes' : '' }])) as Record<Lang, { title: string }> },
+    } as Block),
+  },
+  {
     type: 'vcard',
     label: 'Guardar contacto (vCard)',
     description: 'Botón para que tus clientes te guarden en su agenda con un toque',

@@ -12,8 +12,9 @@ import { EditorTopBar } from './EditorTopBar'
 import { AddBlockModal } from './AddBlockModal'
 import { PublishDialog } from './PublishDialog'
 import { BLOCK_BY_TYPE } from '@/lib/blocks/registry'
+import type { KnowledgeEntry } from '@/lib/knowledge'
 
-interface Props { page: Page; plan: Plan; connectedProviders: PaymentProvider[]; hiddenBlocks: string[] }
+interface Props { page: Page; plan: Plan; connectedProviders: PaymentProvider[]; hiddenBlocks: string[]; knowledge: KnowledgeEntry[] }
 
 type MobileTab = 'blocks' | 'preview' | 'properties'
 
@@ -25,7 +26,7 @@ function isTypingTarget(t: EventTarget | null) {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
 }
 
-export function EditorShell({ page, plan, connectedProviders, hiddenBlocks }: Props) {
+export function EditorShell({ page, plan, connectedProviders, hiddenBlocks, knowledge }: Props) {
   const ready = useEditorStore(s => s.page !== null)
   const isDirty = useEditorStore(s => s.isDirty)
   const isSaving = useEditorStore(s => s.isSaving)
@@ -41,7 +42,7 @@ export function EditorShell({ page, plan, connectedProviders, hiddenBlocks }: Pr
 
   useEffect(() => {
     useEditorStore.getState().setPage(page)
-    useEditorStore.setState({ connectedProviders })
+    useEditorStore.setState({ connectedProviders, knowledge })
     // Deep link from the Cobros assistant: /editor/<id>?add=payment_button
     const add = new URLSearchParams(window.location.search).get('add')
     if (add && BLOCK_BY_TYPE[add as BlockType]) {
@@ -49,7 +50,7 @@ export function EditorShell({ page, plan, connectedProviders, hiddenBlocks }: Pr
       else useEditorStore.getState().addBlock(add as BlockType)
       window.history.replaceState(null, '', window.location.pathname)
     }
-  }, [page, connectedProviders, plan])
+  }, [page, connectedProviders, plan, knowledge])
 
   // On small screens, jump to the editing tab as soon as a block is selected.
   useEffect(() => {

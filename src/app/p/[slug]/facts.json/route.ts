@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOwnerAvailability } from '@/lib/billing.server'
+import { getPublicKnowledge } from '@/lib/knowledge.server'
 import { buildStructuredData, extractFacts } from '@/lib/seo'
 import type { Page } from '@/types'
 
@@ -12,6 +13,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const page = data as unknown as Page | null
   if (!page || page.settings.seo.noindex || (await getOwnerAvailability(page.user_id)) === 'paused') return Response.json({ error: 'not_found' }, { status: 404 })
   const base = (process.env.NEXT_PUBLIC_APP_URL || 'https://linkhub.app').replace(/\/$/, '')
-  return Response.json({ slug: page.slug, url: `${base}/p/${page.slug}`, facts: extractFacts(page), structuredData: buildStructuredData(page, base) },
+  const facts = extractFacts(page, page.settings.defaultLang, await getPublicKnowledge(page.user_id, page.id))
+  return Response.json({ slug: page.slug, url: `${base}/p/${page.slug}`, facts, structuredData: buildStructuredData(page, base, facts) },
     { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600' } })
 }

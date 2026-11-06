@@ -19,5 +19,6 @@ export function mapEmbedUrl(input: string): string | null {
       return place ? `https://www.google.com/maps?q=${encodeURIComponent(decodeURIComponent(place.replace(/\+/g, ' ')).slice(0, 200))}&output=embed` : null
     } catch { return null }
   }
+  if (/^(javascript|data|vbscript|file|ftp|blob):/i.test(raw)) return null   // never an address
   return `https://www.google.com/maps?q=${encodeURIComponent(raw.slice(0, 200))}&output=embed`   // plain address
 }

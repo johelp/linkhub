@@ -1,4 +1,5 @@
 import type { Page, Block, Lang } from '@/types'
+import { faqPairs, type KnowledgeEntry } from './knowledge.ts'
 
 // SEO / GEO (generative-engine) / LLM representation of a customer page.
 // Search engines read JSON-LD; AI assistants read clean text and structured
@@ -61,15 +62,16 @@ export interface Facts {
   hours: { day: number; open: string; close: string }[]
   timezone?: string
   offers: { name: string; description?: string; price?: number; currency?: string; durationMin?: number; category?: string }[]
+  faqs: { q: string; a: string }[]
   menu: { name: string; items: { name: string; description?: string; price?: number }[] }[]
   hasBooking: boolean
   currency?: string
 }
 
 // Flatten what the owner built into plain facts about the business.
-export function extractFacts(page: Page, lang: Lang = page.settings.defaultLang): Facts {
+export function extractFacts(page: Page, lang: Lang = page.settings.defaultLang, knowledge: KnowledgeEntry[] = []): Facts {
   const blocks = (page.blocks as Block[]).filter(b => b.visible)
-  const f: Facts = { name: page.name, tagline: page.settings.profile?.tagline?.trim() ?? '', description: '', sameAs: [], hours: [], offers: [], menu: [], hasBooking: false }
+  const f: Facts = { name: page.name, tagline: page.settings.profile?.tagline?.trim() ?? '', description: '', sameAs: [], hours: [], offers: [], menu: [], faqs: faqPairs(knowledge).slice(0, 50), hasBooking: false }
   for (const b of blocks) {
     switch (b.type) {
       case 'contact_card':
@@ -210,10 +212,12 @@ export function buildStructuredData(page: Page, baseUrl: string, facts: Facts = 
       }
     }
   }
+  const faqPage = facts.faqs.length ? { '@type': 'FAQPage', '@id': `${url}#faq`, mainEntity: facts.faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) } : null
   return {
     '@context': 'https://schema.org',
     '@graph': [
       business,
+      ...(faqPage ? [faqPage] : []),
       { '@type': 'WebPage', '@id': `${url}#webpage`, url, name: meta.title, description: meta.description, inLanguage: page.settings.defaultLang, about: { '@id': `${url}#business` }, isPartOf: { '@type': 'WebSite', name: 'LinkHub', url: baseUrl } },
     ],
   }
@@ -244,6 +248,7 @@ export function buildLlmsText(page: Page, baseUrl: string, facts: Facts = extrac
     }
     L.push('')
   }
+  if (facts.faqs.length) { L.push('## Preguntas frecuentes', ''); for (const f of facts.faqs) L.push(`**${f.q}**`, f.a, ''); }
   if (facts.hasBooking) L.push('## Reservas', `Se puede solicitar cita online en ${url} (la confirmación llega por WhatsApp).`, '')
   if (facts.sameAs.length) L.push('## Perfiles', ...facts.sameAs.map(u => `- ${u}`), '')
   L.push('## Enlace', `- ${url}`)

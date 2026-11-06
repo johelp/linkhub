@@ -4,6 +4,7 @@ import { PLAN_LIMITS, blockRequiresPro, type Block, type Plan } from '@/types'
 import type { TablesUpdate, Json } from '@/lib/supabase/database.types'
 import { HEX_COLOR, sanitizeBlocks, sanitizeSettings } from '@/lib/security'
 import { getFlagsForUser } from '@/lib/flags.server'
+import { isSchemaType } from '@/lib/seo'
 import { BLOCK_FLAG } from '@/lib/flags'
 
 const MAX_BLOCKS = 100
@@ -39,6 +40,9 @@ function validateSettings(settings: unknown): string | null {
   if (settings.fontFamily !== undefined && !(typeof settings.fontFamily === 'string' && /^[\w\s-]{1,40}$/.test(settings.fontFamily))) {
     return 'fontFamily inválido'
   }
+  const seo = settings.seo as Record<string, unknown> | undefined
+  if (seo?.schemaType !== undefined && !isSchemaType(seo.schemaType)) return 'Tipo de negocio no válido'
+  if (seo?.noindex !== undefined && typeof seo.noindex !== 'boolean') return 'noindex inválido'
   return null
 }
 

@@ -10,8 +10,11 @@ interface Props {
   pc: string
   pageName: string
   editing: boolean
+  preview?: boolean       // example pages: show the WhatsApp message instead of opening a chat
   onSent?: (url: string) => void
 }
+
+import { PreviewNote } from './PreviewNote'
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
@@ -25,7 +28,7 @@ const serverNow = () => 0
 
 // Public appointment request: service -> day -> time -> name -> WhatsApp.
 // Phase 1 only *requests* a slot; the owner confirms availability by chat.
-export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent }: Props) {
+export function AppointmentRequest({ block, lang, pc, pageName, editing, preview, onSent }: Props) {
   const d = block.data
   const t = d.translations[lang]?.title ? d.translations[lang] : d.translations.es
   const minute = useSyncExternalStore(subscribeNoop, minuteNow, serverNow)
@@ -37,6 +40,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
   const [phone, setPhone] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [previewMsg, setPreviewMsg] = useState<string | null>(null)
 
   const service = d.services.find(s => s.id === serviceId) ?? d.services[0]
   const days = useMemo(() => {
@@ -52,7 +56,9 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
     const req = { serviceId: service?.id ?? '', dayKey, time, name, phone, notes }
     const v = validateAppointment(d, req)
     if (!v.ok) { setError(v.error ?? null); return }
-    const url = whatsappOrderUrl(d.whatsapp, buildAppointmentMessage({ data: d, pageName, req, lang }))
+    const message = buildAppointmentMessage({ data: d, pageName, req, lang })
+    if (preview) { setPreviewMsg(message); return }
+    const url = whatsappOrderUrl(d.whatsapp, message)
     onSent?.(url)
     window.open(url, '_blank', 'noopener,noreferrer')
   }
@@ -70,7 +76,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
   return (
     <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 16, marginBottom: 8, overflow: 'hidden' }}>
       <div style={{ padding: '14px 16px 4px' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: INK }}>📅 {t?.title || 'Reservá tu turno'}</div>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: INK }}>📅 {t?.title || 'Reserva tu cita'}</h2>
         {t?.description && <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>{t.description}</div>}
       </div>
 
@@ -130,6 +136,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, onSent 
               style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               💬 Solicitar turno por WhatsApp
             </button>
+            {previewMsg && <PreviewNote message={previewMsg} what="solicitud" />}
             <div style={{ fontSize: 11, color: '#9A9D9F', textAlign: 'center' }}>Es una solicitud: te confirman la disponibilidad por WhatsApp</div>
           </div>
         )}

@@ -2,12 +2,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
 import { sanitizeBlocks } from '@/lib/security'
 import { mapEmbedUrl } from '@/lib/maps'
+import type { KnowledgeEntry } from '@/lib/knowledge'
 import { OrderMenu } from './OrderMenu'
 import { AppointmentRequest } from './AppointmentRequest'
 
@@ -37,7 +38,7 @@ export interface EditingControls {
   onDelete: (id: string) => void
 }
 
-interface Props { page: Page; editing?: boolean; controls?: EditingControls }
+interface Props { page: Page; editing?: boolean; controls?: EditingControls; knowledge?: KnowledgeEntry[] }
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: '📷', facebook: '👥', tiktok: '🎵',
@@ -57,6 +58,9 @@ const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   not_found: 'Ese producto o entrada ya no está disponible.',
   failed: 'No se pudo iniciar el pago. Intentá de nuevo en un momento.',
 }
+
+// Demo / example pages are not real pages: no analytics, no payments.
+const isSynthetic = (id: string) => id.startsWith('demo') || id.startsWith('example')
 
 // ─── Public-page motion ──────────────────────────────────────────
 // One IntersectionObserver reveals `.lh-reveal` cells as they enter the
@@ -110,7 +114,7 @@ function MiniBar({ target, name, avatarUrl, initial, pc }: { target: React.RefOb
   )
 }
 
-export function PageView({ page, editing = false, controls }: Props) {
+export function PageView({ page, editing = false, controls, knowledge = [] }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)
@@ -162,7 +166,7 @@ export function PageView({ page, editing = false, controls }: Props) {
 
   // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
-    if (editing || page.id.startsWith('demo')) return
+    if (editing || isSynthetic(page.id)) return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -175,7 +179,7 @@ export function PageView({ page, editing = false, controls }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
-    if (editing || page.id.startsWith('demo')) return
+    if (editing || isSynthetic(page.id)) return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,
@@ -210,6 +214,7 @@ export function PageView({ page, editing = false, controls }: Props) {
   const profile = page.settings.profile
   // Motion: on by default; off in the editor canvas, in landing demos, or when the owner turns it off.
   const fx = !editing && !page.id.startsWith('demo') && page.settings.animations !== false
+  const preview = page.id.startsWith('example')   // example pages never open a real WhatsApp chat
   useMotion(rootRef, fx, visibleBlocks.length)
   const initial = (page.name.trim()[0] || '•').toUpperCase()
   // Simple link cards sit two-per-row on wide layouts; everything richer
@@ -335,6 +340,8 @@ export function PageView({ page, editing = false, controls }: Props) {
                   pageId={page.id}
                   pageSlug={page.slug}
                   pageName={page.name}
+                  knowledge={knowledge}
+                  preview={preview}
                   expandedId={expandedId}
                   setExpandedId={setExpandedId}
                   onTrackClick={trackClick}
@@ -469,8 +476,8 @@ function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string })
 }
 
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId, setExpandedId, onTrackClick, editing }: {
-  block: Block; lang: Lang; pc: string; pageId: string; pageSlug: string; pageName: string
+function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge, preview, expandedId, setExpandedId, onTrackClick, editing }: {
+  block: Block; lang: Lang; pc: string; pageId: string; pageSlug: string; pageName: string; knowledge: KnowledgeEntry[]; preview: boolean
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
   editing: boolean
@@ -488,9 +495,9 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId
     case 'section_label': {
       const b = block as SectionLabelBlock
       return (
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', margin: '22px 0 8px 2px', letterSpacing: '.8px', textTransform: 'uppercase' }}>
+        <h2 style={{ fontSize: 11, fontWeight: 700, color: '#6B6E71', margin: '22px 0 8px 2px', letterSpacing: '.8px', textTransform: 'uppercase' }}>
           {b.data.translations[lang]?.text || b.data.translations['es']?.text || ''}
-        </div>
+        </h2>
       )
     }
 
@@ -524,6 +531,24 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId
       )
     }
 
+    case 'faq': {
+      const b = block as FaqBlock
+      const faqs = knowledge.filter(k => k.kind === 'faq')
+      if (faqs.length === 0) return editing ? <EmptyBlockPlaceholder icon="❓" label="Añade preguntas en Conocimiento (menú del panel) y aparecerán aquí" /> : null
+      const title = b.data.translations[lang]?.title || b.data.translations.es?.title || 'Preguntas frecuentes'
+      return (
+        <section style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1A1B1C', marginBottom: 6 }}>{title}</h2>
+          {faqs.map(f => (
+            <details key={f.id} style={{ borderTop: '1px solid rgba(26,27,28,0.08)' }}>
+              <summary style={{ cursor: 'pointer', padding: '11px 0', fontSize: 14, fontWeight: 600, color: '#1A1B1C', listStyle: 'none' }}>{f.title}</summary>
+              <p style={{ fontSize: 13.5, color: '#3F4346', lineHeight: 1.6, paddingBottom: 12, whiteSpace: 'pre-line' }}>{f.content}</p>
+            </details>
+          ))}
+        </section>
+      )
+    }
+
     case 'vcard': {
       const b = block as VCardBlock
       const label = b.data.translations[lang]?.label || b.data.translations.es?.label || 'Guardar en mis contactos'
@@ -550,13 +575,13 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId
 
     case 'appointment_request': {
       const b = block as AppointmentRequestBlock
-      return <AppointmentRequest block={b} lang={lang} pc={pc} pageName={pageName} editing={editing}
+      return <AppointmentRequest block={b} lang={lang} pc={pc} pageName={pageName} editing={editing} preview={preview}
         onSent={url => onTrackClick(b.id, 'appointment_request', url)} />
     }
 
     case 'order_menu': {
       const b = block as OrderMenuBlock
-      return <OrderMenu block={b} lang={lang} pc={pc} pageName={pageName} editing={editing}
+      return <OrderMenu block={b} lang={lang} pc={pc} pageName={pageName} editing={editing} preview={preview}
         onSent={url => onTrackClick(b.id, 'order_menu', url)} />
     }
 
@@ -648,8 +673,9 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, expandedId
             </div>
             <div style={{ fontSize: 11, color: '#9A9D9F', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
           </div>
-          {isOpen && (
-            <div className="lh-expand" style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {/* Always in the DOM (hidden when closed) so crawlers and AI assistants can read every option */}
+          {(
+            <div className={isOpen ? 'lh-expand' : undefined} style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: isOpen ? 'flex' : 'none', flexWrap: 'wrap', gap: 8 }}>
               {b.data.children.map(child => {
                 const ct = child.translations[lang] || child.translations['es'] || { label: '' }
                 return (

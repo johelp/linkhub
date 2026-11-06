@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getOwnerAvailability } from '@/lib/billing.server'
 import { extractFacts, defaultMeta, buildStructuredData } from '@/lib/seo'
 import { PausedPage } from './PausedPage'
+import { getPublicKnowledge } from '@/lib/knowledge.server'
 import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import type { Metadata } from 'next'
@@ -25,7 +26,7 @@ const loadPage = cache(async (slug: string) => {
   const { data } = await supabase.from('pages').select('*').eq('slug', slug).eq('published', true).single()
   if (!data) return null
   const page = data as unknown as Page
-  return { page, availability: await getOwnerAvailability(page.user_id) }
+  return { page, availability: await getOwnerAvailability(page.user_id), knowledge: await getPublicKnowledge(page.user_id, page.id) }
 })
 
 const baseUrl = () => (process.env.NEXT_PUBLIC_APP_URL || 'https://linkhub.app').replace(/\/$/, '')
@@ -34,8 +35,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const loaded = await loadPage(slug)
   if (!loaded) return { title: 'Página no encontrada', robots: { index: false } }
-  const { page, availability: av } = loaded
-  const facts = extractFacts(page)
+  const { page, availability: av, knowledge } = loaded
+  const facts = extractFacts(page, page.settings.defaultLang, knowledge)
   const meta = defaultMeta(page, facts)
   const url = `${baseUrl()}/p/${page.slug}`
   // Paused or opted-out pages stay out of search results and AI answers.
@@ -59,14 +60,14 @@ export default async function PublicPage({ params }: Props) {
   const { slug } = await params
   const loaded = await loadPage(slug)
   if (!loaded) notFound()
-  const { page, availability: av } = loaded
+  const { page, availability: av, knowledge } = loaded
 
   // Payment lapsed beyond the grace period: a neutral "back soon" screen.
   if (av === 'paused') return <PausedPage name={page.name} color={page.settings.primaryColor} avatarUrl={page.settings.profile?.avatarUrl} />
 
   // Structured data (schema.org) chosen from the business type: search engines
   // and AI assistants read this instead of guessing from the layout.
-  const jsonLd = buildStructuredData(page, baseUrl())
+  const jsonLd = buildStructuredData(page, baseUrl(), extractFacts(page, page.settings.defaultLang, knowledge))
 
   const ga4Id = page.settings.pixels?.ga4Id
   const metaPixelId = page.settings.pixels?.metaPixelId
@@ -117,7 +118,7 @@ export default async function PublicPage({ params }: Props) {
           </noscript>
         </>
       )}
-      <PageView page={page} />
+      <PageView page={page} knowledge={knowledge} />
     </>
   )
 }

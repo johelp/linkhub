@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import { ArrowRight, Check, CalendarClock, ShoppingBag, CreditCard, BarChart3, Stethoscope, Scissors, GraduationCap, Utensils, Ticket, Mountain, QrCode, Languages, MonitorSmartphone, SlidersHorizontal, LifeBuoy, Wallet } from 'lucide-react'
+import { ArrowRight, Check, CalendarClock, ShoppingBag, CreditCard, BarChart3, Stethoscope, Scissors, GraduationCap, Utensils, Ticket, Mountain, QrCode, Languages, MonitorSmartphone, SlidersHorizontal, LifeBuoy, Wallet, Search, Bot, Minus } from 'lucide-react'
 import { LivePreview } from './LivePreview'
 import { Reveal, LandingNav, StickyCta } from './landing/ScrollFx'
 import { HeroShowcase } from './HeroShowcase'
 import { Pricing } from './landing/Pricing'
 import { QR_TOOLS } from '@/lib/qrTools'
 import { VERTICALS } from '@/lib/verticals'
+import { NICHES } from '@/lib/examples'
 
 export const metadata: Metadata = {
   title: 'LinkHub — Tu presencia profesional sin necesidad de una web',
@@ -48,6 +49,7 @@ const steps = [
 ]
 
 const faqs = [
+  { q: '¿En qué se diferencia de un panel de enlaces o una tarjeta de visita?', a: 'Un panel de enlaces solo reúne enlaces. Con LinkHub tus clientes también reservan citas, hacen pedidos y pagan, y tu página incluye los datos que Google y los asistentes de IA necesitan para entender tu negocio. La tarjeta de contacto (vCard) es uno más de los módulos.' },
   { q: '¿Quién controla mi página y mis datos?', a: 'Tú. Editas todo cuando quieras, conectas tu propia pasarela de cobro y puedes exportar tus contactos y tus cobros. Si dejas LinkHub, te llevas tu información.' },
   { q: '¿Me ayudáis a ponerlo en marcha?', a: 'Sí. La plataforma incluye un asistente paso a paso para crear tu página y conectar tus cobros, y puedes escribirnos a hola@linkhub.app si te atascas.' },
   { q: '¿Necesito tener una página web?', a: 'No. LinkHub está pensado para quien trabaja desde Instagram, WhatsApp o el boca a boca: tu página reúne lo que ofreces y la compartes con un enlace o un código QR. Si más adelante quieres tu propio dominio, el plan Pro lo incluye.' },
@@ -164,6 +166,80 @@ export default function LandingPage() {
                 <Shot src="/landing/analiticas.webp" w={1200} h={900} alt="Panel de analíticas con gráfico de visitas y clics y bloques más clicados" />
               </Feature>
             </div>
+          </div>
+        </section>
+
+        {/* BEYOND LINK-IN-BIO */}
+        <section id="diferencia" aria-labelledby="dif-h" style={{ background: '#fff', borderBlock: `1px solid ${LINE}` }}>
+          <div className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-28">
+            <Reveal><SectionHead id="dif-h" eyebrow="La diferencia" title="Más que un panel de enlaces o una tarjeta de visita" lead="Un panel de enlaces solo apunta a otros sitios. LinkHub es tu presencia completa: la gente te encuentra, te entiende y contrata sin salir de ahí." /></Reveal>
+
+            <div className="mt-12 overflow-x-auto rounded-2xl" style={{ border: `1px solid ${LINE}` }}>
+              <table className="w-full min-w-[640px] text-left text-[15px]">
+                <caption className="sr-only">Comparación entre un panel de enlaces o tarjeta de contacto y LinkHub</caption>
+                <thead>
+                  <tr style={{ background: PAPER }}>
+                    <th scope="col" className="px-5 py-4 font-semibold">Qué necesitas</th>
+                    <th scope="col" className="px-5 py-4 font-semibold" style={{ color: MUTED }}>Panel de enlaces / vCard</th>
+                    <th scope="col" className="px-5 py-4 font-semibold">LinkHub</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Reunir tus enlaces y redes', true, true],
+                    ['Guardar tu contacto en la agenda (vCard)', true, true],
+                    ['Citas con horarios libres y pedidos con carrito', false, true],
+                    ['Cobros online con tu pasarela', false, true],
+                    ['Aparecer en Google con datos estructurados según tu tipo de negocio', false, true],
+                    ['Que los asistentes de IA entiendan y recomienden tu negocio', false, true],
+                    ['Base de conocimiento y preguntas frecuentes', false, true],
+                    ['Mapa de Google, horario en vivo y ficha local', false, true],
+                    ['Analíticas de visitas y clics por bloque', 'Básicas', true],
+                    ['Conector para asistentes de IA (MCP) y API propia', false, 'Por invitación'],
+                  ].map(([what, other, mine]) => (
+                    <tr key={String(what)} style={{ borderTop: `1px solid ${LINE}` }}>
+                      <th scope="row" className="px-5 py-4 font-medium" style={{ color: INK }}>{what}</th>
+                      <td className="px-5 py-4">{other === true ? <><Check size={18} aria-hidden style={{ color: '#15803D' }} /><span className="sr-only">Sí</span></> : other === false ? <><Minus size={18} aria-hidden style={{ color: '#9AA0A5' }} /><span className="sr-only">No</span></> : <span style={{ color: MUTED }}>{other}</span>}</td>
+                      <td className="px-5 py-4 font-semibold">{mine === true ? <><Check size={18} aria-hidden style={{ color: '#15803D' }} /><span className="sr-only">Sí</span></> : <span>{mine}</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {[
+                { icon: Search, title: 'Te encuentran en Google', text: 'Tu página incluye datos estructurados (schema.org) adaptados a tu tipo de negocio: carta y reservas si eres restaurante, servicios y citas si eres profesional, cursos si das clases, entradas si organizas eventos.' },
+                { icon: Bot, title: 'Los asistentes de IA te entienden', text: 'Cada página publica una versión limpia para IA (llms.txt) con tus servicios, precios, horario y respuestas, y tu base de conocimiento alimenta las preguntas frecuentes.' },
+                { icon: Wallet, title: 'Se conecta con tus herramientas', text: 'Conector MCP y API para que tu chatbot o tus automatizaciones lean y gestionen tu página y tu base de conocimiento. Disponible por invitación.' },
+              ].map((c, i) => (
+                <Reveal key={c.title} delay={i * 80}>
+                  <div className="h-full rounded-2xl p-7" style={{ background: PAPER, border: `1px solid ${LINE}` }}>
+                    <c.icon size={22} strokeWidth={1.75} aria-hidden />
+                    <h3 className="mt-4 text-[18px] font-semibold">{c.title}</h3>
+                    <p className="mt-2.5 text-[15px] leading-relaxed" style={{ color: BODY }}>{c.text}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* EXAMPLES */}
+        <section aria-labelledby="ejemplos-h" className="mx-auto max-w-[1160px] px-5 sm:px-8 py-20 lg:py-24">
+          <Reveal>
+            <div className="flex flex-wrap items-end justify-between gap-5">
+              <SectionHead id="ejemplos-h" eyebrow="Ejemplos" title="Mira páginas reales de tu sector" lead="Doce ejemplos interactivos con datos de España, Argentina y México. Pide una cita, arma un pedido, abre las preguntas." />
+              <Link href="/ejemplos" className="inline-flex items-center gap-2 rounded-full px-6 text-[15px] font-semibold no-underline hover:bg-white" style={{ height: 48, border: `1.5px solid ${LINE}`, color: INK }}>Ver todos los ejemplos <ArrowRight size={16} aria-hidden /></Link>
+            </div>
+          </Reveal>
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {NICHES.slice(0, 8).map(n => (
+              <Link key={n.slug} href={`/ejemplos/${n.slug}`} className="group flex items-center justify-between gap-3 rounded-xl bg-white px-5 py-4 no-underline transition-colors hover:bg-[#FAFAF8]" style={{ border: `1px solid ${LINE}`, color: INK }}>
+                <span className="flex items-center gap-3 min-w-0"><span aria-hidden className="h-8 w-1.5 rounded-full flex-shrink-0" style={{ background: n.color }} /><span className="text-[15px] font-semibold truncate">{n.label}</span></span>
+                <ArrowRight size={15} aria-hidden className="flex-shrink-0 transition-transform group-hover:translate-x-1" />
+              </Link>
+            ))}
           </div>
         </section>
 

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import type { Page, Block, BlockType, Lang, PageSettings, SeasonMode, BlockCondition, PaymentProvider } from '@/types'
 import { generateId } from '@/lib/utils'
+import type { KnowledgeEntry } from '@/lib/knowledge'
 import { BLOCK_BY_TYPE, normalizeBlock } from '@/lib/blocks/registry'
 
 export type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error'
@@ -13,6 +14,7 @@ interface EditorState {
   page: Page | null
   selectedBlockId: string | null
   connectedProviders: PaymentProvider[]
+  knowledge: KnowledgeEntry[]
   previewLang: Lang
   previewDevice: 'mobile' | 'tablet' | 'desktop'
   isDirty: boolean
@@ -110,6 +112,7 @@ export const useEditorStore = create<EditorState>()(
     page: null,
     selectedBlockId: null,
     connectedProviders: [],
+    knowledge: [],
     previewLang: 'es',
     previewDevice: 'mobile',
     isDirty: false,
