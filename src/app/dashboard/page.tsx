@@ -67,11 +67,11 @@ export default async function DashboardPage() {
   const planCard = (
 <section className="bg-white rounded-2xl p-5" style={{ border: '1px solid rgba(26,27,28,0.08)' }} aria-labelledby="plan-h">
             <h2 id="plan-h" className="text-[15px] font-bold text-[#1A1B1C] mb-3">Tu plan: <span style={{ color: plan === 'pro' ? '#E8150A' : '#5A5D60' }}>{plan === 'pro' ? 'Pro' : 'Free'}</span></h2>
-            <p className="text-xs text-[#7A7D80] mb-1.5">Páginas usadas</p>
+            <p className="text-xs text-[#5B6064] mb-1.5">Páginas usadas</p>
             <div className="h-1.5 rounded-full bg-[#F2F3F4] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.min((list.length / Math.min(limits.pages, 10)) * 100, 100)}%`, background: '#1A1B1C' }} /></div>
             <p className="text-xs text-[#6B6E71] mt-1.5">{list.length} de {plan === 'pro' ? 'ilimitadas' : limits.pages}</p>
             {plan !== 'pro' && (
-              <Link href="/dashboard/upgrade" className="mt-4 flex items-center justify-center h-10 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}>Ver el plan Pro</Link>
+              <Link href="/dashboard/upgrade" className="mt-4 flex items-center justify-center h-10 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#C8110A' }}>Ver el plan Pro</Link>
             )}
           </section>
   )
@@ -81,7 +81,7 @@ export default async function DashboardPage() {
       <header className="flex flex-wrap items-end justify-between gap-4 mb-7">
         <div>
           <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Hola{hello ? `, ${hello}` : ''} 👋</h1>
-          <p className="text-sm text-[#7A7D80] mt-1">Así viene tu actividad en los últimos 30 días.</p>
+          <p className="text-sm text-[#5B6064] mt-1">Así viene tu actividad en los últimos 30 días.</p>
         </div>
         <NewPageButton canCreate={canCreate} plan={plan} />
       </header>
@@ -140,8 +140,8 @@ function Kpi({ label, value, delta: d, spark, color, hint, locked, href }: {
   const body = (
     <div className="bg-white rounded-2xl p-4 lg:p-5 h-full" style={{ border: '1px solid rgba(26,27,28,0.08)' }}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[12.5px] font-medium text-[#7A7D80]">{label}</p>
-        {locked && <Link href="/dashboard/upgrade" className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}><Lock size={9} />PRO</Link>}
+        <p className="text-[12.5px] font-medium text-[#5B6064]">{label}</p>
+        {locked && <Link href="/dashboard/upgrade" className="flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full no-underline" style={{ background: '#FEF0EF', color: '#C8110A' }}><Lock size={9} />PRO</Link>}
       </div>
       <p className="text-[28px] font-bold tracking-tight text-[#1A1B1C] tabular-nums mt-1 leading-none">{value}</p>
       <div className="flex items-center gap-2 mt-2 min-h-[18px]">
@@ -163,7 +163,7 @@ function EmptyState({ canCreate, plan }: { canCreate: boolean; plan: Plan }) {
     <div className="bg-white rounded-3xl text-center px-6 py-14" style={{ border: '1px dashed rgba(26,27,28,0.18)' }}>
       <div className="text-5xl mb-4">🚀</div>
       <h2 className="text-xl font-bold text-[#1A1B1C] mb-2">Creá tu primera página</h2>
-      <p className="text-sm text-[#7A7D80] max-w-sm mx-auto mb-6">Elegí una plantilla (catálogo, citas, pedidos…) o empezá en blanco. Queda lista en minutos.</p>
+      <p className="text-sm text-[#5B6064] max-w-sm mx-auto mb-6">Elegí una plantilla (catálogo, citas, pedidos…) o empezá en blanco. Queda lista en minutos.</p>
       {canCreate && <div className="inline-block"><NewPageButton canCreate plan={plan} /></div>}
     </div>
   )

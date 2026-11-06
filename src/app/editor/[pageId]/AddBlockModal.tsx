@@ -114,7 +114,7 @@ function BlockCard({ def, tint, locked, onClick }: { def: BlockDef; tint: string
       }}>
       {locked && (
         <span className="absolute top-3 right-3 rounded-full flex items-center justify-center"
-          style={{ width: 22, height: 22, background: '#FEF0EF', color: '#E8150A' }} title="Requiere plan Pro">
+          style={{ width: 22, height: 22, background: '#FEF0EF', color: '#C8110A' }} title="Requiere plan Pro">
           <Lock size={11} />
         </span>
       )}

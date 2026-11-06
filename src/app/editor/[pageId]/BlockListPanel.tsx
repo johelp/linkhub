@@ -44,7 +44,7 @@ export function BlockListPanel({ onAddBlock }: Props) {
         </span>
         <button onClick={onAddBlock}
           className="flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-2 rounded-lg transition-colors"
-          style={{background:'#FEF0EF',color:'#E8150A'}}
+          style={{background:'#FEF0EF',color:'#C8110A'}}
           onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
           onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>
           <Plus size={14}/> Añadir
@@ -114,8 +114,7 @@ function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDele
         opacity: isDragging ? 0.5 : 1,
         marginBottom: 6,
       }}>
-      <div onClick={onSelect} role="button" tabIndex={0}
-        onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelect() } }}
+      <div
         onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
         className="relative flex items-center gap-2.5 pl-1.5 pr-3 py-2 rounded-xl cursor-pointer group transition-all"
         style={{
@@ -126,12 +125,15 @@ function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDele
             hover (desktop); always visible below that, since a touch
             screen never fires :hover and the handle would otherwise be
             impossible to find on tablet/mobile. */}
-        <div {...attributes} {...listeners}
+        <div {...attributes} {...listeners} aria-label={`Arrastrar para reordenar: ${summary.title}`}
           className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
           style={{color:'#6B6E71'}}>
           <GripVertical size={16}/>
         </div>
 
+        {/* The row's main control is ONE real button (select the block); drag handle and
+            actions are its siblings, never nested inside it. */}
+        <button type="button" onClick={onSelect} aria-pressed={isSelected} className="flex flex-1 min-w-0 items-center gap-2.5 text-left cursor-pointer bg-transparent border-0 p-0">
         {/* Icon tile — same tinted-square language as the "Añadir bloque"
             modal, so a block reads as the same thing in both places. */}
         <div className="flex items-center justify-center rounded-lg flex-shrink-0"
@@ -148,6 +150,7 @@ function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDele
             {def?.label}{summary.detail ? ` · ${summary.detail}` : ''}
           </p>
         </div>
+        </button>
 
         {hasIssue && <span title="Falta completar este bloque" style={{ color: '#D97706' }} className="flex-shrink-0 group-hover:invisible"><AlertTriangle size={14} /></span>}
 

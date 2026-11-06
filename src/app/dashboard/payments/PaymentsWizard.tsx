@@ -69,7 +69,7 @@ export function PaymentsWizard({ status, result, resultProvider, enabledProvider
                 </span>
                 <span className="block text-[14px] font-bold" style={{ color: INK }}>{p.name}</span>
                 <span className="block text-xs text-[#5A5D60] mt-0.5 leading-snug">{p.tagline}</span>
-                <span className="block text-[11px] font-semibold mt-1.5" style={{ color: p.color }}>{p.region}</span>
+                <span className="block text-[11px] font-semibold mt-1.5" style={{ color: '#3F4346' }}>{p.region}</span>
               </button>
             )
           })}
@@ -169,7 +169,7 @@ function Connect({ provider, status, isAdmin }: { provider: PaymentProvider; sta
   return (
     <div>
       <ol className="space-y-2.5 text-[13.5px] text-[#3A3D40] mb-4">
-        <li className="flex gap-2.5"><Num n="a" />Necesitás una cuenta de {label}{provider === 'mercadopago' ? ' de vendedor' : ''}. Si no tenés, <a className="underline font-semibold" style={{ color: meta.color }} href={signup} target="_blank" rel="noopener noreferrer">creala acá <ExternalLink size={11} className="inline" /></a>.</li>
+        <li className="flex gap-2.5"><Num n="a" />Necesitás una cuenta de {label}{provider === 'mercadopago' ? ' de vendedor' : ''}. Si no tenés, <a className="underline font-semibold" style={{ color: '#0A5E8A' }} href={signup} target="_blank" rel="noopener noreferrer">creala acá <ExternalLink size={11} className="inline" /></a>.</li>
         <li className="flex gap-2.5"><Num n="b" />Tocá el botón. Se abre {label} en esta misma pestaña.</li>
         <li className="flex gap-2.5"><Num n="c" />Iniciá sesión y aceptá los permisos. Volvés acá automáticamente.</li>
       </ol>
@@ -279,7 +279,7 @@ function Step({ n, state, locked, title, summary, children }: { n: number; state
   const done = state === 'done'
   const open = !locked
   return (
-    <section className="rounded-2xl bg-white p-5" style={{ ...card, borderColor: state === 'current' ? INK : undefined, boxShadow: state === 'current' ? '0 0 0 3px rgba(26,27,28,0.08)' : undefined, opacity: locked ? 0.7 : 1 }} aria-labelledby={`step-${n}`}>
+    <section className="rounded-2xl bg-white p-5" style={{ ...card, borderColor: state === 'current' ? INK : undefined, boxShadow: state === 'current' ? '0 0 0 3px rgba(26,27,28,0.08)' : undefined, opacity: 1 }} aria-labelledby={`step-${n}`}>
       <div className="flex items-start gap-3">
         <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 text-white" style={{ background: done ? '#16A34A' : state === 'current' ? INK : '#C7C9CB' }} aria-hidden>{done ? <Check size={16} strokeWidth={3} /> : n}</span>
         <div className="min-w-0 flex-1">

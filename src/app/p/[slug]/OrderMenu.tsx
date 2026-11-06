@@ -75,7 +75,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, preview, onSent 
       </div>
 
       {isEmpty && editing && (
-        <div style={{ padding: '18px 16px', fontSize: 12, color: '#9A9D9F', textAlign: 'center' }}>Agregá productos para armar tu catálogo</div>
+        <div style={{ padding: '18px 16px', fontSize: 12, color: '#6B6E71', textAlign: 'center' }}>Agregá productos para armar tu catálogo</div>
       )}
 
       {step === 'browse' && (
@@ -85,7 +85,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, preview, onSent 
             if (items.length === 0) return null
             return (
               <div key={cat.id}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.8px', textTransform: 'uppercase', margin: '14px 0 6px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B6E71', letterSpacing: '.8px', textTransform: 'uppercase', margin: '14px 0 6px' }}>
                   {cat.translations[lang]?.name || cat.translations.es?.name}
                 </div>
                 {items.map(item => {
@@ -173,7 +173,7 @@ export function OrderMenu({ block, lang, pc, pageName, editing, preview, onSent 
             💬 Enviar pedido por WhatsApp
           </button>
           {previewMsg && <PreviewNote message={previewMsg} what="pedido" />}
-          <div style={{ marginTop: 6, fontSize: 11, color: '#9A9D9F', textAlign: 'center' }}>Se abrirá WhatsApp con tu pedido listo para enviar</div>
+          <div style={{ marginTop: 6, fontSize: 11, color: '#6B6E71', textAlign: 'center' }}>Se abrirá WhatsApp con tu pedido listo para enviar</div>
         </div>
       )}
     </div>

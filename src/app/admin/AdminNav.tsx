@@ -31,7 +31,7 @@ export function AdminNav({ email, env }: { email: string; env: string }) {
               <Link key={href} href={href} aria-current={active ? 'page' : undefined} className="dash-link relative flex items-center gap-3 rounded-xl px-3 py-2 min-h-[44px] no-underline hover:bg-[#F2F3F4]" style={{ background: active ? '#FEF0EF' : undefined }}>
                 {active && <span aria-hidden className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full" style={{ background: R }} />}
                 <Icon size={18} strokeWidth={active ? 2.4 : 2} color={active ? R : '#4A4D50'} aria-hidden />
-                <span className="leading-tight"><span className="block text-[14px] font-semibold" style={{ color: active ? R : '#1A1B1C' }}>{label}</span><span className="block text-[11.5px] text-[#6B6E71]">{hint}</span></span>
+                <span className="leading-tight"><span className="block text-[14px] font-semibold" style={{ color: active ? '#C8110A' : '#1A1B1C' }}>{label}</span><span className="block text-[11.5px] text-[#6B6E71]">{hint}</span></span>
               </Link>
             )
           })}

@@ -33,8 +33,8 @@ export function LivePreview() {
 
         <div className="flex justify-center">
           <div style={{ width: 'min(100%, 320px)', borderRadius: 40, border: `10px solid ${INK}`, background: '#fff', overflow: 'hidden', maxHeight: 520, position: 'relative', boxShadow: '0 1px 2px rgba(17,19,20,.06), 0 40px 80px -30px rgba(17,19,20,.35)' }}
-            role="img" aria-label="Vista previa de tu página">
-            <div style={{ maxHeight: 500, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden><PageView page={page} /></div>
+            role="group" aria-label="Vista previa de tu página">
+            <div style={{ maxHeight: 500, overflow: 'hidden', pointerEvents: 'none' }} inert><PageView page={page} /></div>
             <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 80, pointerEvents: 'none', background: 'linear-gradient(to bottom, rgba(255,255,255,0), #fff)' }} />
           </div>
         </div>

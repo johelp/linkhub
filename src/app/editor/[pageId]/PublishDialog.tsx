@@ -99,7 +99,7 @@ export function PublishDialog({ open, onClose, onSetPublished }: Props) {
         <div className="flex gap-2 justify-end">
           {live ? (
             <button disabled={busy} onClick={() => run(false)}
-              className="px-4 py-2.5 rounded-xl text-[13px] font-semibold" style={{ color: '#E8150A', border: '1.5px solid #F6C6C3', background: '#fff' }}>
+              className="px-4 py-2.5 rounded-xl text-[13px] font-semibold" style={{ color: '#C8110A', border: '1.5px solid #F6C6C3', background: '#fff' }}>
               Despublicar
             </button>
           ) : (

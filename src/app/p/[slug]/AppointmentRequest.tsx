@@ -71,7 +71,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, preview
     padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, transition: 'background .15s, color .15s, border-color .15s, transform .1s',
     border: `1.5px solid ${active ? pc : BORDER}`, background: active ? pc : '#fff', color: active ? '#fff' : INK,
   })
-  const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.8px', textTransform: 'uppercase', margin: '14px 0 6px' }
+  const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#6B6E71', letterSpacing: '.8px', textTransform: 'uppercase', margin: '14px 0 6px' }
 
   return (
     <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 16, marginBottom: 8, overflow: 'hidden' }}>
@@ -93,7 +93,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, preview
                   <button className="lh-press" key={s.id} type="button" role="radio" aria-checked={active} onClick={() => pickService(s.id)}
                     style={{ ...chip(active), textAlign: 'left', display: 'flex', justifyContent: 'space-between', gap: 8, width: '100%' }}>
                     <span>{n}</span>
-                    <span style={{ fontWeight: 500, opacity: 0.85 }}>{s.durationMin} min{s.price ? ` · ${formatMoney(s.price, d.currency)}` : ''}</span>
+                    <span style={{ fontWeight: 500 }}>{s.durationMin} min{s.price ? ` · ${formatMoney(s.price, d.currency)}` : ''}</span>
                   </button>
                 )
               })}
@@ -103,7 +103,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, preview
 
         <div style={label}>Día</div>
         {days.length === 0 ? (
-          <div style={{ fontSize: 12.5, color: '#9A9D9F' }}>{minute ? 'No hay turnos disponibles en los próximos días.' : 'Cargando disponibilidad…'}</div>
+          <div style={{ fontSize: 12.5, color: '#6B6E71' }}>{minute ? 'No hay turnos disponibles en los próximos días.' : 'Cargando disponibilidad…'}</div>
         ) : (
           <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} role="radiogroup" aria-label="Día">
             {days.map(x => (
@@ -137,7 +137,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, preview
               💬 Solicitar turno por WhatsApp
             </button>
             {previewMsg && <PreviewNote message={previewMsg} what="solicitud" />}
-            <div style={{ fontSize: 11, color: '#9A9D9F', textAlign: 'center' }}>Es una solicitud: te confirman la disponibilidad por WhatsApp</div>
+            <div style={{ fontSize: 11, color: '#6B6E71', textAlign: 'center' }}>Es una solicitud: te confirman la disponibilidad por WhatsApp</div>
           </div>
         )}
         {error && !time && <div role="alert" style={{ marginTop: 8, fontSize: 12.5, color: '#B50F07' }}>{error}</div>}

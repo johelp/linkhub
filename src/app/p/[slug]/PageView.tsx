@@ -8,6 +8,7 @@ import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
 import { sanitizeBlocks } from '@/lib/security'
 import { mapEmbedUrl } from '@/lib/maps'
+import { summarizeBlock } from '@/lib/blocks/summary'
 import type { KnowledgeEntry } from '@/lib/knowledge'
 import { OrderMenu } from './OrderMenu'
 import { AppointmentRequest } from './AppointmentRequest'
@@ -298,7 +299,7 @@ export function PageView({ page, editing = false, controls, knowledge = [] }: Pr
 
           {page.settings.showPoweredBy && (
             <div className="hidden @4xl:block" style={{ textAlign: 'center', marginTop: 18 }}>
-              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
+              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6B6E71', textDecoration: 'none' }}>
                 Creado con LinkHub
               </a>
             </div>
@@ -320,7 +321,7 @@ export function PageView({ page, editing = false, controls, knowledge = [] }: Pr
                 {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
               </p>
               <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
-                style={{ border: 'none', background: 'none', color: '#9A9D9F', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+                style={{ border: 'none', background: 'none', color: '#6B6E71', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
             </div>
           )}
 
@@ -364,7 +365,7 @@ export function PageView({ page, editing = false, controls, knowledge = [] }: Pr
           {page.settings.showPoweredBy && (
             <div className="@4xl:hidden" style={{ textAlign: 'center', marginTop: 32 }}>
               <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer"
-                style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
+                style={{ fontSize: 11, color: '#6B6E71', textDecoration: 'none' }}>
                 Creado con LinkHub
               </a>
             </div>
@@ -403,7 +404,7 @@ function SelectableBlock({ block, index, total, controls, children }: {
   return (
     <div
       role="button" tabIndex={0} aria-pressed={selected}
-      aria-label={`Seleccionar bloque ${index + 1}`}
+      aria-label={`Seleccionar bloque ${index + 1}: ${summarizeBlock(block, controls.lang).title}`}
       data-block-id={block.id}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       // Capture phase: the click is consumed here, so links, accordions and
@@ -415,7 +416,7 @@ function SelectableBlock({ block, index, total, controls, children }: {
         outline: selected ? '2px solid #E8150A' : hover ? '2px solid rgba(232,21,10,0.35)' : '2px solid transparent',
         opacity: block.visible ? 1 : 0.45, transition: 'outline-color .12s',
       }}>
-      <div style={{ pointerEvents: 'none' }}>{children}</div>
+      <div style={{ pointerEvents: 'none' }} inert>{children}</div>
 
       {tags.length > 0 && (
         <div style={{ position: 'absolute', left: 6, top: 6, display: 'flex', gap: 4, pointerEvents: 'none' }}>
@@ -451,7 +452,7 @@ function InsertSlot({ index, onInsertAt, alwaysVisible }: { index: number; onIns
         style={{
           opacity: show ? 1 : 0, transition: 'opacity .12s', display: 'flex', alignItems: 'center', gap: 6,
           padding: '4px 12px', borderRadius: 20, border: '1.5px dashed #E8150A', background: '#FEF0EF',
-          color: '#E8150A', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          color: '#C8110A', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
         }}>
         + Añadir bloque
       </button>
@@ -470,7 +471,7 @@ function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string })
       border: '1.5px dashed rgba(26,27,28,0.15)', background: '#F6F6F5',
     }}>
       <span style={{ fontSize: 22 }}>{icon}</span>
-      <span style={{ fontSize: 12, color: '#9A9D9F', textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: 12, color: '#6B6E71', textAlign: 'center' }}>{label}</span>
     </div>
   )
 }
@@ -524,9 +525,9 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
-            {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
           </div>
-          <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
+          <div style={{ fontSize: 13, color: '#6B6E71' }}>→</div>
         </a>
       )
     }
@@ -556,7 +557,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
         <a href={`/p/${pageSlug}/contact.vcf`} download onClick={() => onTrackClick(b.id, 'vcard', 'vcard')} style={card}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F2F3F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }} aria-hidden>📇</div>
           <div style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</div>
-          <div style={{ fontSize: 18, color: '#9A9D9F' }} aria-hidden>↓</div>
+          <div style={{ fontSize: 18, color: '#6B6E71' }} aria-hidden>↓</div>
         </a>
       )
     }
@@ -597,7 +598,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
           {(t.title || t.description) && (
             <div style={{ marginBottom: 10 }}>
               {t.title && <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
-              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
             </div>
           )}
           {sections.map(section => {
@@ -605,7 +606,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
             return (
               <div key={section.id} style={{ marginBottom: 10 }}>
                 {st.name && (
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6B6E71', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
                     {st.name}
                   </div>
                 )}
@@ -615,7 +616,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid rgba(26,27,28,0.06)' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1B1C' }}>{it.name}</div>
-                        {it.description && <div style={{ fontSize: 11, color: '#9A9D9F', marginTop: 2 }}>{it.description}</div>}
+                        {it.description && <div style={{ fontSize: 11, color: '#6B6E71', marginTop: 2 }}>{it.description}</div>}
                       </div>
                       {item.price && <div style={{ fontSize: 13, fontWeight: 700, color: pc, flexShrink: 0 }}>{item.price}</div>}
                     </div>
@@ -669,9 +670,9 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
-              <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.subtitle}</div>
+              <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.subtitle}</div>
             </div>
-            <div style={{ fontSize: 11, color: '#9A9D9F', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
+            <div style={{ fontSize: 11, color: '#6B6E71', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
           </div>
           {/* Always in the DOM (hidden when closed) so crawlers and AI assistants can read every option */}
           {(
@@ -781,7 +782,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
             )}
           </div>
-          {b.data.caption && <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
+          {b.data.caption && <p style={{ fontSize: 12, color: '#6B6E71', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
         </div>
       )
     }
@@ -803,7 +804,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{t.title}</div>
-            {t.description && <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t.description}</div>}
+            {t.description && <div style={{ fontSize: 12, opacity: 1, marginTop: 2 }}>{t.description}</div>}
           </div>
           <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(b.data.price, b.data.currency)}</div>
         </a>
@@ -818,7 +819,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
           {(t.title || t.description) && (
             <div style={{ marginBottom: 8 }}>
               {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
-              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
             </div>
           )}
           {b.data.tiers.map(tier => (
@@ -856,7 +857,7 @@ function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge,
               {'★'.repeat(fullStars)}<span style={{ color: '#E5E7EB' }}>{'★'.repeat(5 - fullStars)}</span>
             </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1B1C' }}>{b.data.rating.toFixed(1)}</span>
-            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#9A9D9F' }}>({b.data.reviewCount} reseñas)</span>}
+            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#6B6E71' }}>({b.data.reviewCount} reseñas)</span>}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {b.data.mapsUrl && (
@@ -918,7 +919,7 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
       ) : (
         <form onSubmit={submit}>
           {headline && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{headline}</p>}
-          {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 12 }}>{description}</p>}
+          {description && <p style={{ fontSize: 12, color: '#6B6E71', marginBottom: 12 }}>{description}</p>}
           <div style={{ display: 'flex', gap: 6 }}>
             <input
               type="email" required value={email} onChange={e => setEmail(e.target.value)}
@@ -930,7 +931,7 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
               {buttonLabel}
             </button>
           </div>
-          {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
+          {status === 'error' && <p style={{ fontSize: 11, color: '#C8110A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
         </form>
       )}
     </div>
@@ -983,8 +984,8 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
     <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
       <div style={{ fontSize: 28, marginBottom: 6 }}>{stampIcon}</div>
       {title && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{title}</p>}
-      {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 4 }}>{description}</p>}
-      <p style={{ fontSize: 11, color: '#9A9D9F', marginBottom: 12 }}>
+      {description && <p style={{ fontSize: 12, color: '#6B6E71', marginBottom: 4 }}>{description}</p>}
+      <p style={{ fontSize: 11, color: '#6B6E71', marginBottom: 12 }}>
         {targetStamps} sellos = {rewardDescription || 'un premio'}
       </p>
       {code ? (
@@ -998,8 +999,8 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
           {loading ? 'Un momento...' : 'Obtener mi tarjeta'}
         </button>
       )}
-      {error && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 8 }}>{error}</p>}
-      {isDemo && <p style={{ fontSize: 10, color: '#9A9D9F', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
+      {error && <p style={{ fontSize: 11, color: '#C8110A', marginTop: 8 }}>{error}</p>}
+      {isDemo && <p style={{ fontSize: 10, color: '#6B6E71', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
     </div>
   )
 }
@@ -1028,7 +1029,7 @@ function BusinessHoursCard({ title, timezone, schedule, pc }: {
           <span style={{
             fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
             background: status.isOpen ? '#ECFDF5' : '#FEF0EF',
-            color: status.isOpen ? '#16A34A' : '#E8150A',
+            color: status.isOpen ? '#15803D' : '#B91C1C',
           }}>
             {status.isOpen ? '● Abierto ahora' : '○ Cerrado ahora'}
           </span>

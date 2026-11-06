@@ -29,7 +29,7 @@ export default async function UpgradePage() {
 
       <div className="max-w-sm">
         <div className="bg-white rounded-2xl p-6 border-2" style={{ borderColor: '#E8150A' }}>
-          <div className="inline-block text-xs font-bold px-2 py-1 rounded-full mb-3" style={{ background: '#FEF0EF', color: '#E8150A' }}>
+          <div className="inline-block text-xs font-bold px-2 py-1 rounded-full mb-3" style={{ background: '#FEF0EF', color: '#C8110A' }}>
             Todo incluido
           </div>
           <h2 className="text-xl font-bold mb-1" style={{ color: '#1A1B1C' }}>Pro</h2>

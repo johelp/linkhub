@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { Children, cloneElement, isValidElement, useId, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
 import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock, PageSettings } from '@/types'
@@ -58,7 +58,7 @@ export function PropertiesPanel({ plan }: Props) {
           <button onClick={() => duplicateBlock(selectedBlock.id)} title="Duplicar bloque" aria-label="Duplicar bloque"
             className="p-1.5 rounded-lg hover:bg-[#F2F3F4]" style={{ color: '#5A5D60' }}><CopyIcon size={16} /></button>
           <button onClick={() => removeBlock(selectedBlock.id)} title="Eliminar bloque" aria-label="Eliminar bloque"
-            className="p-1.5 rounded-lg hover:bg-[#FEF0EF]" style={{ color: '#E8150A' }}><Trash2 size={16} /></button>
+            className="p-1.5 rounded-lg hover:bg-[#FEF0EF]" style={{ color: '#C8110A' }}><Trash2 size={16} /></button>
         </div>
       ) : (
         <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
@@ -240,7 +240,7 @@ function LinkEditor({ block, lang, limits, onUpdate, onUpdateSeason }: {
         <Field label="Color de fondo">
           <div className="flex flex-wrap gap-2">
             {Object.entries(ICON_BG_PRESETS).map(([key, color]) => (
-              <button key={key} onClick={() => onUpdate(block.id, { iconBg: key })}
+              <button key={key} onClick={() => onUpdate(block.id, { iconBg: key })} aria-label={`Fondo ${key}`} aria-pressed={block.data.iconBg === key}
                 className="w-7 h-7 rounded-lg border-2 transition-all"
                 style={{ background: color, borderColor: block.data.iconBg === key ? '#E8150A' : 'transparent' }} />
             ))}
@@ -284,7 +284,7 @@ function FeaturedEditor({ block, lang, onUpdate, onUpdateSeason }: {
         <Field label="Color">
           <div className="flex flex-wrap gap-2">
             {Object.entries(COLOR_SCHEMES).map(([key, scheme]) => (
-              <button key={key} onClick={() => onUpdate(block.id, { colorScheme: key })}
+              <button key={key} onClick={() => onUpdate(block.id, { colorScheme: key })} aria-label={`Color ${key}`} aria-pressed={block.data.colorScheme === key}
                 className="w-7 h-7 rounded-lg border-2 transition-all"
                 style={{ background: scheme.bg, borderColor: block.data.colorScheme === key ? '#1A1B1C' : 'transparent' }} />
             ))}
@@ -663,7 +663,7 @@ function MenuEditor({ block, lang, onUpdate }: {
               <div className="flex items-center justify-between mb-2.5">
                 <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
                   <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
-                    style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{si + 1}</span>
+                    style={{ width: 18, height: 18, background: '#FEF0EF', color: '#C8110A' }}>{si + 1}</span>
                   Categoría
                 </span>
                 <RemoveButton onClick={() => removeSection(section.id)} />
@@ -1047,7 +1047,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
             <div className="flex items-center justify-between mb-2.5">
               <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
                 <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
-                  style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{i + 1}</span>
+                  style={{ width: 18, height: 18, background: '#FEF0EF', color: '#C8110A' }}>{i + 1}</span>
                 Tipo
               </span>
               {tiers.length > 1 && <RemoveButton onClick={() => removeTier(tier.id)} />}
@@ -1262,7 +1262,7 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
       <Section label="Color principal">
         <div className="flex flex-wrap gap-2">
           {['#E8150A', '#FF8C00', '#185FA5', '#16A34A', '#7C3AED', '#1A1B1C', '#DB2777', '#0891B2'].map(c => (
-            <button key={c} onClick={() => onUpdate({ primaryColor: c })}
+            <button key={c} onClick={() => onUpdate({ primaryColor: c })} aria-label={`Color principal ${c}`} aria-pressed={settings.primaryColor === c}
               className="w-8 h-8 rounded-lg border-2 transition-all"
               style={{ background: c, borderColor: settings.primaryColor === c ? '#1A1B1C' : 'transparent' }} />
           ))}
@@ -1421,7 +1421,7 @@ function AddButton({ label, onClick, dashed }: { label: string; onClick: () => v
       className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[13px] font-semibold rounded-xl transition-all"
       style={dashed
         ? { background: hover ? '#FAFAFA' : '#fff', color: '#5A5D60', border: `1.5px dashed ${hover ? 'rgba(26,27,28,0.35)' : 'rgba(26,27,28,0.22)'}` }
-        : { background: hover ? '#FCE0DE' : '#FEF0EF', color: '#E8150A', boxShadow: hover ? '0 3px 10px rgba(232,21,10,0.16)' : 'none' }}>
+        : { background: hover ? '#FCE0DE' : '#FEF0EF', color: '#C8110A', boxShadow: hover ? '0 3px 10px rgba(232,21,10,0.16)' : 'none' }}>
       <Plus size={15} /> {label}
     </button>
   )
@@ -1433,24 +1433,33 @@ function RemoveButton({ onClick, title = 'Eliminar' }: { onClick: () => void; ti
     <button onClick={onClick} title={title}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       className="flex items-center justify-center rounded-lg flex-shrink-0 transition-colors"
-      style={{ width: 24, height: 24, color: '#E8150A', background: hover ? '#FEF0EF' : 'transparent' }}>
+      style={{ width: 24, height: 24, color: '#C8110A', background: hover ? '#FEF0EF' : 'transparent' }}>
       <X size={13} />
     </button>
   )
 }
 
+// The visible label is tied to its control through aria-labelledby (the label is a
+// sibling, not a wrapper, so groups of buttons inside a Field keep working).
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const id = useId()
+  const tied = Children.map(children, c => {
+    if (!isValidElement(c)) return c
+    const el = c as React.ReactElement<Record<string, unknown>>
+    const native = typeof el.type === 'string' && ['input', 'select', 'textarea'].includes(el.type)
+    return native || el.type === Input ? cloneElement(el, { 'aria-labelledby': id }) : c
+  })
   return (
     <div>
-      <label className="text-[13px] font-medium block mb-1.5" style={{ color: '#5A5D60' }}>{label}</label>
-      {children}
+      <label id={id} className="text-[13px] font-medium block mb-1.5" style={{ color: '#4A4E52' }}>{label}</label>
+      {tied}
     </div>
   )
 }
 
-function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function Input({ value, onChange, placeholder, ...aria }: { value: string; onChange: (v: string) => void; placeholder?: string; 'aria-labelledby'?: string }) {
   return (
-    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-labelledby={aria['aria-labelledby']}
       className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
       style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}
       onFocus={e => (e.target.style.borderColor = '#E8150A')}
@@ -1527,7 +1536,7 @@ function ProLock({ feature }: { feature: string }) {
     <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#FEF0EF', border: '1px solid #E8150A22' }}>
       <div className="text-xl">🔒</div>
       <div>
-        <p className="text-xs font-semibold" style={{ color: '#E8150A' }}>{feature} · Plan Pro</p>
+        <p className="text-xs font-semibold" style={{ color: '#C8110A' }}>{feature} · Plan Pro</p>
         <a href="/dashboard/upgrade" className="text-xs underline" style={{ color: '#B50F07' }}>Actualizar →</a>
       </div>
     </div>

@@ -117,7 +117,7 @@ function SaveStatus({ status, onRetry }: { status: ReturnType<typeof selectSaveS
   if (status === 'saving') return <span className={base} style={{ color: LIGHT }} role="status"><Loader2 size={11} className="animate-spin" /> Guardando…</span>
   if (status === 'dirty') return <span className={base} style={{ color: '#B45309' }} role="status">● Cambios sin guardar</span>
   if (status === 'error') return (
-    <button onClick={onRetry} className={base + ' underline'} style={{ color: '#E8150A' }} role="status">
+    <button onClick={onRetry} className={base + ' underline'} style={{ color: '#C8110A' }} role="status">
       <AlertCircle size={11} /> Error al guardar · Reintentar
     </button>
   )

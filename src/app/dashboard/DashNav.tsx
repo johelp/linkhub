@@ -61,7 +61,7 @@ export function DashNav({ name, initial, plan, isAdmin, developers = false }: Pr
         <Icon size={19} strokeWidth={on ? 2.4 : 2} color={on ? R : '#4A4D50'} aria-hidden />
         {collapsed ? <span className="sr-only">{it.label}</span> : (
           <span className="min-w-0 leading-tight">
-            <span className="block text-[14px] font-semibold" style={{ color: on ? R : INK }}>{it.label}</span>
+            <span className="block text-[14px] font-semibold" style={{ color: on ? '#C8110A' : INK }}>{it.label}</span>
             <span className="block text-[11.5px] truncate" style={{ color: SUB }}>{it.hint}</span>
           </span>
         )}
@@ -113,7 +113,7 @@ export function DashNav({ name, initial, plan, isAdmin, developers = false }: Pr
             {collapsed ? <span className="sr-only">{name}, plan {plan}</span> : (
               <span className="min-w-0">
                 <span className="block text-[13px] font-semibold truncate" style={{ color: INK }}>{name}</span>
-                <span className="block text-[11px] font-bold uppercase tracking-wide" style={{ color: plan === 'pro' ? R : SUB }}>Plan {plan}</span>
+                <span className="block text-[11px] font-bold uppercase tracking-wide" style={{ color: plan === 'pro' ? '#C8110A' : SUB }}>Plan {plan}</span>
               </span>
             )}
           </Link>
@@ -133,7 +133,7 @@ export function DashNav({ name, initial, plan, isAdmin, developers = false }: Pr
           const on = active(href, exact)
           return (
             <Link key={href} href={href} aria-current={on ? 'page' : undefined} className="dash-link relative flex flex-col items-center justify-center gap-1 min-h-[56px] text-[11px] font-semibold no-underline"
-              style={{ color: on ? R : '#4A4D50' }}>
+              style={{ color: on ? '#C8110A' : '#4A4D50' }}>
               {on && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full" style={{ background: R }} />}
               <Icon size={20} strokeWidth={on ? 2.4 : 2} aria-hidden />{label}
             </Link>

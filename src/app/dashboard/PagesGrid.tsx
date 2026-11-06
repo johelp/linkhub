@@ -44,7 +44,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
         <div className="flex p-1 rounded-xl bg-[#ECEDEE]" role="group" aria-label="Filtrar páginas">
           {([['all', 'Todas'], ['live', 'En vivo'], ['draft', 'Borradores']] as const).map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)} aria-pressed={filter === k}
-              className="px-3 py-1.5 rounded-lg text-[12.5px] font-semibold" style={{ background: filter === k ? '#fff' : 'transparent', color: filter === k ? '#1A1B1C' : '#7A7D80', boxShadow: filter === k ? '0 1px 3px rgba(26,27,28,.12)' : 'none' }}>{l}</button>
+              className="px-3 py-1.5 rounded-lg text-[12.5px] font-semibold" style={{ background: filter === k ? '#fff' : 'transparent', color: filter === k ? '#1A1B1C' : '#5B6064', boxShadow: filter === k ? '0 1px 3px rgba(26,27,28,.12)' : 'none' }}>{l}</button>
           ))}
         </div>
       </div>
@@ -76,7 +76,7 @@ export function PagesGrid({ pages, canCreate, plan, showClicks }: { pages: PageR
               </dl>
 
               <div className="flex items-center gap-1.5">
-                <Link href={`/editor/${p.id}`} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#E8150A' }}>
+                <Link href={`/editor/${p.id}`} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl text-[13px] font-semibold no-underline" style={{ background: '#FEF0EF', color: '#C8110A' }}>
                   <Pencil size={13} /> Editar
                 </Link>
                 {p.published && (

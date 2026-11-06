@@ -59,7 +59,7 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <a href={qrSvgUrl || '#'} download={`qr-${slug}.svg`}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, background: '#FEF0EF', color: '#E8150A', textDecoration: 'none' }}>
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, background: '#FEF0EF', color: '#C8110A', textDecoration: 'none' }}>
           <Download size={14} /> SVG
         </a>
         <a href={qrPngUrl || '#'} download={`qr-${slug}.png`}

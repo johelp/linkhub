@@ -275,15 +275,15 @@ export default function LandingPage() {
           <Reveal><SectionHead id="como-h" eyebrow="Cómo funciona" title="De cero a tu primera cita en una tarde" /></Reveal>
           <ol className="mt-12 grid gap-10 md:grid-cols-3" style={{ listStyle: 'none', padding: 0 }}>
             {steps.map((s, i) => (
-              <Reveal key={s.n} delay={i * 80}>
-                <li>
+              <li key={s.n}>
+                <Reveal delay={i * 80}>
                   <p className="text-[13px] font-semibold tabular-nums" style={{ color: MUTED }}>{s.n}</p>
                   <div className="mt-3 pt-5" style={{ borderTop: `2px solid ${INK}` }}>
                     <h3 className="text-[19px] font-semibold">{s.title}</h3>
                     <p className="mt-2 text-[16px] leading-relaxed" style={{ color: BODY }}>{s.text}</p>
                   </div>
-                </li>
-              </Reveal>
+                </Reveal>
+              </li>
             ))}
           </ol>
         </section>

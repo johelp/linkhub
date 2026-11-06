@@ -64,7 +64,7 @@ export function PageCardActions({ pageId, pageName }: Props) {
           ))}
           <div className="my-1 h-px" style={{ background: BORDER }} />
           <button role="menuitem" onClick={remove} disabled={busy}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium hover:bg-[#FEF0EF] text-left" style={{ color: '#E8150A' }}>
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium hover:bg-[#FEF0EF] text-left" style={{ color: '#C8110A' }}>
             <Trash2 size={14} />{busy ? 'Eliminando…' : 'Eliminar página'}
           </button>
         </div>

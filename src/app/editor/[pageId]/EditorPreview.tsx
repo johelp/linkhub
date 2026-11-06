@@ -72,7 +72,7 @@ export function EditorPreview({ onAddAt }: { onAddAt: (index?: number) => void }
 
         <button onClick={() => onAddAt()}
           className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-full text-[13px] font-semibold flex-shrink-0"
-          style={{ background: '#fff', color: '#E8150A', border: '1.5px dashed #E8150A' }}>
+          style={{ background: '#fff', color: '#C8110A', border: '1.5px dashed #E8150A' }}>
           <Plus size={15} /> Añadir bloque
         </button>
         <p className="py-3 text-xs" style={{ color: '#6B6E71' }}>linkhub.app/p/{page.slug}</p>

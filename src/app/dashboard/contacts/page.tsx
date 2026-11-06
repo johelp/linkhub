@@ -43,7 +43,7 @@ export default async function ContactsPage({ searchParams }: Props) {
       <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
         <div>
           <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Contactos</h1>
-          <p className="text-sm text-[#7A7D80] mt-1">Emails que dejaron tus visitantes en el bloque de captura.</p>
+          <p className="text-sm text-[#5B6064] mt-1">Emails que dejaron tus visitantes en el bloque de captura.</p>
         </div>
         {selected && total > 0 && (
           <a href={`/api/subscribers/export?pageId=${selected.id}`} className="flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold no-underline text-white" style={{ background: '#1A1B1C' }}><Download size={14} />Exportar CSV</a>
@@ -63,9 +63,9 @@ export default async function ContactsPage({ searchParams }: Props) {
 
       {subs.length === 0 ? (
         <div className="bg-white rounded-2xl px-6 py-14 text-center" style={card}>
-          <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#FEF0EF', color: '#E8150A' }}><Mail size={22} /></div>
+          <div className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ background: '#FEF0EF', color: '#C8110A' }}><Mail size={22} /></div>
           <h2 className="text-lg font-bold text-[#1A1B1C] mb-1">{term ? 'Sin resultados' : 'Todavía no hay contactos'}</h2>
-          <p className="text-sm text-[#7A7D80] max-w-sm mx-auto">{term ? 'Probá con otra búsqueda.' : 'Agregá el bloque “Captura de email” a tu página y los emails aparecen acá. Los pedidos y turnos llegan directo a tu WhatsApp.'}</p>
+          <p className="text-sm text-[#5B6064] max-w-sm mx-auto">{term ? 'Probá con otra búsqueda.' : 'Agregá el bloque “Captura de email” a tu página y los emails aparecen acá. Los pedidos y turnos llegan directo a tu WhatsApp.'}</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl overflow-hidden" style={card}>

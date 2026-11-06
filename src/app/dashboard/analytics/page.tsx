@@ -59,7 +59,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1100px] mx-auto">
       <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Analíticas</h1>
-      <p className="text-sm text-[#7A7D80] mt-1 mb-5">Qué pasa en tus páginas: visitas, clics y desde dónde te ven.</p>
+      <p className="text-sm text-[#5B6064] mt-1 mb-5">Qué pasa en tus páginas: visitas, clics y desde dónde te ven.</p>
 
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <div className="flex gap-1.5 overflow-x-auto pb-1 mr-auto" role="group" aria-label="Página">
@@ -72,7 +72,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-white rounded-2xl p-10 text-center text-sm text-[#7A7D80]" style={card}>Todavía no tenés páginas. Creá una y compartila para empezar a ver datos.</div>
+        <div className="bg-white rounded-2xl p-10 text-center text-sm text-[#5B6064]" style={card}>Todavía no tenés páginas. Creá una y compartila para empezar a ver datos.</div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-5">
@@ -89,7 +89,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
                 {full && <span className="flex items-center gap-1.5"><i className="w-2.5 h-2.5 rounded-full" style={{ background: '#185FA5' }} />Clics</span>}
               </div>
             </div>
-            <AreaChart days={cur} series={[{ label: 'Visitas', values: views.slice(rangeDays), color: '#E8150A' }, ...(full ? [{ label: 'Clics', values: clicks.slice(rangeDays), color: '#185FA5' }] : [])]} />
+            <AreaChart days={cur} series={[{ label: 'Visitas', values: views.slice(rangeDays), color: '#C8110A' }, ...(full ? [{ label: 'Clics', values: clicks.slice(rangeDays), color: '#185FA5' }] : [])]} />
             {v === 0 && <p className="text-center text-sm text-[#6B6E71] mt-2">Aún no hay visitas en este período. Compartí tu enlace o tu QR.</p>}
           </section>
 
@@ -157,9 +157,9 @@ export default async function AnalyticsPage({ searchParams }: Props) {
 function Stat({ label, value, delta: d }: { label: string; value: number | string | null; delta?: number | null }) {
   return (
     <div className="bg-white rounded-2xl p-4 lg:p-5" style={card}>
-      <p className="text-[12.5px] font-medium text-[#7A7D80]">{label}</p>
+      <p className="text-[12.5px] font-medium text-[#5B6064]">{label}</p>
       {value === null ? (
-        <Link href="/dashboard/upgrade" className="inline-flex items-center gap-1.5 mt-2 text-sm font-bold no-underline" style={{ color: '#E8150A' }}><Lock size={13} />Solo Pro</Link>
+        <Link href="/dashboard/upgrade" className="inline-flex items-center gap-1.5 mt-2 text-sm font-bold no-underline" style={{ color: '#C8110A' }}><Lock size={13} />Solo Pro</Link>
       ) : (
         <p className="text-[28px] font-bold tracking-tight text-[#1A1B1C] tabular-nums leading-tight mt-1">{value}</p>
       )}

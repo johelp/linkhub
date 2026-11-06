@@ -20,8 +20,8 @@ export function HeroShowcase() {
   return (
     <div className="flex flex-col items-center" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       <div style={{ width: 'min(100%, 320px)', borderRadius: 40, border: `10px solid ${INK}`, background: '#fff', overflow: 'hidden', boxShadow: '0 1px 2px rgba(17,19,20,.06), 0 40px 80px -30px rgba(17,19,20,.35)', maxHeight: 590, position: 'relative' }}
-        role="img" aria-label={`Ejemplo de página de LinkHub: ${HERO_EXAMPLES[index].label}`}>
-        <div key={HERO_EXAMPLES[index].page.id} className="hero-fade-up" style={{ animationDuration: '0.35s', maxHeight: 570, overflow: 'hidden', pointerEvents: 'none' }} aria-hidden>
+        role="group" aria-label={`Ejemplo de página de LinkHub: ${HERO_EXAMPLES[index].label}`}>
+        <div key={HERO_EXAMPLES[index].page.id} className="hero-fade-up" style={{ animationDuration: '0.35s', maxHeight: 570, overflow: 'hidden', pointerEvents: 'none' }} inert>
           <PageView page={HERO_EXAMPLES[index].page} />
         </div>
         <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 80, pointerEvents: 'none', background: 'linear-gradient(to bottom, rgba(255,255,255,0), #fff)' }} />
