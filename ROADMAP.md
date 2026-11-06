@@ -137,3 +137,11 @@ Idea planteada por el usuario para motivar a que la gente venda y revenda LinkHu
 **Decisiones abiertas:** cuánta anticipación y duración por servicio, zona horaria del negocio (ya existe en `business_hours`), política de datos personales (Ley 25.326 / RGPD) y límites de uso en el plan Free.
 
 Ya hay una landing de rubro `/para/profesionales-y-clases` que lo menciona como "próximamente".
+
+
+## Estado y próximos pasos (actualizado)
+Documentación estratégica y operativa: `docs/estrategia/` (mercados, dominios propios, Google Business Profile, IA y MCP) y `docs/operacion/` (administración del SaaS, entornos y despliegue). Documentación para desarrolladores: `docs/developers/`.
+
+**Hecho recientemente:** citas fase 1, pedidos, cobros multi-pasarela (Mercado Pago, Stripe Connect, Redsys), historial de cobros con registro de eventos, dashboard y admin rediseñados, funciones por cliente (despliegue gradual), página en pausa por impago, GEO/SEO/LLM (schema por tipo de negocio, llms.txt, FAQ, base de conocimiento), vCard, mapa de Google, ejemplos por nicho y mercado, precios por región, landing profesional.
+
+**Siguiente:** citas fase 2 (guardar y gestionar solicitudes), ficha de Google (niveles 1–2), dominio propio como complemento, MCP/API para clientes (en curso), pago por transferencia/Bizum, textos legales y fiscalidad.
