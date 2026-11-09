@@ -103,10 +103,11 @@ export function world() {
       { id: 'k2', user_id: ALICE, page_id: ALICE_PAGE, kind: 'policy', title: 'Política interna de descuentos', content: 'Secreto: descuento máximo 30%.', visibility: 'private', position: 1 },
       { id: 'k3', user_id: BOB, page_id: null, kind: 'faq', title: '¿Aceptan tarjeta Bob?', content: 'Solo efectivo en Bob.', visibility: 'public', position: 0 },
     ],
+    // Relative to the real clock: the analytics store filters with Date.now(), so fixed dates would age out of the window.
     analytics_events: [
-      { id: 'e1', page_id: ALICE_PAGE, event_type: 'view', block_id: null, block_type: null, created_at: new Date(NOW.getTime() - 1000).toISOString() },
-      { id: 'e2', page_id: ALICE_PAGE, event_type: 'click', block_id: 'b-link', block_type: 'link', created_at: new Date(NOW.getTime() - 1000).toISOString() },
-      { id: 'e3', page_id: BOB_PAGE, event_type: 'view', block_id: null, block_type: null, created_at: new Date(NOW.getTime() - 1000).toISOString() },
+      { id: 'e1', page_id: ALICE_PAGE, event_type: 'view', block_id: null, block_type: null, created_at: new Date(Date.now() - 1000).toISOString() },
+      { id: 'e2', page_id: ALICE_PAGE, event_type: 'click', block_id: 'b-link', block_type: 'link', created_at: new Date(Date.now() - 1000).toISOString() },
+      { id: 'e3', page_id: BOB_PAGE, event_type: 'view', block_id: null, block_type: null, created_at: new Date(Date.now() - 1000).toISOString() },
     ],
     payments: [
       { id: 'p1', page_id: ALICE_PAGE, created_at: '2026-11-01T10:00:00Z', status: 'approved', provider: 'stripe', amount: '25.50', currency: 'EUR', tier_name: 'Bono', payer_email: 'cliente@mail.test', provider_payment_id: 'pi_1', access_token: 'SECRET-TOKEN' },
