@@ -46,6 +46,6 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       # Pinned by version tag; pin to a commit SHA when you adopt Dependabot for actions.
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
