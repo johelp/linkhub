@@ -25,7 +25,7 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with: { version: latest }
       - name: Apply migrations (staging)
         run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
@@ -38,7 +38,7 @@ jobs:
     environment: production   # required reviewers = manual approval gate
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with: { version: latest }
       - name: Apply migrations (production)
         run: supabase db push --db-url "$SUPABASE_DB_URL" --include-all
