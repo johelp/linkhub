@@ -24,6 +24,7 @@ Las migraciones están en `supabase/migrations/`, numeradas e **idempotentes** (
 | 017 | `017_billing_lapse.sql` | `profiles.billing_lapsed_at` | Nadie se pausa por impago |
 | 018 | `018_api_keys.sql` | `api_keys`, `api_key_audit`, triggers de protección y tope de 10 claves activas | Sin claves de API: la pantalla Desarrolladores no funciona |
 | 019 | `019_knowledge_base.sql` | `knowledge_entries` (tope 300 por cuenta, RLS del dueño) | Sin base de conocimiento |
+| 022 | `022_security_advisor_fixes.sql` | Vistas `security_invoker`, revoca `EXECUTE` en funciones de trigger, fija `search_path` | Vistas que saltan RLS |
 | 021 | `021_custom_domains.sql` | `custom_domains` + estado (pending/verified/active), token y restricciones; **sustituye la política de la 001** (el dueño ya no puede escribir `verified`) | Sin dominio propio |
 | 020 | `020_roadmap_votes.sql` | `roadmap_votes` (máx. 10 votos por cuenta, RLS del dueño; totales solo con service role) | Sin votos en Próximamente |
 
@@ -60,4 +61,4 @@ El MCP, la API de claves y `/api/v1` **no añaden variables nuevas**: usan las d
 
 
 ## Script único 011–021
-`supabase/bundles/011-021.sql` (y `001-021.sql`, solo para un proyecto nuevo y vacío) reúne las migraciones 011 a 021 en una sola transacción, con comprobación previa de 001–010 y consulta de verificación final. Se regenera con `npm run sql:bundle` (no editar a mano). Para pegarlo en el SQL Editor de **staging**.
+`supabase/bundles/011-022.sql` (y `001-022.sql`, solo para un proyecto nuevo y vacío) reúne las migraciones 011 a 021 en una sola transacción, con comprobación previa de 001–010 y consulta de verificación final. Se regenera con `npm run sql:bundle` (no editar a mano). Para pegarlo en el SQL Editor de **staging**.

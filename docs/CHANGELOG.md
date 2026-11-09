@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-09 — Base de datos migrada y correcciones del asesor de seguridad
+
+**Hecho** (proyecto Supabase `linkhub`, ref `rfgmqiuujpngemnngzmo`, que hoy sirve a producción y staging)
+- El proyecto solo tenía la migración 001 (0 páginas, 0 perfiles). Se aplicaron 002 a 021 mediante el MCP de Supabase, y la fila de `profiles` del usuario administrador, que faltaba, se creó con los datos de `auth.users`.
+- **Migración 022** (`022_security_advisor_fixes.sql`): las vistas `pages_summary` y `analytics_summary` eran SECURITY DEFINER (cualquiera con la clave anónima podía leer todas las páginas y analíticas por la API REST); pasan a `security_invoker`. Se retira `EXECUTE` de las funciones de trigger para `anon`/`authenticated` y se fija el `search_path` de `set_updated_at`.
+- Los scripts únicos pasan a `011-022.sql` y `001-022.sql` (`npm run sql:bundle`).
+
 ## 2026-11-06 — Script único de migraciones 011–021
 
 **Añadido**

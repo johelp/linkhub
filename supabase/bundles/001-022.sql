@@ -1,21 +1,575 @@
 -- ============================================================================
--- LinkHub · migraciones 011 a 021 en un solo script
+-- LinkHub · migraciones 001 a 022 en un solo script
 -- Generado desde supabase/migrations/ (no editar a mano: regenerar con `npm run sql:bundle`).
 -- Pégalo en Supabase → SQL Editor del proyecto de STAGING.
--- Antes: 001–010 deben estar aplicadas (este script lo comprueba).
+-- Solo para un proyecto NUEVO y vacío: la migración 001 no es idempotente.
 -- Todo va en una transacción: si algo falla no queda nada a medias.
 -- Las migraciones son idempotentes: volver a ejecutarlo es seguro.
 -- NO lo ejecutes en producción sin haberlo probado en staging.
 -- ============================================================================
 begin;
 
-do $$
+-- ───────────────────────── 001_initial_schema.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Database Schema
+-- Run this in: Supabase Dashboard → SQL Editor
+-- ─────────────────────────────────────────────────────────────────
+
+-- Enable UUID extension
+create extension if not exists "uuid-ossp";
+
+-- ─── PROFILES ────────────────────────────────────────────────────
+create table public.profiles (
+  id            uuid references auth.users(id) on delete cascade primary key,
+  email         text not null,
+  full_name     text,
+  avatar_url    text,
+  plan          text not null default 'free' check (plan in ('free','pro','agency')),
+  plan_expires_at timestamptz,
+  created_at    timestamptz default now() not null,
+  updated_at    timestamptz default now() not null
+);
+
+alter table public.profiles enable row level security;
+
+create policy "Users can view own profile"
+  on public.profiles for select using (auth.uid() = id);
+
+create policy "Users can update own profile"
+  on public.profiles for update using (auth.uid() = id);
+
+-- Auto-create profile on signup
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if to_regclass('public.profiles') is null or to_regclass('public.pages') is null
-     or to_regclass('public.analytics_events') is null or to_regclass('public.email_subscribers') is null then
-    raise exception 'Faltan las migraciones 001-010: aplícalas primero (o genera el script desde la 001).';
+  insert into public.profiles (id, email, full_name, avatar_url)
+  values (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- ─── PAGES ───────────────────────────────────────────────────────
+create table public.pages (
+  id            uuid default uuid_generate_v4() primary key,
+  user_id       uuid references public.profiles(id) on delete cascade not null,
+  slug          text unique not null,
+  name          text not null,
+  settings      jsonb not null default '{
+    "defaultLang": "es",
+    "enabledLangs": ["es"],
+    "seasonMode": "always",
+    "primaryColor": "#E8150A",
+    "backgroundColor": "#F6F6F5",
+    "fontFamily": "DM Sans",
+    "showPoweredBy": true,
+    "seo": {
+      "title": "",
+      "description": "",
+      "ogImage": null
+    }
+  }',
+  blocks        jsonb not null default '[]',
+  published     boolean default false not null,
+  qr_url        text,
+  custom_domain text unique,
+  views         integer default 0 not null,
+  created_at    timestamptz default now() not null,
+  updated_at    timestamptz default now() not null
+);
+
+alter table public.pages enable row level security;
+
+-- Owners can do anything
+create policy "Owners can manage own pages"
+  on public.pages for all using (auth.uid() = user_id);
+
+-- Public can read published pages (for /p/[slug] route)
+create policy "Public can view published pages"
+  on public.pages for select using (published = true);
+
+-- Slug validation: lowercase letters, numbers, hyphens
+alter table public.pages
+  add constraint slug_format check (slug ~ '^[a-z0-9][a-z0-9\-]{1,60}[a-z0-9]$');
+
+-- Updated_at trigger
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger pages_updated_at
+  before update on public.pages
+  for each row execute procedure public.set_updated_at();
+
+-- ─── ANALYTICS EVENTS ────────────────────────────────────────────
+create table public.analytics_events (
+  id          uuid default uuid_generate_v4() primary key,
+  page_id     uuid references public.pages(id) on delete cascade not null,
+  event_type  text not null check (event_type in ('view','click')),
+  block_id    text,
+  block_type  text,
+  url         text,
+  lang        text default 'es',
+  country     text,
+  device      text check (device in ('mobile','tablet','desktop')),
+  referrer    text,
+  created_at  timestamptz default now() not null
+);
+
+-- Partitioned by month for performance (optional, add later)
+-- Analytics insert is public (anonymous tracking)
+alter table public.analytics_events enable row level security;
+
+create policy "Public can insert analytics"
+  on public.analytics_events for insert with check (true);
+
+create policy "Owners can view analytics"
+  on public.analytics_events for select
+  using (
+    exists (
+      select 1 from public.pages
+      where pages.id = analytics_events.page_id
+      and pages.user_id = auth.uid()
+    )
+  );
+
+-- Index for dashboard queries
+create index analytics_page_created on public.analytics_events(page_id, created_at desc);
+
+-- ─── DOMAINS ─────────────────────────────────────────────────────
+create table public.custom_domains (
+  id         uuid default uuid_generate_v4() primary key,
+  page_id    uuid references public.pages(id) on delete cascade unique,
+  domain     text unique not null,
+  verified   boolean default false,
+  txt_record text,
+  created_at timestamptz default now()
+);
+
+alter table public.custom_domains enable row level security;
+
+create policy "Owners can manage domains"
+  on public.custom_domains for all
+  using (
+    exists (
+      select 1 from public.pages
+      where pages.id = custom_domains.page_id
+      and pages.user_id = auth.uid()
+    )
+  );
+
+-- ─── HELPER VIEWS ────────────────────────────────────────────────
+-- Page summary for dashboard (without full blocks JSON)
+create or replace view public.pages_summary as
+  select
+    p.id,
+    p.user_id,
+    p.slug,
+    p.name,
+    p.published,
+    p.views,
+    p.settings->>'primaryColor' as primary_color,
+    p.settings->>'defaultLang' as default_lang,
+    jsonb_array_length(p.blocks) as block_count,
+    p.created_at,
+    p.updated_at
+  from public.pages p;
+
+-- Analytics 30-day summary per page
+create or replace view public.analytics_summary as
+  select
+    page_id,
+    count(*) filter (where event_type = 'view') as views_30d,
+    count(*) filter (where event_type = 'click') as clicks_30d,
+    count(distinct country) as countries,
+    date_trunc('day', created_at) as day
+  from public.analytics_events
+  where created_at > now() - interval '30 days'
+  group by page_id, date_trunc('day', created_at);
+
+-- ─── STORAGE BUCKETS (run in Storage section or here) ────────────
+-- insert into storage.buckets (id, name, public) values ('page-assets', 'page-assets', true);
+
+-- Storage policy (set in Supabase dashboard)
+-- Allow authenticated users to upload to their own folder: user_id/*
+
+-- ───────────────────────── 002_plan_enforcement_and_views.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Plan enforcement + views counter fix
+-- Run this in: Supabase Dashboard → SQL Editor (after 001_initial_schema.sql)
+-- ─────────────────────────────────────────────────────────────────
+
+-- ─── VIEWS COUNTER ───────────────────────────────────────────────
+-- pages.views was never incremented anywhere (dashboard always showed 0).
+-- Increment it from the analytics_events insert (public can insert 'view' events).
+create or replace function public.increment_page_views()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.event_type = 'view' then
+    update public.pages set views = views + 1 where id = new.page_id;
   end if;
-end $$;
+  return new;
+end;
+$$;
+
+create trigger analytics_increment_views
+  after insert on public.analytics_events
+  for each row execute procedure public.increment_page_views();
+
+-- ─── PLAN LIMITS ─────────────────────────────────────────────────
+-- Plan limits (page count, advanced blocks) were only enforced in the UI
+-- and in the Next.js API route. Since RLS lets an authenticated user call
+-- the Supabase REST API directly (bypassing our app), the real boundary
+-- has to live here.
+create or replace function public.enforce_plan_limits()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  user_plan text;
+  page_count int;
+  page_limit int;
+  block jsonb;
+  advanced_blocks text[] := array['featured','expandable','social_grid','contact_card','image_banner','text'];
+begin
+  select plan into user_plan from public.profiles where id = new.user_id;
+  user_plan := coalesce(user_plan, 'free');
+
+  if tg_op = 'INSERT' then
+    page_limit := case user_plan when 'free' then 1 else 999999 end;
+    select count(*) into page_count from public.pages where user_id = new.user_id;
+    if page_count >= page_limit then
+      raise exception 'plan_limit_exceeded: % plan allows at most % page(s)', user_plan, page_limit;
+    end if;
+  end if;
+
+  if user_plan = 'free' and new.blocks is not null then
+    for block in select * from jsonb_array_elements(new.blocks)
+    loop
+      if (block->>'type') = any(advanced_blocks) then
+        raise exception 'plan_limit_exceeded: block type % requires Pro plan', block->>'type';
+      end if;
+    end loop;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger pages_enforce_plan_limits
+  before insert or update on public.pages
+  for each row execute procedure public.enforce_plan_limits();
+
+-- ───────────────────────── 003_two_plan_tiers.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Collapse to two plan tiers (free / pro)
+-- Run this in: Supabase Dashboard → SQL Editor (after 001 and 002)
+-- ─────────────────────────────────────────────────────────────────
+
+-- Fold any existing 'agency' accounts into 'pro' — 'pro' now includes
+-- everything 'agency' used to (custom domain, full+export analytics).
+update public.profiles set plan = 'pro' where plan = 'agency';
+
+-- Tighten the check constraint to just the two tiers.
+alter table public.profiles drop constraint if exists profiles_plan_check;
+alter table public.profiles add constraint profiles_plan_check check (plan in ('free','pro'));
+
+-- ───────────────────────── 004_stripe_billing.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Stripe billing fields
+-- Run this in: Supabase Dashboard → SQL Editor (after 001, 002, 003)
+-- ─────────────────────────────────────────────────────────────────
+
+alter table public.profiles
+  add column if not exists stripe_customer_id text unique,
+  add column if not exists stripe_subscription_id text unique,
+  add column if not exists stripe_subscription_status text;
+
+-- The webhook handler runs with the service_role key (it authenticates via
+-- Stripe's signature, not a Supabase session), so it bypasses RLS already.
+-- This index just makes "find profile by customer id" fast on webhook events.
+create index if not exists profiles_stripe_customer_id_idx on public.profiles(stripe_customer_id);
+
+-- ───────────────────────── 005_protect_billing_columns.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Protect billing columns on profiles from self-service writes
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-004)
+-- ─────────────────────────────────────────────────────────────────
+--
+-- "Users can update own profile" (001) is `for update using (auth.uid() = id)`
+-- with no `with check` and no column-level restriction. RLS in Postgres is
+-- row-scoped, not column-scoped, so that policy lets any authenticated user
+-- PATCH their OWN plan/stripe_* columns directly via the Supabase REST API
+-- (same anon key + session the browser client already uses) — completely
+-- bypassing Stripe and the /api/checkout → webhook flow. This trigger closes
+-- that: an end-user session (PostgREST request with an 'authenticated' JWT)
+-- can no longer change these columns — only the Stripe webhook's
+-- service-role client (src/lib/supabase/admin.ts) or a trusted operator
+-- running SQL directly can.
+
+create or replace function public.protect_billing_columns()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  -- Only block requests that came in through PostgREST as a logged-in end
+  -- user (auth.role() = 'authenticated'). The Stripe webhook's service-role
+  -- client carries role 'service_role' and is exempt. Raw SQL run directly
+  -- in the Supabase SQL Editor (e.g. the manual "grant Pro" query in
+  -- SETUP.md §7) has no JWT context at all — auth.role() is null there,
+  -- which is also exempt, so that workflow keeps working.
+  if auth.role() = 'authenticated' then
+    if new.plan is distinct from old.plan
+       or new.stripe_customer_id is distinct from old.stripe_customer_id
+       or new.stripe_subscription_id is distinct from old.stripe_subscription_id
+       or new.stripe_subscription_status is distinct from old.stripe_subscription_status
+       or new.plan_expires_at is distinct from old.plan_expires_at then
+      raise exception 'not_allowed: billing fields are managed by the server';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger profiles_protect_billing_columns
+  before update on public.profiles
+  for each row execute procedure public.protect_billing_columns();
+
+-- ───────────────────────── 006_email_capture.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Email capture block
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-005)
+-- ─────────────────────────────────────────────────────────────────
+
+create table public.email_subscribers (
+  id         uuid default uuid_generate_v4() primary key,
+  page_id    uuid references public.pages(id) on delete cascade not null,
+  email      text not null,
+  lang       text default 'es',
+  created_at timestamptz default now() not null,
+  unique (page_id, email)
+);
+
+alter table public.email_subscribers enable row level security;
+
+-- Public can submit their email from the published page (same pattern as
+-- analytics_events — anonymous visitors, no auth).
+create policy "Public can subscribe"
+  on public.email_subscribers for insert with check (true);
+
+-- Only the page owner can read/export/delete their own subscribers.
+create policy "Owners can manage their subscribers"
+  on public.email_subscribers for select
+  using (exists (select 1 from public.pages where pages.id = email_subscribers.page_id and pages.user_id = auth.uid()));
+
+create policy "Owners can delete their subscribers"
+  on public.email_subscribers for delete
+  using (exists (select 1 from public.pages where pages.id = email_subscribers.page_id and pages.user_id = auth.uid()));
+
+create index email_subscribers_page_id_idx on public.email_subscribers(page_id, created_at desc);
+
+-- ───────────────────────── 007_mercadopago_connect.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Mercado Pago Connect (OAuth) + payment logging
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-006)
+-- ─────────────────────────────────────────────────────────────────
+
+-- Holds each creator's Mercado Pago OAuth tokens. RLS is enabled with NO
+-- policies granted to anon/authenticated — this table is intentionally
+-- unreachable from any user session, even the owner's own, because it
+-- holds live payment credentials. Only the service-role client
+-- (src/lib/supabase/admin.ts, used by the /api/connect/mercadopago/* and
+-- /api/pay/mercadopago routes) can read or write it. This mirrors the
+-- lesson from 005: RLS is row-scoped, not column-scoped, so "owners can
+-- manage their own row" would also mean owners can read their own
+-- access_token straight from the browser — never desirable for a secret.
+create table public.payment_connections (
+  id                uuid default uuid_generate_v4() primary key,
+  user_id           uuid references public.profiles(id) on delete cascade not null,
+  provider          text not null default 'mercadopago' check (provider in ('mercadopago')),
+  provider_user_id  text not null,
+  access_token      text not null,
+  refresh_token     text not null,
+  public_key        text,
+  live_mode         boolean default true not null,
+  connected_at      timestamptz default now() not null,
+  unique (user_id, provider)
+);
+
+alter table public.payment_connections enable row level security;
+
+-- Payment log. No secrets in here, so owners can read their own rows
+-- directly (matches the analytics_events pattern). Inserts/updates only
+-- come from the server (preference creation + webhook), not RLS policies.
+create table public.payments (
+  id                    uuid default uuid_generate_v4() primary key,
+  page_id               uuid references public.pages(id) on delete cascade not null,
+  block_id              text not null,
+  provider              text not null default 'mercadopago',
+  status                text not null default 'pending' check (status in ('pending','approved','rejected','refunded')),
+  amount                numeric(12,2) not null,
+  currency              text not null,
+  provider_payment_id   text,
+  provider_preference_id text,
+  payer_email           text,
+  created_at            timestamptz default now() not null,
+  updated_at            timestamptz default now() not null
+);
+
+alter table public.payments enable row level security;
+
+create policy "Owners can view their payments"
+  on public.payments for select
+  using (exists (select 1 from public.pages where pages.id = payments.page_id and pages.user_id = auth.uid()));
+
+create trigger payments_updated_at
+  before update on public.payments
+  for each row execute procedure public.set_updated_at();
+
+create index payments_page_id_idx on public.payments(page_id, created_at desc);
+
+-- ───────────────────────── 008_event_tickets.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Event tickets on top of Mercado Pago payments
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-007)
+-- ─────────────────────────────────────────────────────────────────
+
+-- Payments need to remember which ticket tier was bought (event_tickets
+-- blocks have 2-3 tiers with different prices; payment_button blocks don't
+-- use these columns at all).
+alter table public.payments
+  add column if not exists tier_id text,
+  add column if not exists tier_name text;
+
+create table public.tickets (
+  id           uuid default uuid_generate_v4() primary key,
+  payment_id   uuid references public.payments(id) on delete cascade not null unique,
+  page_id      uuid references public.pages(id) on delete cascade not null,
+  tier_id      text not null,
+  tier_name    text not null,
+  code         text unique not null,
+  buyer_email  text,
+  status       text not null default 'issued' check (status in ('issued','used','cancelled')),
+  used_at      timestamptz,
+  created_at   timestamptz default now() not null
+);
+
+alter table public.tickets enable row level security;
+
+-- Owners can list/search their own event's tickets (used by the validation
+-- screen, which runs as the owner's own session -- no admin client needed).
+create policy "Owners can view their tickets"
+  on public.tickets for select
+  using (exists (select 1 from public.pages where pages.id = tickets.page_id and pages.user_id = auth.uid()));
+
+-- Owners (or their staff, same login) can mark a ticket used. The actual
+-- "already used?" race is handled by the app doing a conditional update
+-- (`where status = 'issued'`), not by RLS.
+create policy "Owners can update their tickets"
+  on public.tickets for update
+  using (exists (select 1 from public.pages where pages.id = tickets.page_id and pages.user_id = auth.uid()));
+
+-- No insert policy: tickets are only ever created by the Mercado Pago
+-- webhook (service role) after a real approved payment. No select policy
+-- for anon: the public ticket-confirmation page (/t/[code]) looks a ticket
+-- up by its own server-side admin-client call, scoped to the exact code
+-- from the URL -- never a client-side query, since an open "anyone can
+-- select" policy would let someone list every ticket (and every buyer
+-- email) with no filter at all via the REST API.
+
+create index tickets_page_id_idx on public.tickets(page_id, created_at desc);
+create index tickets_code_idx on public.tickets(code);
+
+-- ───────────────────────── 009_loyalty_cards.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Loyalty stamp cards ("tarjeta de sellos")
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-008)
+-- ─────────────────────────────────────────────────────────────────
+
+create table public.loyalty_cards (
+  id                 uuid default uuid_generate_v4() primary key,
+  page_id            uuid references public.pages(id) on delete cascade not null,
+  block_id           text not null,
+  code               text unique not null,
+  stamps_count       int not null default 0,
+  last_redeemed_at   timestamptz,
+  created_at         timestamptz default now() not null
+);
+
+alter table public.loyalty_cards enable row level security;
+
+-- A visitor gets their own card from the public page (anonymous, no auth --
+-- same pattern as email_subscribers). The check clause is what stops someone
+-- from opening devtools and inserting a card that already has stamps on it,
+-- or already marked redeemed: every column but the identifying ones must
+-- start at its zero value, same discipline as never trusting a client-sent
+-- price on the payment blocks.
+create policy "Public can create a loyalty card"
+  on public.loyalty_cards for insert
+  with check (stamps_count = 0 and last_redeemed_at is null);
+
+-- Owners can list and stamp/redeem cards for their own pages (the dashboard
+-- "sumar sello" screen runs as the owner's own session, no admin client
+-- needed -- same pattern as tickets).
+create policy "Owners can view their loyalty cards"
+  on public.loyalty_cards for select
+  using (exists (select 1 from public.pages where pages.id = loyalty_cards.page_id and pages.user_id = auth.uid()));
+
+create policy "Owners can update their loyalty cards"
+  on public.loyalty_cards for update
+  using (exists (select 1 from public.pages where pages.id = loyalty_cards.page_id and pages.user_id = auth.uid()));
+
+-- No public select policy: the customer's own card page (/l/[code]) looks it
+-- up server-side via the admin client by its exact code, same as /t/[code]
+-- tickets -- an open "anyone can select" policy would let someone list every
+-- card (and everyone's stamp counts) with no filter via the REST API.
+
+create index loyalty_cards_page_id_idx on public.loyalty_cards(page_id, created_at desc);
+create index loyalty_cards_code_idx on public.loyalty_cards(code);
+
+-- ───────────────────────── 010_storage_images.sql ─────────────────────────
+-- ─────────────────────────────────────────────────────────────────
+-- LinkHub — Storage bucket for user-uploaded images (image_banner block)
+-- Run this in: Supabase Dashboard → SQL Editor (after 001-009)
+-- ─────────────────────────────────────────────────────────────────
+
+-- Public bucket: images need to be readable by anyone visiting a published
+-- page (no auth), same trust model as the page content itself. Writes are
+-- restricted below by RLS on storage.objects, not by the bucket being
+-- private -- a private bucket would need a signed URL per image on every
+-- page load, which public pages don't do anywhere else in this project.
+insert into storage.buckets (id, name, public)
+values ('images', 'images', true)
+on conflict (id) do nothing;
+
+-- Folder-per-user convention: every object's path starts with the
+-- uploader's auth.uid(), e.g. "3fa8.../<uuid>.jpg" -- storage.foldername()
+-- splits the path on "/" and [1] is that first segment. This is the
+-- standard Supabase Storage pattern for "users can only touch their own
+-- files" and mirrors how `payments`/`loyalty_cards` scope rows to owners.
+create policy "Public can view images"
+  on storage.objects for select
+  using (bucket_id = 'images');
+
+create policy "Users can upload to their own folder"
+  on storage.objects for insert
+  with check (bucket_id = 'images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can update their own images"
+  on storage.objects for update
+  using (bucket_id = 'images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can delete their own images"
+  on storage.objects for delete
+  using (bucket_id = 'images' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ───────────────────────── 011_security_hardening.sql ─────────────────────────
 -- Security hardening (audit SEC-004/005/006). Apply with `supabase db push`
@@ -545,6 +1099,36 @@ create policy "Owners remove their domain" on public.custom_domains for delete
 -- No UPDATE policy on purpose: status changes are server-side only.
 
 create index if not exists custom_domains_active_idx on public.custom_domains (domain) where status = 'active';
+
+-- ───────────────────────── 022_security_advisor_fixes.sql ─────────────────────────
+-- Fixes reported by the Supabase security advisor after applying 001-021.
+-- Idempotent.
+
+-- 1) The two helper views from 001 were SECURITY DEFINER: they ran with the
+--    creator's rights and bypassed RLS, so anyone with the anon key could read
+--    every page / every analytics row through them. With security_invoker the
+--    caller's RLS applies (the dashboard already filters by user_id).
+alter view public.pages_summary set (security_invoker = on);
+alter view public.analytics_summary set (security_invoker = on);
+
+-- 2) Pin the search_path of the shared updated_at trigger function.
+alter function public.set_updated_at() set search_path = public;
+
+-- 3) Trigger functions must not be callable through /rest/v1/rpc. Triggers
+--    fire regardless of EXECUTE privileges, so revoking is safe.
+revoke execute on function
+  public.enforce_plan_limits(),
+  public.handle_new_user(),
+  public.increment_page_views(),
+  public.limit_api_keys(),
+  public.limit_knowledge_entries(),
+  public.limit_roadmap_votes(),
+  public.protect_api_key_columns(),
+  public.protect_billing_columns(),
+  public.protect_moderation(),
+  public.protect_page_server_columns(),
+  public.throttle_public_inserts()
+from public, anon, authenticated;
 
 -- ───────────────────────── Verificación ─────────────────────────
 -- Debe devolver 'ok' en todas las filas.

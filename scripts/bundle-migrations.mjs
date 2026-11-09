@@ -4,7 +4,7 @@
 import { readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 
 const args = process.argv.slice(2)
-const FROM = Number(args[0] ?? 11), TO = Number(args[1] ?? 21)
+const FROM = Number(args[0] ?? 11), TO = Number(args[1] ?? 22)
 const dir = new URL('../supabase/migrations/', import.meta.url)
 const files = readdirSync(dir).filter(f => /^\d{3}_.*\.sql$/.test(f)).filter(f => { const n = Number(f.slice(0, 3)); return n >= FROM && n <= TO }).sort()
 
