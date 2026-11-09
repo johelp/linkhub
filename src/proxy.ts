@@ -48,6 +48,19 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Dev needs eval/HMR, so the CSP is production-only.
+  const csp = process.env.NODE_ENV === 'production' && CSP_PATHS.some(r => pathname.startsWith(r))
+    ? buildCsp(Buffer.from(crypto.randomUUID()).toString('base64'))
+    : null
+  const next = () => {
+    // Next reads the nonce from the *request* CSP header and stamps its own
+    // scripts with it; the same header goes on the response for the browser.
+    const headers = new Headers(request.headers)
+    if (csp) headers.set('Content-Security-Policy', csp)
+    const r = NextResponse.next({ request: { headers } })
+    if (csp) r.headers.set('Content-Security-Policy', csp)
+    return r
+  }
   // Safety net: if Supabase sends the sign-in link to the Site URL root
   // (`/?code=...`, e.g. when the exact redirect URL isn't in its allow-list),
   // hand the code to the real callback instead of showing the landing.
