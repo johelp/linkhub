@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AUTH_FAILURE_MESSAGES, isAuthFailure } from '@/lib/authErrors'
+import { safeNextPath } from '@/lib/security'
 import { ArrowRight, CalendarCheck, CreditCard, Mail, MessageCircle, ShieldCheck } from 'lucide-react'
 
 const INK = '#111314'
@@ -12,6 +13,7 @@ const MUTED = '#5B6064'
 const LINE = 'rgba(17,19,20,0.12)'
 const ACCENT = '#E8150A'
 const RESEND_SECONDS = 30
+const CODE_LENGTH = 6   // Supabase → Authentication → Providers → Email → "Email OTP Length" must match
 
 // Supabase messages are English and technical; translate the ones people actually hit.
 function friendlyAuthError(message: string, status?: number): string {
@@ -29,12 +31,19 @@ const INBOXES: Record<string, { name: string; url: string }> = {
   'icloud.com': { name: 'iCloud', url: 'https://www.icloud.com/mail' },
 }
 
+function friendlyCodeError(message: string): string {
+  if (/expired|invalid/i.test(message)) return 'Ese código no es válido o ha caducado. Revisa los dígitos o pide uno nuevo.'
+  return 'No hemos podido comprobar el código. Inténtalo de nuevo.'
+}
+
 export function AuthForm() {
   const [email, setEmail] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cooldown, setCooldown] = useState(0)
+  const [code, setCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/dashboard'
   const failure = searchParams.get('error')
@@ -46,6 +55,32 @@ export function AuthForm() {
     return () => clearTimeout(id)
   }, [cooldown])
 
+  // If the link is opened in another tab of THIS browser, the session appears
+  // here too: take the user in instead of leaving this tab waiting.
+  useEffect(() => {
+    if (!sentTo) return
+    try {
+      const { data } = createClient().auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) window.location.assign(safeNextPath(next))
+      })
+      return () => data.subscription.unsubscribe()
+    } catch { /* not configured: nothing to listen to */ }
+  }, [sentTo, next])
+
+  async function verify(token: string) {
+    if (!sentTo || verifying) return
+    setVerifying(true); setError(null)
+    try {
+      const { error: err } = await createClient().auth.verifyOtp({ email: sentTo, token, type: 'email' })
+      if (err) { setError(friendlyCodeError(err.message)); setCode(''); return }
+      window.location.assign(safeNextPath(next))   // full load: the server reads the new session cookie
+    } catch {
+      setError('El acceso no está disponible ahora mismo. Inténtalo de nuevo en unos minutos.')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
   async function send(address: string) {
     setLoading(true); setError(null)
     try {
@@ -55,7 +90,7 @@ export function AuthForm() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
       })
       if (err) { setError(friendlyAuthError(err.message, err.status)); return }
-      setSentTo(address); setCooldown(RESEND_SECONDS)
+      setSentTo(address); setCode(''); setCooldown(RESEND_SECONDS)
     } catch {
       // createClient throws when the Supabase URL/key are not configured for this deployment.
       setError('El acceso no está disponible ahora mismo. Inténtalo de nuevo en unos minutos.')
@@ -94,32 +129,44 @@ export function AuthForm() {
           <Link href="/" className="lg:hidden block text-center text-[24px] font-bold no-underline mb-8" style={{ color: INK }}>Link<span style={{ color: ACCENT }}>Hub</span></Link>
 
           {sentTo ? (
-            <div role="status" aria-live="polite">
+            <div>
               <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: '#fff', border: `1px solid ${LINE}` }}><Mail size={26} aria-hidden /></span>
-              <h1 className="mt-6 font-bold" style={{ fontSize: 30, lineHeight: 1.1, letterSpacing: '-0.03em' }}>Revisa tu correo</h1>
-              <p className="mt-3 text-[16px] leading-relaxed" style={{ color: BODY }}>Te hemos enviado un enlace de acceso a <strong style={{ color: INK }}>{sentTo}</strong>. Ábrelo en este mismo navegador y entrarás directamente.</p>
+              <h1 className="mt-6 font-bold" style={{ fontSize: 30, lineHeight: 1.1, letterSpacing: '-0.03em' }}>Escribe tu código</h1>
+              <p className="mt-3 text-[16px] leading-relaxed" style={{ color: BODY }} role="status" aria-live="polite">Te hemos enviado un código de {CODE_LENGTH} dígitos a <strong style={{ color: INK }}>{sentTo}</strong>.</p>
+
+              <form className="mt-6" onSubmit={e => { e.preventDefault(); if (code.length === CODE_LENGTH) verify(code) }}>
+                <label htmlFor="otp" className="block text-[14px] font-semibold mb-2">Código</label>
+                <input id="otp" name="otp" value={code} autoFocus required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={CODE_LENGTH}
+                  onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, CODE_LENGTH); setCode(v); if (v.length === CODE_LENGTH) verify(v) }}
+                  aria-invalid={error ? true : undefined} aria-describedby={error ? 'auth-error' : undefined} placeholder="······"
+                  className="w-full rounded-xl px-4 outline-none bg-white focus:border-[#111314]"
+                  style={{ height: 64, border: `1.5px solid ${error ? '#B50F07' : LINE}`, color: INK, fontSize: 30, fontWeight: 700, letterSpacing: '0.4em', textAlign: 'center', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} />
+                {error && <p id="auth-error" role="alert" className="mt-2 text-[14px]" style={{ color: '#B50F07' }}>{error}</p>}
+                <button type="submit" disabled={verifying || code.length !== CODE_LENGTH} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full text-[16px] font-semibold text-white"
+                  style={{ height: 54, background: ACCENT, border: 0, cursor: verifying ? 'wait' : 'pointer', opacity: verifying || code.length !== CODE_LENGTH ? 0.6 : 1, fontFamily: 'inherit' }}>
+                  {verifying ? 'Comprobando…' : <>Entrar <ArrowRight size={17} aria-hidden /></>}
+                </button>
+              </form>
+
               {inbox && (
-                <a href={inbox.url} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full text-[16px] font-semibold text-white no-underline" style={{ height: 52, background: INK }}>
-                  Abrir {inbox.name} <ArrowRight size={17} aria-hidden />
+                <a href={inbox.url} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold no-underline" style={{ height: 48, border: `1.5px solid ${LINE}`, color: INK, background: '#fff' }}>
+                  Abrir {inbox.name}
                 </a>
               )}
-              <ol className="mt-6 grid gap-2.5 text-[14.5px]" style={{ color: BODY, paddingLeft: 20 }}>
-                <li>Busca un mensaje de LinkHub (mira también en spam o promociones).</li>
-                <li>Pulsa el botón «Acceder a LinkHub».</li>
-                <li>El enlace caduca pronto y solo funciona una vez.</li>
-              </ol>
-              {error && <p role="alert" className="mt-4 text-[14px]" style={{ color: '#B50F07' }}>{error}</p>}
-              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
+              <p className="mt-5 text-[14px] leading-relaxed" style={{ color: MUTED }}>
+                También puedes pulsar el botón del correo, en este mismo navegador. Busca un mensaje de LinkHub (mira en spam o promociones). El código caduca pronto y solo funciona una vez.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
                 <button type="button" onClick={() => send(sentTo)} disabled={cooldown > 0 || loading} className="underline" style={{ background: 'none', border: 0, padding: 0, minHeight: 44, color: cooldown > 0 ? MUTED : INK, cursor: cooldown > 0 ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
-                  {cooldown > 0 ? `Reenviar en ${cooldown} s` : loading ? 'Enviando…' : 'Reenviar el enlace'}
+                  {cooldown > 0 ? `Reenviar en ${cooldown} s` : loading ? 'Enviando…' : 'Reenviar el código'}
                 </button>
-                <button type="button" onClick={() => { setSentTo(null); setError(null) }} className="underline" style={{ background: 'none', border: 0, padding: 0, minHeight: 44, color: INK, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Usar otro correo</button>
+                <button type="button" onClick={() => { setSentTo(null); setError(null); setCode('') }} className="underline" style={{ background: 'none', border: 0, padding: 0, minHeight: 44, color: INK, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Usar otro correo</button>
               </div>
             </div>
           ) : (
             <>
               <h1 className="font-bold" style={{ fontSize: 32, lineHeight: 1.1, letterSpacing: '-0.03em' }}>Entra a LinkHub</h1>
-              <p className="mt-3 text-[16px] leading-relaxed" style={{ color: BODY }}>Sin contraseña: te enviamos un enlace de acceso. Si aún no tienes cuenta, se crea al entrar.</p>
+              <p className="mt-3 text-[16px] leading-relaxed" style={{ color: BODY }}>Sin contraseña: te enviamos un código de acceso (y un enlace, si prefieres). Si aún no tienes cuenta, se crea al entrar.</p>
 
               {failureMessage && (
                 <p role="alert" className="mt-5 rounded-xl p-3.5 text-[14px] leading-relaxed" style={{ background: '#FEF0EF', color: '#B50F07' }}>{failureMessage}</p>
@@ -134,7 +181,7 @@ export function AuthForm() {
                 {error && <p id="auth-error" role="alert" className="mt-2 text-[14px]" style={{ color: '#B50F07' }}>{error}</p>}
                 <button type="submit" disabled={loading || !email.trim()} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full text-[16px] font-semibold text-white"
                   style={{ height: 54, background: ACCENT, border: 0, cursor: loading ? 'wait' : 'pointer', opacity: loading || !email.trim() ? 0.6 : 1, fontFamily: 'inherit' }}>
-                  {loading ? 'Enviando…' : <>Enviar enlace de acceso <ArrowRight size={17} aria-hidden /></>}
+                  {loading ? 'Enviando…' : <>Enviar código <ArrowRight size={17} aria-hidden /></>}
                 </button>
               </form>
 

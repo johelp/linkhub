@@ -8,6 +8,13 @@ test('auth templates keep Supabase placeholders intact', () => {
   assert.ok(magic.text.includes('{{ .Email }}'))
   assert.ok(AUTH_TEMPLATES.find(t => t.key === 'reauthentication')!.html.includes('{{ .Token }}'))
   assert.equal(AUTH_TEMPLATES.length, 6)
+  // Sign-in and sign-up emails carry the one-time code AND the link.
+  for (const key of ['magic_link', 'confirmation']) {
+    const t = AUTH_TEMPLATES.find(x => x.key === key)!
+    assert.ok(t.html.includes('{{ .Token }}') && t.html.includes('{{ .ConfirmationURL }}'), key)
+    assert.ok(t.subject.includes('{{ .Token }}'), key)
+    assert.ok(t.text.includes('{{ .Token }}'), key)
+  }
 })
 
 test('no template uses voseo or emoji', () => {

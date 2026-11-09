@@ -1,4 +1,4 @@
-import { emailLayout, emailText, escapeHtml, para } from './emailLayout.ts'
+import { codeBox, emailLayout, emailText, escapeHtml, para } from './emailLayout.ts'
 
 export interface Rendered { subject: string; html: string; text: string }
 
@@ -12,19 +12,23 @@ const auth = (key: string, subject: string, p: Parameters<typeof emailLayout>[0]
 })
 
 export const AUTH_TEMPLATES: AuthTemplate[] = [
-  auth('magic_link', 'Tu enlace para acceder a LinkHub', {
-    preheader: 'Entra a tu cuenta con un clic. Sin contraseña.', title: 'Accede a tu cuenta',
-    body: para('Has pedido entrar en LinkHub con <strong>{{ .Email }}</strong>. Pulsa el botón para acceder: no necesitas contraseña.'),
+  // Magic link AND one-time code in the same email: the code is typed in the tab
+  // that asked for it (no stuck tab if the link opens in another browser).
+  auth('magic_link', 'Tu código de acceso a LinkHub: {{ .Token }}', {
+    preheader: 'Tu código: {{ .Token }}. Escríbelo donde lo pediste.', title: 'Tu código de acceso',
+    body: para('Escribe este código en la pantalla de LinkHub donde pediste entrar con <strong>{{ .Email }}</strong>:') + codeBox('{{ .Token }}') +
+      para('¿Prefieres un clic? También puedes usar este botón, en el mismo navegador donde lo pediste:'),
     cta: { label: 'Acceder a LinkHub', url: '{{ .ConfirmationURL }}' },
-    note: 'El enlace caduca pronto y solo funciona una vez. Si no lo has pedido tú, puedes ignorar este correo: nadie entrará sin él.',
-  }, ['Has pedido entrar en LinkHub con {{ .Email }}.', 'Abre este enlace para acceder (caduca pronto y solo funciona una vez).']),
+    note: 'El código y el enlace caducan pronto y solo funcionan una vez. Si no lo has pedido tú, ignora este correo: nadie entrará sin él. Nunca compartas este código.',
+  }, ['Tu código de acceso: {{ .Token }}', 'Escríbelo en la pantalla de LinkHub donde pediste entrar con {{ .Email }}.', 'O abre este enlace en el mismo navegador (caduca pronto y solo funciona una vez).']),
 
-  auth('confirmation', 'Confirma tu correo en LinkHub', {
-    preheader: 'Un último paso para activar tu cuenta.', title: 'Confirma tu correo',
-    body: para('Gracias por crear tu cuenta en LinkHub. Confirma que <strong>{{ .Email }}</strong> es tuyo para empezar a construir tu página.'),
+  auth('confirmation', 'Tu código para activar LinkHub: {{ .Token }}', {
+    preheader: 'Tu código: {{ .Token }}. Un último paso para activar tu cuenta.', title: 'Confirma tu correo',
+    body: para('Gracias por crear tu cuenta en LinkHub. Escribe este código en la pantalla donde empezaste para confirmar que <strong>{{ .Email }}</strong> es tuyo:') + codeBox('{{ .Token }}') +
+      para('O pulsa el botón, en el mismo navegador:'),
     cta: { label: 'Confirmar mi correo', url: '{{ .ConfirmationURL }}' },
-    note: 'Si no has creado una cuenta, ignora este mensaje.',
-  }, ['Confirma que {{ .Email }} es tuyo para activar tu cuenta.']),
+    note: 'Si no has creado una cuenta, ignora este mensaje. Nunca compartas este código.',
+  }, ['Tu código de confirmación: {{ .Token }}', 'Escríbelo en la pantalla de LinkHub donde empezaste, para confirmar {{ .Email }}.']),
 
   auth('invite', 'Te han invitado a LinkHub', {
     preheader: 'Tienes una invitación para unirte.', title: 'Te han invitado a LinkHub',

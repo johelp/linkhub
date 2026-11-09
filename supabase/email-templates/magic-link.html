@@ -1,18 +1,18 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Accede a tu cuenta</title></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Tu código de acceso</title></head>
 <body style="margin:0;padding:0;background:#F4F4F1;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Entra a tu cuenta con un clic. Sin contraseña.&#8199;&zwnj;&#8199;&zwnj;&#8199;&zwnj;</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Tu código: {{ .Token }}. Escríbelo donde lo pediste.&#8199;&zwnj;&#8199;&zwnj;&#8199;&zwnj;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F4F1;padding:32px 12px;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
 <tr><td align="center">
   <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
     <tr><td style="padding:0 4px 20px;font-size:22px;font-weight:700;color:#111314;letter-spacing:-0.02em;">Link<span style="color:#E8150A;">Hub</span></td></tr>
     <tr><td style="background:#FFFFFF;border:1px solid #E6E6E2;border-radius:16px;padding:36px 32px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-        <tr><td style="padding:0 0 16px;font-size:24px;line-height:1.25;font-weight:700;color:#111314;letter-spacing:-0.02em;">Accede a tu cuenta</td></tr>
-        <tr><td><p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#3F4346;">Has pedido entrar en LinkHub con <strong>{{ .Email }}</strong>. Pulsa el botón para acceder: no necesitas contraseña.</p></td></tr>
+        <tr><td style="padding:0 0 16px;font-size:24px;line-height:1.25;font-weight:700;color:#111314;letter-spacing:-0.02em;">Tu código de acceso</td></tr>
+        <tr><td><p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#3F4346;">Escribe este código en la pantalla de LinkHub donde pediste entrar con <strong>{{ .Email }}</strong>:</p><p style="margin:0 0 20px;padding:18px 20px;background:#F4F4F1;border:1px solid #E6E6E2;border-radius:12px;text-align:center;font-size:34px;line-height:1;font-weight:700;letter-spacing:0.28em;color:#111314;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">{{ .Token }}</p><p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#3F4346;">¿Prefieres un clic? También puedes usar este botón, en el mismo navegador donde lo pediste:</p></td></tr>
         <tr><td style="padding:8px 0 24px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#E8150A;color:#FFFFFF;font-size:16px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:999px;">Acceder a LinkHub</a></td></tr>
        <tr><td style="padding:0 0 20px;font-size:13px;line-height:1.5;color:#6B6F73;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br><a href="{{ .ConfirmationURL }}" style="color:#6B6F73;word-break:break-all;">{{ .ConfirmationURL }}</a></td></tr>
-        <tr><td style="padding:0 0 8px;font-size:13px;line-height:1.5;color:#6B6F73;">El enlace caduca pronto y solo funciona una vez. Si no lo has pedido tú, puedes ignorar este correo: nadie entrará sin él.</td></tr>
+        <tr><td style="padding:0 0 8px;font-size:13px;line-height:1.5;color:#6B6F73;">El código y el enlace caducan pronto y solo funcionan una vez. Si no lo has pedido tú, ignora este correo: nadie entrará sin él. Nunca compartas este código.</td></tr>
       </table>
     </td></tr>
     <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.6;color:#6B6F73;text-align:center;">
