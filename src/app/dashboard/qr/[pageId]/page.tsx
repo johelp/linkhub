@@ -35,7 +35,7 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
   return (
     <div style={{ padding: 24, maxWidth: 480 }}>
       <div style={{ marginBottom: 24 }}>
-        <Link href="/dashboard" style={{ fontSize: 13, color: '#9A9D9F', textDecoration: 'none' }}>← Dashboard</Link>
+        <Link href="/dashboard" style={{ fontSize: 13, color: '#6B6E71', textDecoration: 'none' }}>← Dashboard</Link>
         <h1 style={{ fontSize: 20, fontWeight: 700, marginTop: 8, color: '#1A1B1C' }}>QR · {pageName}</h1>
       </div>
 
@@ -43,15 +43,15 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
         {qrSvgUrl ? (
           <Image src={qrSvgUrl} alt="QR Code" width={220} height={220} unoptimized style={{ borderRadius: 12 }} />
         ) : (
-          <div style={{ width: 220, height: 220, borderRadius: 12, background: '#F6F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9A9D9F', fontSize: 13 }}>Cargando...</div>
+          <div style={{ width: 220, height: 220, borderRadius: 12, background: '#F6F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B6E71', fontSize: 13 }}>Cargando...</div>
         )}
-        <p style={{ fontSize: 12, marginTop: 16, color: '#9A9D9F', fontWeight: 500 }}>Apuntá la cámara para abrir la página</p>
+        <p style={{ fontSize: 12, marginTop: 16, color: '#6B6E71', fontWeight: 500 }}>Apuntá la cámara para abrir la página</p>
       </div>
 
       {pageUrl && (
         <div style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, border: '1px solid rgba(26,27,28,0.09)' }}>
           <span style={{ fontSize: 13, color: '#1A1B1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pageUrl}</span>
-          <button onClick={copyUrl} style={{ marginLeft: 12, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#16A34A' : '#9A9D9F' }}>
+          <button onClick={copyUrl} style={{ marginLeft: 12, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: copied ? '#16A34A' : '#6B6E71' }}>
             {copied ? <Check size={16} /> : <Copy size={16} />}
           </button>
         </div>
@@ -59,7 +59,7 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
 
       <div style={{ display: 'flex', gap: 10 }}>
         <a href={qrSvgUrl || '#'} download={`qr-${slug}.svg`}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, background: '#FEF0EF', color: '#E8150A', textDecoration: 'none' }}>
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 0', borderRadius: 12, fontSize: 13, fontWeight: 600, background: '#FEF0EF', color: '#C8110A', textDecoration: 'none' }}>
           <Download size={14} /> SVG
         </a>
         <a href={qrPngUrl || '#'} download={`qr-${slug}.png`}
@@ -67,7 +67,7 @@ export default function QRPage({ params }: { params: Promise<{ pageId: string }>
           <Download size={14} /> PNG
         </a>
       </div>
-      <p style={{ fontSize: 11, textAlign: 'center', marginTop: 12, color: '#9A9D9F' }}>SVG para imprimir · PNG para redes sociales</p>
+      <p style={{ fontSize: 11, textAlign: 'center', marginTop: 12, color: '#6B6E71' }}>SVG para imprimir · PNG para redes sociales</p>
     </div>
   )
 }

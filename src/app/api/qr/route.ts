@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import QRCode from 'qrcode'
+import { SLUG_RE } from '@/lib/security'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const slug = searchParams.get('slug')
   const format = searchParams.get('format') || 'svg'
 
-  if (!slug) return NextResponse.json({ error: 'slug required' }, { status: 400 })
+  if (!slug || !SLUG_RE.test(slug)) return NextResponse.json({ error: 'valid slug required' }, { status: 400 })
 
   // Build URL from request origin so it works on any domain (local, Vercel preview, production)
   const origin = process.env.NEXT_PUBLIC_APP_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`

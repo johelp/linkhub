@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-function csvEscape(value: string): string {
+function csvEscape(raw: string): string {
+  // Neutralize spreadsheet formula injection (=, +, -, @ at the start of a cell).
+  const value = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`
   return value
 }
@@ -25,7 +27,10 @@ export async function GET(request: NextRequest) {
     .eq('page_id', pageId)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('subscribers export error', error)
+    return NextResponse.json({ error: 'No se pudo exportar' }, { status: 500 })
+  }
 
   const rows = [
     ['email', 'idioma', 'fecha'],

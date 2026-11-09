@@ -1,9 +1,15 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { getOwnerAvailability } from '@/lib/billing.server'
+import { extractFacts, defaultMeta, buildStructuredData } from '@/lib/seo'
+import { PausedPage } from './PausedPage'
+import { getPublicKnowledge } from '@/lib/knowledge.server'
 import { notFound } from 'next/navigation'
-import Script from 'next/script'
 import type { Metadata } from 'next'
 import type { Page } from '@/types'
 import { PageView } from './PageView'
+import { activeDomainOfPage } from '@/lib/domains.server'
+import { TrackingConsent } from './TrackingConsent'
 
 // Owner-supplied IDs end up interpolated into inline scripts below, so they're
 // validated against the exact shape Google/Meta issue before use (fail closed
@@ -15,56 +21,56 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
+// One cached lookup shared by metadata + page (React cache dedupes per request).
+const loadPage = cache(async (slug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase.from('pages').select('*').eq('slug', slug).eq('published', true).single()
+  if (!data) return null
+  const page = data as unknown as Page
+  return { page, availability: await getOwnerAvailability(page.user_id), knowledge: await getPublicKnowledge(page.user_id, page.id) }
+})
+
+const baseUrl = () => (process.env.NEXT_PUBLIC_APP_URL || 'https://linkhub.app').replace(/\/$/, '')
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('pages')
-    .select('name, settings')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single()
-
-  if (!data) return { title: 'Página no encontrada' }
-
-  const settings = data.settings as unknown as Page['settings']
+  const loaded = await loadPage(slug)
+  if (!loaded) return { title: 'Página no encontrada', robots: { index: false } }
+  const { page, availability: av, knowledge } = loaded
+  const facts = extractFacts(page, page.settings.defaultLang, knowledge)
+  const meta = defaultMeta(page, facts)
+  // With an active custom domain, that domain is the canonical address (no duplicate content).
+  const custom = await activeDomainOfPage(page.id)
+  const url = custom ? `https://${custom}` : `${baseUrl()}/p/${page.slug}`
+  // Paused or opted-out pages stay out of search results and AI answers.
+  const indexable = av !== 'paused' && !page.settings.seo.noindex
   return {
-    title: settings.seo.title || data.name,
-    description: settings.seo.description || undefined,
+    title: { absolute: meta.title },
+    description: meta.description,
+    alternates: { canonical: url, types: { 'text/markdown': `${url}/llms.txt`, 'application/json': `${url}/facts.json` } },
     openGraph: {
-      title: settings.seo.title || data.name,
-      description: settings.seo.description || undefined,
-      images: settings.seo.ogImage ? [settings.seo.ogImage] : [],
+      type: 'website', url, siteName: 'LinkHub', title: meta.title, description: meta.description, locale: page.settings.defaultLang === 'es' ? 'es_ES' : page.settings.defaultLang,
+      ...(page.settings.seo.ogImage ? { images: [page.settings.seo.ogImage] } : {}),   // otherwise the generated opengraph-image applies
     },
-    robots: { index: true, follow: true },
+    twitter: { card: 'summary_large_image', title: meta.title, description: meta.description },
+    robots: indexable ? { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' } : { index: false, follow: false },
   }
 }
 
-export const revalidate = 60 // ISR: revalidate every 60s
+export const revalidate = 60 // ISR: revalidate every 60s (billing events also revalidate on demand)
 
 export default async function PublicPage({ params }: Props) {
   const { slug } = await params
-  const supabase = await createClient()
+  const loaded = await loadPage(slug)
+  if (!loaded) notFound()
+  const { page, availability: av, knowledge } = loaded
 
-  const { data } = await supabase
-    .from('pages')
-    .select('*')
-    .eq('slug', slug)
-    .eq('published', true)
-    .single()
+  // Payment lapsed beyond the grace period: a neutral "back soon" screen.
+  if (av === 'paused') return <PausedPage name={page.name} color={page.settings.primaryColor} avatarUrl={page.settings.profile?.avatarUrl} />
 
-  if (!data) notFound()
-
-  const page = data as unknown as Page
-
-  // Structured data for LLMs and search engines
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: page.settings.seo.title || page.name,
-    description: page.settings.seo.description,
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/p/${page.slug}`,
-  }
+  // Structured data (schema.org) chosen from the business type: search engines
+  // and AI assistants read this instead of guessing from the layout.
+  const jsonLd = buildStructuredData(page, baseUrl(), extractFacts(page, page.settings.defaultLang, knowledge))
 
   const ga4Id = page.settings.pixels?.ga4Id
   const metaPixelId = page.settings.pixels?.metaPixelId
@@ -75,46 +81,11 @@ export default async function PublicPage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // Escape '<' so owner-controlled text can't close the <script> tag (stored XSS).
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      {validGa4Id && (
-        <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${validGa4Id}`} strategy="afterInteractive" />
-          <Script id="ga4-init" strategy="afterInteractive">
-            {`window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${validGa4Id}');`}
-          </Script>
-        </>
-      )}
-      {validMetaPixelId && (
-        <>
-          <Script id="meta-pixel-init" strategy="afterInteractive">
-            {`!function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${validMetaPixelId}');
-              fbq('track', 'PageView');`}
-          </Script>
-          <noscript>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              height="1"
-              width="1"
-              style={{ display: 'none' }}
-              src={`https://www.facebook.com/tr?id=${validMetaPixelId}&ev=PageView&noscript=1`}
-              alt=""
-            />
-          </noscript>
-        </>
-      )}
-      <PageView page={page} />
+      {(validGa4Id || validMetaPixelId) && <TrackingConsent ga4Id={validGa4Id} metaPixelId={validMetaPixelId} pageName={page.name} />}
+      <PageView page={page} knowledge={knowledge} />
     </>
   )
 }

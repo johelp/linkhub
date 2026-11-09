@@ -1,13 +1,10 @@
 export default function Loading() {
+  const bar = 'rounded-2xl animate-pulse bg-[rgba(26,27,28,0.06)]'
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ height: 28, width: 180, borderRadius: 8, background: 'rgba(26,27,28,0.06)', marginBottom: 24 }} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
-        {[1,2,3].map(i => (
-          <div key={i} style={{ height: 160, borderRadius: 16, background: 'rgba(26,27,28,0.05)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-        ))}
-      </div>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+    <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[1180px] mx-auto" aria-busy="true" aria-label="Cargando">
+      <div className={`${bar} h-8 w-56 mb-8`} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">{[1, 2, 3, 4].map(i => <div key={i} className={`${bar} h-32`} />)}</div>
+      <div className="grid gap-4 md:grid-cols-2">{[1, 2, 3, 4].map(i => <div key={i} className={`${bar} h-52`} />)}</div>
     </div>
   )
 }

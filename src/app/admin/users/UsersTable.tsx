@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { PlanSelect } from './PlanSelect'
 import { formatDate } from '@/lib/utils'
@@ -7,7 +8,7 @@ import type { Plan } from '@/types'
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
-const LIGHT = '#9A9D9F'
+const LIGHT = '#6B6E71'
 const BORDER = 'rgba(26,27,28,0.09)'
 
 export interface AdminUserRow {
@@ -55,7 +56,7 @@ export function UsersTable({ users }: { users: AdminUserRow[] }) {
             ) : filtered.map(u => (
               <tr key={u.id} style={{ borderTop: `1px solid ${BORDER}` }}>
                 <td style={td}>
-                  <p style={{ fontSize: 13, color: INK, fontWeight: 600 }}>{u.full_name || u.email}</p>
+                  <Link href={`/admin/users/${u.id}`} style={{ fontSize: 13, color: INK, fontWeight: 600, textDecoration: 'none' }}>{u.full_name || u.email}</Link>
                   {u.full_name && <p style={{ fontSize: 11.5, color: LIGHT }}>{u.email}</p>}
                 </td>
                 <td style={td}><PlanSelect userId={u.id} plan={u.plan} /></td>

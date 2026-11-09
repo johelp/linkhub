@@ -6,9 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "emails:build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build-email-templates.mjs",
+    "emails:push": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/push-email-templates.mjs",
+    "sql:bundle": "node scripts/bundle-migrations.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -19,7 +25,7 @@
     "immer": "^11.1.4",
     "lucide-react": "^1.8.0",
     "nanoid": "^5.1.7",
-    "next": "16.3.4",
+    "next": "^16.4.5",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-colorful": "^5.6.1",
@@ -36,7 +42,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

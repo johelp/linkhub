@@ -1,13 +1,16 @@
 'use client'
-import { useRef, useState } from 'react'
+import { Children, cloneElement, isValidElement, useId, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, PageSettings } from '@/types'
+import type { Plan, Lang, SeasonMode, Block, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, TextBlock, ContactCardBlock, SocialGridBlock, DividerBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock, PageSettings } from '@/types'
 import { PLAN_LIMITS } from '@/types'
-import { COLOR_SCHEMES, ICON_BG_PRESETS } from '@/lib/blocks/registry'
+import { COLOR_SCHEMES, ICON_BG_PRESETS, BLOCK_BY_TYPE } from '@/lib/blocks/registry'
+import { PROVIDER_BY_ID } from '@/lib/payments/meta'
+import { SCHEMA_OPTIONS, inferSchemaType } from '@/lib/seo'
+import { mapEmbedUrl } from '@/lib/maps'
 import { generateId } from '@/lib/utils'
 import { uploadPageImage } from '@/lib/imageUpload'
-import { Settings, Layout, Globe, Upload, Loader2, Plus, X } from 'lucide-react'
+import { Settings, Globe, Upload, Loader2, Plus, X, ChevronLeft, Trash2, Copy as CopyIcon } from 'lucide-react'
 
 const ALL_LANGS: { code: Lang; label: string }[] = [
   { code: 'es', label: 'Español' },
@@ -20,51 +23,68 @@ const ALL_LANGS: { code: Lang; label: string }[] = [
 
 interface Props { plan: Plan }
 
-type Tab = 'block' | 'page' | 'seo'
+type PageTab = 'design' | 'seo'
 
+// The inspector is contextual: with a block selected it edits that block;
+// otherwise it edits the page itself (design / languages / SEO). No empty
+// "select something" state, no tab to hunt for.
 export function PropertiesPanel({ plan }: Props) {
-  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang } = useEditorStore()
-  const [tab, setTab] = useState<Tab>('block')
+  const { page, selectedBlockId, updateBlock, updateBlockSeasonFilter, updateBlockCondition, updateSettings, updateSeo, previewLang, selectBlock, duplicateBlock, removeBlock } = useEditorStore()
+  const [tab, setTab] = useState<PageTab>('design')
   const limits = PLAN_LIMITS[plan]
 
   if (!page) return null
 
   const selectedBlock = selectedBlockId ? page.blocks.find(b => b.id === selectedBlockId) : null
+  const def = selectedBlock ? BLOCK_BY_TYPE[selectedBlock.type] : null
 
   return (
-    <div className="flex flex-col h-full bg-white border-l overflow-hidden"
+    <div className="flex flex-col h-full bg-white border-l overflow-hidden w-full"
       style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
 
-      {/* Tabs */}
-      <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
-        {([
-          { id: 'block', icon: <Layout size={14} />, label: 'Bloque' },
-          { id: 'page', icon: <Settings size={14} />, label: 'Página' },
-          { id: 'seo', icon: <Globe size={14} />, label: 'SEO' },
-        ] as { id: Tab; icon: React.ReactNode; label: string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[13px] font-semibold transition-colors"
-            style={{
-              borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
-              color: tab === t.id ? '#E8150A' : '#9A9D9F',
-            }}>
-            {t.icon}{t.label}
+      {selectedBlock ? (
+        <div className="flex items-center gap-2 px-4 h-14 border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
+          <button onClick={() => selectBlock(null)} title="Volver a ajustes de la página" aria-label="Volver a ajustes de la página"
+            className="p-1.5 -ml-1.5 rounded-lg hover:bg-[#F2F3F4]" style={{ color: '#5A5D60' }}>
+            <ChevronLeft size={18} />
           </button>
-        ))}
-      </div>
+          <span className="text-lg" aria-hidden>{def?.icon}</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold truncate" style={{ color: '#1A1B1C' }}>{def?.label ?? selectedBlock.type}</p>
+            {limits.multiLanguage && page.settings.enabledLangs.length > 1 && (
+              <p className="text-[11px]" style={{ color: '#6B6E71' }}>Editando en {previewLang.toUpperCase()}</p>
+            )}
+          </div>
+          <button onClick={() => duplicateBlock(selectedBlock.id)} title="Duplicar bloque" aria-label="Duplicar bloque"
+            className="p-1.5 rounded-lg hover:bg-[#F2F3F4]" style={{ color: '#5A5D60' }}><CopyIcon size={16} /></button>
+          <button onClick={() => removeBlock(selectedBlock.id)} title="Eliminar bloque" aria-label="Eliminar bloque"
+            className="p-1.5 rounded-lg hover:bg-[#FEF0EF]" style={{ color: '#C8110A' }}><Trash2 size={16} /></button>
+        </div>
+      ) : (
+        <div className="flex border-b flex-shrink-0" style={{ borderColor: 'rgba(26,27,28,0.09)' }}>
+          {([
+            { id: 'design', icon: <Settings size={14} />, label: 'Diseño y ajustes' },
+            { id: 'seo', icon: <Globe size={14} />, label: 'SEO' },
+          ] as { id: PageTab; icon: React.ReactNode; label: string }[]).map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex-1 flex items-center justify-center gap-1.5 h-14 text-[13px] font-semibold transition-colors"
+              style={{
+                borderBottom: tab === t.id ? '2px solid #E8150A' : '2px solid transparent',
+                color: tab === t.id ? '#E8150A' : '#6B6E71',
+              }}>
+              {t.icon}{t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-5">
-        {tab === 'block' && (
-          selectedBlock
-            ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
-                onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
-            : <div className="text-center py-14">
-                <div className="text-4xl mb-3">👆</div>
-                <p className="text-sm" style={{ color: '#9A9D9F' }}>Seleccioná un bloque<br />para editarlo</p>
-              </div>
-        )}
-        {tab === 'page' && <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />}
-        {tab === 'seo' && <SeoEditor seo={page.settings.seo} onUpdate={updateSeo} />}
+      <div className="flex-1 overflow-y-auto p-5" key={selectedBlock?.id ?? tab}>
+        {selectedBlock
+          ? <BlockEditor block={selectedBlock} lang={previewLang} plan={plan} allBlocks={page.blocks}
+              onUpdate={updateBlock} onUpdateSeason={updateBlockSeasonFilter} onUpdateCondition={updateBlockCondition} />
+          : tab === 'design'
+            ? <PageSettingsEditor settings={page.settings} limits={limits} onUpdate={updateSettings} />
+            : <SeoEditor seo={page.settings.seo} slug={page.slug} suggested={inferSchemaType(page)} onUpdate={updateSeo} />}
       </div>
     </div>
   )
@@ -97,8 +117,13 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
     case 'business_hours': editor = <BusinessHoursEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'google_reviews': editor = <GoogleReviewsEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'loyalty_card': editor = <LoyaltyCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'vcard': editor = <VCardEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'map_embed': editor = <MapEditor block={block} onUpdate={onUpdate} />; break
+    case 'faq': editor = <FaqEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'appointment_request': editor = <AppointmentEditor block={block} lang={lang} onUpdate={onUpdate} />; break
+    case 'order_menu': editor = <OrderMenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
     case 'menu': editor = <MenuEditor block={block} lang={lang} onUpdate={onUpdate} />; break
-    default: editor = <p className="text-xs" style={{ color: '#9A9D9F' }}>Sin opciones para este bloque.</p>
+    default: editor = <p className="text-xs" style={{ color: '#6B6E71' }}>Sin opciones para este bloque.</p>
   }
 
   // "business_hours" itself is the only source type today, so it can't condition on another one.
@@ -108,11 +133,39 @@ function BlockEditor({ block, lang, plan, allBlocks, onUpdate, onUpdateSeason, o
 
   return (
     <div className="space-y-5">
+      {(block.type === 'payment_button' || block.type === 'event_tickets') && <GatewayField block={block} onUpdate={onUpdate} />}
       {editor}
       {limits.advancedBlocks && sources.length > 0 && (
         <ConditionField block={block} sources={sources} onUpdate={onUpdateCondition} />
       )}
     </div>
+  )
+}
+
+// ─── Which gateway charges this block (payment blocks only) ──────
+function GatewayField({ block, onUpdate }: { block: PaymentButtonBlock | EventTicketsBlock; onUpdate: (id: string, d: Partial<Block['data']>) => void }) {
+  const connected = useEditorStore(s => s.connectedProviders)
+  if (connected.length === 0) {
+    return (
+      <div className="rounded-2xl p-4" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }} role="note">
+        <p className="text-[13.5px] font-bold" style={{ color: '#9A3412' }}>Todavía no conectaste una pasarela de cobro</p>
+        <p className="text-xs mt-1" style={{ color: '#9A3412' }}>Sin eso, el botón no puede cobrar. Son 3 pasos guiados.</p>
+        <a href="/dashboard/payments" className="inline-block mt-2.5 text-[13px] font-semibold px-3.5 py-2 rounded-lg text-white" style={{ background: '#9A3412' }}>Configurar cobros →</a>
+      </div>
+    )
+  }
+  if (connected.length === 1) return null
+  const value = block.data.provider ?? 'auto'
+  return (
+    <Section label="Cobrar con">
+      <Field label="Pasarela">
+        <select value={value} onChange={e => onUpdate(block.id, { provider: e.target.value } as Partial<Block['data']>)}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+          <option value="auto">Automática (la mejor para la moneda)</option>
+          {connected.map(id => <option key={id} value={id}>{PROVIDER_BY_ID[id].name}</option>)}
+        </select>
+      </Field>
+    </Section>
   )
 }
 
@@ -187,7 +240,7 @@ function LinkEditor({ block, lang, limits, onUpdate, onUpdateSeason }: {
         <Field label="Color de fondo">
           <div className="flex flex-wrap gap-2">
             {Object.entries(ICON_BG_PRESETS).map(([key, color]) => (
-              <button key={key} onClick={() => onUpdate(block.id, { iconBg: key })}
+              <button key={key} onClick={() => onUpdate(block.id, { iconBg: key })} aria-label={`Fondo ${key}`} aria-pressed={block.data.iconBg === key}
                 className="w-7 h-7 rounded-lg border-2 transition-all"
                 style={{ background: color, borderColor: block.data.iconBg === key ? '#E8150A' : 'transparent' }} />
             ))}
@@ -231,7 +284,7 @@ function FeaturedEditor({ block, lang, onUpdate, onUpdateSeason }: {
         <Field label="Color">
           <div className="flex flex-wrap gap-2">
             {Object.entries(COLOR_SCHEMES).map(([key, scheme]) => (
-              <button key={key} onClick={() => onUpdate(block.id, { colorScheme: key })}
+              <button key={key} onClick={() => onUpdate(block.id, { colorScheme: key })} aria-label={`Color ${key}`} aria-pressed={block.data.colorScheme === key}
                 className="w-7 h-7 rounded-lg border-2 transition-all"
                 style={{ background: scheme.bg, borderColor: block.data.colorScheme === key ? '#1A1B1C' : 'transparent' }} />
             ))}
@@ -536,7 +589,7 @@ function EmailCaptureEditor({ block, lang, onUpdate }: {
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Opcional" /></Field>
         <Field label="Texto del botón"><Input value={t.buttonLabel} onChange={v => setT('buttonLabel', v)} placeholder="Enviar" /></Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>Los emails capturados se descargan en CSV desde el dashboard de cada página.</p>
     </div>
   )
 }
@@ -610,7 +663,7 @@ function MenuEditor({ block, lang, onUpdate }: {
               <div className="flex items-center justify-between mb-2.5">
                 <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
                   <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
-                    style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{si + 1}</span>
+                    style={{ width: 18, height: 18, background: '#FEF0EF', color: '#C8110A' }}>{si + 1}</span>
                   Categoría
                 </span>
                 <RemoveButton onClick={() => removeSection(section.id)} />
@@ -624,7 +677,7 @@ function MenuEditor({ block, lang, onUpdate }: {
                   return (
                     <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-semibold" style={{ color: '#9A9D9F' }}>Producto {ii + 1}</span>
+                        <span className="text-[11px] font-semibold" style={{ color: '#6B6E71' }}>Producto {ii + 1}</span>
                         <RemoveButton onClick={() => removeItem(section.id, item.id)} />
                       </div>
                       <Field label="Nombre"><Input value={it.name} onChange={v => updateItem(section.id, item.id, 'name', v)} /></Field>
@@ -644,9 +697,270 @@ function MenuEditor({ block, lang, onUpdate }: {
         <Field label="Link a un PDF con la carta completa">
           <Input value={block.data.pdfUrl || ''} onChange={v => onUpdate(block.id, { pdfUrl: v })} placeholder="https://..." />
         </Field>
-        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>
+        <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>
           Se muestra como un link &quot;Ver carta completa&quot; debajo de las categorías -- útil si además tenés un PDF ya diseñado.
         </p>
+      </Section>
+    </div>
+  )
+}
+
+// ─── Appointment request (solicitud de citas, fase 1) ─────────────
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+function AppointmentEditor({ block, lang, onUpdate }: {
+  block: AppointmentRequestBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<AppointmentRequestBlock['data']>) => void
+}) {
+  const d = block.data
+  const t = d.translations[lang] || d.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, { translations: { ...d.translations, [lang]: { ...t, [key]: val } } })
+  const blankLangs = <T,>(v: T) => Object.fromEntries(ALL_LANGS.map(l => [l.code, v])) as Record<Lang, T>
+  const intOr = (v: string, min: number, max: number, fallback: number) => {
+    const n = parseInt(v, 10)
+    return Number.isFinite(n) ? Math.min(Math.max(n, min), max) : fallback
+  }
+  const patchService = (id: string, fn: (s: AppointmentRequestBlock['data']['services'][number]) => AppointmentRequestBlock['data']['services'][number]) =>
+    onUpdate(block.id, { services: d.services.map(s => s.id === id ? fn(s) : s) })
+  const patchDay = (day: number, patch: Partial<AppointmentRequestBlock['data']['schedule'][number]>) =>
+    onUpdate(block.id, { schedule: d.schedule.map(x => x.day === day ? { ...x, ...patch } : x) })
+
+  return (
+    <div className="space-y-5">
+      <Section label="Tu agenda">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Reservá tu turno" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Elegí servicio, día y horario" /></Field>
+        <Field label="WhatsApp donde recibís las solicitudes">
+          <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Es una solicitud: vos confirmás la disponibilidad por chat.</p>
+        </Field>
+        <Field label="Zona horaria">
+          <Input value={d.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
+        </Field>
+      </Section>
+
+      <Section label={`Servicios (${d.services.length})`}>
+        {d.services.map((svc, i) => {
+          const st = svc.translations[lang] || svc.translations['es'] || { name: '', description: '' }
+          return (
+            <div key={svc.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Servicio {i + 1}</span>
+                {d.services.length > 1 && <RemoveButton onClick={() => onUpdate(block.id, { services: d.services.filter(s => s.id !== svc.id) })} />}
+              </div>
+              <div className="space-y-2">
+                <Field label="Nombre"><Input value={st.name} placeholder="Corte, Consulta, Clase de yoga..."
+                  onChange={v => patchService(svc.id, s => ({ ...s, translations: { ...s.translations, [lang]: { ...st, name: v } } }))} /></Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Duración (min)"><Input value={String(svc.durationMin)} onChange={v => patchService(svc.id, s => ({ ...s, durationMin: intOr(v, 5, 480, s.durationMin) }))} /></Field>
+                  <Field label={`Precio (${d.currency})`}><Input value={svc.price ? String(svc.price) : ''} placeholder="Opcional"
+                    onChange={v => patchService(svc.id, s => ({ ...s, price: Math.max(Number(v.replace(',', '.')) || 0, 0) || undefined }))} /></Field>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        <AddButton dashed label="Añadir servicio" onClick={() => onUpdate(block.id, {
+          services: [...d.services, { id: generateId(), translations: blankLangs({ name: '', description: '' }), durationMin: 60 }],
+        })} />
+      </Section>
+
+      <Section label="Días y horarios de atención">
+        <div className="space-y-2">
+          {[1, 2, 3, 4, 5, 6, 0].map(day => {
+            const row = d.schedule.find(x => x.day === day) ?? { day, closed: true, open: '09:00', close: '18:00' }
+            return (
+              <div key={day} className="flex items-center gap-2">
+                <label className="flex items-center gap-2 w-[104px] flex-shrink-0 text-[13px]" style={{ color: '#1A1B1C' }}>
+                  <input type="checkbox" checked={!row.closed}
+                    onChange={e => d.schedule.some(x => x.day === day)
+                      ? patchDay(day, { closed: !e.target.checked })
+                      : onUpdate(block.id, { schedule: [...d.schedule, { ...row, closed: !e.target.checked }] })} />
+                  {DAY_NAMES[day]}
+                </label>
+                {row.closed
+                  ? <span className="text-xs" style={{ color: '#6B6E71' }}>No atiende</span>
+                  : <div className="flex items-center gap-1.5">
+                      <input type="time" value={row.open} onChange={e => patchDay(day, { open: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
+                      <span className="text-xs" style={{ color: '#6B6E71' }}>a</span>
+                      <input type="time" value={row.close} onChange={e => patchDay(day, { close: e.target.value })} className="px-2 py-1.5 rounded-lg text-sm" style={{ border: '1.5px solid rgba(26,27,28,0.12)' }} />
+                    </div>}
+              </div>
+            )
+          })}
+        </div>
+      </Section>
+
+      <Section label="Reglas">
+        <Field label="Cada cuántos minutos ofrecer un turno">
+          <select value={d.slotMinutes} onChange={e => onUpdate(block.id, { slotMinutes: Number(e.target.value) })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', fontFamily: 'inherit' }}>
+            {[15, 20, 30, 45, 60, 90, 120].map(m => <option key={m} value={m}>{m} minutos</option>)}
+          </select>
+        </Field>
+        <Field label="Hasta cuántos días adelante se puede reservar">
+          <Input value={String(d.daysAhead)} onChange={v => onUpdate(block.id, { daysAhead: intOr(v, 1, 60, d.daysAhead) })} />
+        </Field>
+        <Field label="Aviso mínimo (horas)">
+          <Input value={String(d.minNoticeHours)} onChange={v => onUpdate(block.id, { minNoticeHours: intOr(v, 0, 168, d.minNoticeHours) })} />
+        </Field>
+      </Section>
+    </div>
+  )
+}
+
+// ─── vCard / Map / FAQ ───────────────────────────────────────────
+function VCardEditor({ block, lang, onUpdate }: { block: VCardBlock; lang: Lang; onUpdate: (id: string, d: Partial<VCardBlock['data']>) => void }) {
+  const d = block.data
+  const label = d.translations[lang]?.label ?? ''
+  const set = (k: keyof VCardBlock['data'], v: string) => onUpdate(block.id, { [k]: v } as Partial<VCardBlock['data']>)
+  return (
+    <div className="space-y-5">
+      <Section label="Botón">
+        <Field label="Texto del botón"><Input value={label} onChange={v => onUpdate(block.id, { translations: { ...d.translations, [lang]: { label: v } } })} placeholder="Guardar en mis contactos" /></Field>
+        <p className="text-xs" style={{ color: '#6B6E71' }}>Descarga una tarjeta de contacto (.vcf) que se abre directamente en la agenda del teléfono.</p>
+      </Section>
+      <Section label="Datos de la tarjeta (opcional)">
+        <p className="text-xs -mt-1" style={{ color: '#6B6E71' }}>Si lo dejas vacío usamos el nombre de tu página y los datos de tu bloque de contacto.</p>
+        <Field label="Nombre completo"><Input value={d.fullName} onChange={v => set('fullName', v)} placeholder="Laura Gómez" /></Field>
+        <Field label="Cargo o profesión"><Input value={d.jobTitle} onChange={v => set('jobTitle', v)} placeholder="Psicóloga sanitaria" /></Field>
+        <Field label="Empresa o consulta"><Input value={d.organization} onChange={v => set('organization', v)} /></Field>
+        <Field label="Teléfono"><Input value={d.phone} onChange={v => set('phone', v)} placeholder="+34 600 000 000" /></Field>
+        <Field label="Email"><Input value={d.email} onChange={v => set('email', v)} /></Field>
+        <Field label="Dirección"><Input value={d.address} onChange={v => set('address', v)} /></Field>
+        <Field label="Nota"><Input value={d.note} onChange={v => set('note', v)} /></Field>
+      </Section>
+    </div>
+  )
+}
+
+function MapEditor({ block, onUpdate }: { block: MapEmbedBlock; onUpdate: (id: string, d: Partial<MapEmbedBlock['data']>) => void }) {
+  const ok = !block.data.query.trim() || !!mapEmbedUrl(block.data.query)
+  return (
+    <div className="space-y-5">
+      <Section label="Ubicación">
+        <Field label="Dirección o enlace de Google Maps">
+          <Input value={block.data.query} onChange={v => onUpdate(block.id, { query: v })} placeholder="Calle de Alcalá 120, Madrid" />
+          {!ok && <p role="alert" className="text-xs mt-1" style={{ color: '#B91C1C' }}>Solo admitimos direcciones o enlaces de Google Maps.</p>}
+          <p className="text-xs mt-1.5" style={{ color: '#6B6E71' }}>Escribe tu dirección, o en Google Maps pulsa <b>Compartir → Insertar un mapa</b> y pega el código.</p>
+        </Field>
+        <Field label="Altura del mapa">
+          <select value={block.data.height} onChange={e => onUpdate(block.id, { height: Number(e.target.value) })} className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', fontFamily: 'inherit' }}>
+            {[200, 260, 320, 400].map(h => <option key={h} value={h}>{h} px</option>)}
+          </select>
+        </Field>
+      </Section>
+    </div>
+  )
+}
+
+function FaqEditor({ block, lang, onUpdate }: { block: FaqBlock; lang: Lang; onUpdate: (id: string, d: Partial<FaqBlock['data']>) => void }) {
+  const count = useEditorStore(s => s.knowledge.filter(k => k.kind === 'faq').length)
+  return (
+    <div className="space-y-5">
+      <Section label="Título">
+        <Field label="Título del bloque"><Input value={block.data.translations[lang]?.title ?? ''} onChange={v => onUpdate(block.id, { translations: { ...block.data.translations, [lang]: { title: v } } })} placeholder="Preguntas frecuentes" /></Field>
+      </Section>
+      <div className="rounded-2xl p-4" style={{ background: '#F6F6F4', border: '1px solid rgba(26,27,28,0.07)' }}>
+        <p className="text-[13.5px] font-semibold" style={{ color: '#1A1B1C' }}>{count ? `${count} ${count === 1 ? 'pregunta pública' : 'preguntas públicas'}` : 'Todavía no hay preguntas'}</p>
+        <p className="text-xs mt-1" style={{ color: '#5A5D60' }}>Las preguntas se gestionan en tu base de conocimiento y se comparten entre todas tus páginas.</p>
+        <a href="/dashboard/knowledge" target="_blank" rel="noopener noreferrer" className="inline-block mt-2.5 text-[13px] font-semibold underline" style={{ color: '#1A1B1C' }}>Gestionar preguntas →</a>
+      </div>
+    </div>
+  )
+}
+
+// ─── Order menu (mini tienda / pedidos por WhatsApp) ──────────────
+function OrderMenuEditor({ block, lang, onUpdate }: {
+  block: OrderMenuBlock; lang: Lang
+  onUpdate: (id: string, d: Partial<OrderMenuBlock['data']>) => void
+}) {
+  const d = block.data
+  const t = d.translations[lang] || d.translations['es'] || { title: '', description: '' }
+  const setT = (key: string, val: string) => onUpdate(block.id, { translations: { ...d.translations, [lang]: { ...t, [key]: val } } })
+  const blankLangs = <T,>(v: T) => Object.fromEntries(ALL_LANGS.map(l => [l.code, v])) as Record<Lang, T>
+  const num = (v: string) => Math.max(0, Number(v.replace(',', '.')) || 0)
+
+  function setCategories(categories: OrderMenuBlock['data']['categories']) { onUpdate(block.id, { categories }) }
+  function patchItem(catId: string, itemId: string, fn: (it: OrderMenuBlock['data']['categories'][number]['items'][number]) => OrderMenuBlock['data']['categories'][number]['items'][number]) {
+    setCategories(d.categories.map(c => c.id !== catId ? c : { ...c, items: c.items.map(i => i.id === itemId ? fn(i) : i) }))
+  }
+
+  return (
+    <div className="space-y-5">
+      <Section label="Tu tienda">
+        <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Hacé tu pedido" /></Field>
+        <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Horario de entrega, zona..." /></Field>
+        <Field label="WhatsApp donde recibís los pedidos">
+          <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Con código de país. El cliente arma el pedido y se abre un chat con este número.</p>
+        </Field>
+        <Field label="Moneda">
+          <select value={d.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
+            className="w-full px-3 py-2 rounded-xl text-sm outline-none"
+            style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            {['ARS', 'MXN', 'CLP', 'COP', 'UYU', 'PEN', 'BRL', 'USD', 'EUR'].map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+      </Section>
+
+      <Section label="Entrega">
+        <Toggle label="Envío a domicilio" value={d.delivery} onChange={v => onUpdate(block.id, { delivery: v || !d.pickup ? v : d.delivery, pickup: v ? d.pickup : true })} />
+        <Toggle label="Retiro en el local" value={d.pickup} onChange={v => onUpdate(block.id, { pickup: v, delivery: v ? d.delivery : true })} />
+        {d.delivery && (
+          <Field label="Costo de envío (0 = sin cargo)">
+            <Input value={String(d.deliveryFee)} onChange={v => onUpdate(block.id, { deliveryFee: num(v) })} />
+          </Field>
+        )}
+        <Field label="Pedido mínimo (0 = sin mínimo)">
+          <Input value={String(d.minOrder)} onChange={v => onUpdate(block.id, { minOrder: num(v) })} />
+        </Field>
+      </Section>
+
+      <Section label={`Catálogo (${d.categories.reduce((n, c) => n + c.items.length, 0)} productos)`}>
+        {d.categories.map((cat, ci) => {
+          const ct = cat.translations[lang] || cat.translations['es'] || { name: '' }
+          return (
+            <div key={cat.id} className="rounded-xl p-3 mb-2" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)' }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs font-semibold" style={{ color: '#5A5D60' }}>Categoría {ci + 1}</span>
+                <RemoveButton onClick={() => setCategories(d.categories.filter(c => c.id !== cat.id))} />
+              </div>
+              <Field label="Nombre">
+                <Input value={ct.name} placeholder="Hamburguesas, Bebidas..."
+                  onChange={v => setCategories(d.categories.map(c => c.id === cat.id ? { ...c, translations: { ...c.translations, [lang]: { name: v } } } : c))} />
+              </Field>
+              <div className="mt-2.5 space-y-2">
+                {cat.items.map((item, ii) => {
+                  const it = item.translations[lang] || item.translations['es'] || { name: '', description: '' }
+                  return (
+                    <div key={item.id} className="rounded-lg p-2.5" style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)' }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-semibold" style={{ color: '#6B6E71' }}>Producto {ii + 1}</span>
+                        <RemoveButton onClick={() => setCategories(d.categories.map(c => c.id === cat.id ? { ...c, items: c.items.filter(i => i.id !== item.id) } : c))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Field label="Nombre"><Input value={it.name} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, translations: { ...i.translations, [lang]: { ...it, name: v } } }))} /></Field>
+                        <Field label="Descripción (opcional)"><Input value={it.description || ''} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, translations: { ...i.translations, [lang]: { ...it, description: v } } }))} /></Field>
+                        <Field label={`Precio (${d.currency})`}><Input value={String(item.price)} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, price: num(v) }))} /></Field>
+                        <Toggle label="Disponible" value={item.available} onChange={v => patchItem(cat.id, item.id, i => ({ ...i, available: v }))} />
+                        {item.imageUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={item.imageUrl} alt="" className="rounded-lg" style={{ width: 56, height: 56, objectFit: 'cover' }} />
+                        )}
+                        <ImageUploadButton onUploaded={url => patchItem(cat.id, item.id, i => ({ ...i, imageUrl: url }))} />
+                      </div>
+                    </div>
+                  )
+                })}
+                <AddButton dashed label="Añadir producto" onClick={() => setCategories(d.categories.map(c => c.id === cat.id
+                  ? { ...c, items: [...c.items, { id: generateId(), translations: blankLangs({ name: '', description: '' }), price: 0, available: true }] }
+                  : c))} />
+              </div>
+            </div>
+          )
+        })}
+        <AddButton label="Añadir categoría" onClick={() => setCategories([...d.categories, { id: generateId(), translations: blankLangs({ name: '' }), items: [] }])} />
       </Section>
     </div>
   )
@@ -684,7 +998,7 @@ function PaymentButtonEditor({ block, lang, onUpdate }: {
           </select>
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a> para que este bloque cobre de verdad.
       </p>
     </div>
@@ -733,7 +1047,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
             <div className="flex items-center justify-between mb-2.5">
               <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: '#5A5D60' }}>
                 <span className="flex items-center justify-center rounded-full flex-shrink-0 text-[10px] font-bold"
-                  style={{ width: 18, height: 18, background: '#FEF0EF', color: '#E8150A' }}>{i + 1}</span>
+                  style={{ width: 18, height: 18, background: '#FEF0EF', color: '#C8110A' }}>{i + 1}</span>
                 Tipo
               </span>
               {tiers.length > 1 && <RemoveButton onClick={() => removeTier(tier.id)} />}
@@ -749,7 +1063,7 @@ function EventTicketsEditor({ block, lang, onUpdate }: {
         ))}
         {tiers.length < 3 && <AddButton onClick={addTier} label="Añadir tipo de entrada" />}
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Necesitás conectar tu cuenta de Mercado Pago desde <a href="/dashboard/settings" className="underline">Ajustes</a>.
         Cada entrada vendida manda un email con QR de validación, y las podés validar en la puerta desde el ícono 🎫 del dashboard.
       </p>
@@ -783,7 +1097,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
       </Section>
       <Section label="Zona horaria">
         <Input value={block.data.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
-        <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
+        <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Nombre de zona horaria IANA (ej. America/Argentina/Buenos_Aires, Europe/Madrid).</p>
       </Section>
       <p className="text-xs rounded-xl p-2.5" style={{ color: '#5A5D60', background: '#F6F6F5' }}>
         💡 Con este bloque en la página, cualquier otro bloque puede configurarse para mostrarse solo cuando estés abierto o cerrado (sección &quot;Visibilidad condicional&quot; en su editor).
@@ -806,7 +1120,7 @@ function BusinessHoursEditor({ block, lang, onUpdate }: {
                   <input type="time" value={d.open} onChange={e => updateDay(day, { open: e.target.value })}
                     className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
-                  <span style={{ color: '#9A9D9F' }}>—</span>
+                  <span style={{ color: '#6B6E71' }}>—</span>
                   <input type="time" value={d.close} onChange={e => updateDay(day, { close: e.target.value })}
                     className="flex-1 px-2.5 py-2 rounded-lg text-sm outline-none"
                     style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.09)', color: '#1A1B1C' }} />
@@ -856,7 +1170,7 @@ function GoogleReviewsEditor({ block, lang, onUpdate }: {
           <Input value={block.data.placeId || ''} onChange={v => onUpdate(block.id, { placeId: v })} placeholder="ChIJ..." />
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Google no permite incrustar reseñas reales sin una API paga, así que el puntaje lo cargás vos a mano (actualizalo cada tanto).
         Buscá tu Place ID gratis en el{' '}
         <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noopener noreferrer" className="underline">Place ID Finder de Google</a>.
@@ -900,7 +1214,7 @@ function LoyaltyCardEditor({ block, lang, onUpdate }: {
             placeholder="Un producto gratis" />
         </Field>
       </Section>
-      <p className="text-xs" style={{ color: '#9A9D9F' }}>
+      <p className="text-xs" style={{ color: '#6B6E71' }}>
         Cada visitante obtiene su propia tarjeta con un código único. Vos le sumás los sellos desde{' '}
         <span className="font-semibold">Dashboard → 🎟️ (esta página)</span> escaneando o tipeando su código.
       </p>
@@ -916,10 +1230,39 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 }) {
   return (
     <div className="space-y-5">
+      <Section label="Cabecera de la página">
+        <Field label="Frase o descripción corta">
+          <Input value={settings.profile?.tagline ?? ''} placeholder="Hamburguesas artesanales · Palermo"
+            onChange={v => onUpdate({ profile: { ...settings.profile, tagline: v.slice(0, 160) } })} />
+        </Field>
+        <Field label="Logo o foto">
+          {settings.profile?.avatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.profile.avatarUrl} alt="" className="rounded-full mb-2" style={{ width: 56, height: 56, objectFit: 'cover' }} />
+          )}
+          <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, avatarUrl: url } })} />
+          {settings.profile?.avatarUrl && (
+            <button className="text-xs underline mt-1.5" style={{ color: '#6B6E71' }}
+              onClick={() => onUpdate({ profile: { ...settings.profile, avatarUrl: '' } })}>Quitar</button>
+          )}
+        </Field>
+        <Field label="Imagen de portada">
+          {settings.profile?.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={settings.profile.coverUrl} alt="" className="rounded-lg mb-2 w-full" style={{ height: 72, objectFit: 'cover' }} />
+          )}
+          <ImageUploadButton onUploaded={url => onUpdate({ profile: { ...settings.profile, coverUrl: url } })} />
+          {settings.profile?.coverUrl && (
+            <button className="text-xs underline mt-1.5" style={{ color: '#6B6E71' }}
+              onClick={() => onUpdate({ profile: { ...settings.profile, coverUrl: '' } })}>Quitar</button>
+          )}
+        </Field>
+      </Section>
+
       <Section label="Color principal">
         <div className="flex flex-wrap gap-2">
           {['#E8150A', '#FF8C00', '#185FA5', '#16A34A', '#7C3AED', '#1A1B1C', '#DB2777', '#0891B2'].map(c => (
-            <button key={c} onClick={() => onUpdate({ primaryColor: c })}
+            <button key={c} onClick={() => onUpdate({ primaryColor: c })} aria-label={`Color principal ${c}`} aria-pressed={settings.primaryColor === c}
               className="w-8 h-8 rounded-lg border-2 transition-all"
               style={{ background: c, borderColor: settings.primaryColor === c ? '#1A1B1C' : 'transparent' }} />
           ))}
@@ -1002,7 +1345,9 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
         )}
       </Section>
 
-      <Section label="General">
+ <Section label="General">
+        <Toggle label="Animaciones al hacer scroll" value={settings.animations !== false}
+          onChange={v => onUpdate({ animations: v })} />
         <Toggle label="Mostrar 'Creado con LinkHub'" value={settings.showPoweredBy}
           onChange={v => onUpdate({ showPoweredBy: v })} />
       </Section>
@@ -1011,13 +1356,13 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
 }
 
 // ─── SEO Editor ──────────────────────────────────────────────────
-function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
+function SeoEditor({ seo, slug, suggested, onUpdate }: { seo: PageSettings['seo']; slug: string; suggested: string; onUpdate: (s: Partial<PageSettings['seo']>) => void }) {
   return (
     <div className="space-y-5">
       <Section label="SEO & Metadatos">
         <Field label="Título SEO">
           <Input value={seo.title} onChange={v => onUpdate({ title: v })} placeholder="Nombre de tu negocio" />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>{seo.title.length}/60 caracteres</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>{seo.title.length}/60 caracteres</p>
         </Field>
         <Field label="Descripción">
           <textarea value={seo.description} rows={3}
@@ -1025,8 +1370,16 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
             placeholder="Breve descripción de tu negocio o página..."
             className="w-full px-3 py-2 rounded-xl text-sm resize-none outline-none"
             style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }} />
-          <p className="text-xs mt-1" style={{ color: '#9A9D9F' }}>{seo.description.length}/160 caracteres</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>{seo.description.length}/160 caracteres</p>
         </Field>
+        <Field label="Tipo de negocio (datos estructurados)">
+          <select value={seo.schemaType ?? ''} onChange={e => onUpdate({ schemaType: e.target.value || undefined })} className="w-full px-3 py-2 rounded-xl text-sm outline-none" style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}>
+            <option value="">Automático ({SCHEMA_OPTIONS.find(o => o.value === suggested)?.label ?? suggested})</option>
+            {[...new Set(SCHEMA_OPTIONS.map(o => o.group))].map(g => <optgroup key={g} label={g}>{SCHEMA_OPTIONS.filter(o => o.group === g).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>)}
+          </select>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Ayuda a Google y a los asistentes de IA a entender qué eres (carta, servicios, horario, reservas…).</p>
+        </Field>
+        <Toggle label="Ocultar esta página de buscadores y asistentes de IA" value={!!seo.noindex} onChange={v => onUpdate({ noindex: v })} />
         <Field label="Imagen OG (URL)">
           <Input value={seo.ogImage || ''} onChange={v => onUpdate({ ogImage: v || null })} placeholder="https://..." />
         </Field>
@@ -1034,7 +1387,7 @@ function SeoEditor({ seo, onUpdate }: { seo: PageSettings['seo']; onUpdate: (s: 
       <div className="rounded-xl p-3" style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 1px 2px rgba(26,27,28,0.03)' }}>
         <p className="text-xs font-semibold mb-1" style={{ color: '#5A5D60' }}>Vista previa Google</p>
         <p className="text-sm font-medium" style={{ color: '#1a0dab' }}>{seo.title || 'Título de tu página'}</p>
-        <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/tu-slug</p>
+        <p className="text-xs" style={{ color: '#006621' }}>linkhub.app/p/{slug}</p>
         <p className="text-xs mt-0.5" style={{ color: '#545454' }}>{seo.description || 'Descripción de tu página...'}</p>
       </div>
     </div>
@@ -1050,7 +1403,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   return (
     <div className="rounded-2xl p-4"
       style={{ background: '#FAFAFA', border: '1px solid rgba(26,27,28,0.07)', boxShadow: '0 1px 2px rgba(26,27,28,0.03), 0 1px 10px rgba(26,27,28,0.03)' }}>
-      <p className="text-xs font-bold uppercase tracking-wider mb-3.5 pb-3" style={{ color: '#9A9D9F', borderBottom: '1px solid rgba(26,27,28,0.07)' }}>{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wider mb-3.5 pb-3" style={{ color: '#6B6E71', borderBottom: '1px solid rgba(26,27,28,0.07)' }}>{label}</p>
       <div className="space-y-4">{children}</div>
     </div>
   )
@@ -1068,7 +1421,7 @@ function AddButton({ label, onClick, dashed }: { label: string; onClick: () => v
       className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[13px] font-semibold rounded-xl transition-all"
       style={dashed
         ? { background: hover ? '#FAFAFA' : '#fff', color: '#5A5D60', border: `1.5px dashed ${hover ? 'rgba(26,27,28,0.35)' : 'rgba(26,27,28,0.22)'}` }
-        : { background: hover ? '#FCE0DE' : '#FEF0EF', color: '#E8150A', boxShadow: hover ? '0 3px 10px rgba(232,21,10,0.16)' : 'none' }}>
+        : { background: hover ? '#FCE0DE' : '#FEF0EF', color: '#C8110A', boxShadow: hover ? '0 3px 10px rgba(232,21,10,0.16)' : 'none' }}>
       <Plus size={15} /> {label}
     </button>
   )
@@ -1080,24 +1433,33 @@ function RemoveButton({ onClick, title = 'Eliminar' }: { onClick: () => void; ti
     <button onClick={onClick} title={title}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       className="flex items-center justify-center rounded-lg flex-shrink-0 transition-colors"
-      style={{ width: 24, height: 24, color: '#E8150A', background: hover ? '#FEF0EF' : 'transparent' }}>
+      style={{ width: 24, height: 24, color: '#C8110A', background: hover ? '#FEF0EF' : 'transparent' }}>
       <X size={13} />
     </button>
   )
 }
 
+// The visible label is tied to its control through aria-labelledby (the label is a
+// sibling, not a wrapper, so groups of buttons inside a Field keep working).
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const id = useId()
+  const tied = Children.map(children, c => {
+    if (!isValidElement(c)) return c
+    const el = c as React.ReactElement<Record<string, unknown>>
+    const native = typeof el.type === 'string' && ['input', 'select', 'textarea'].includes(el.type)
+    return native || el.type === Input ? cloneElement(el, { 'aria-labelledby': id }) : c
+  })
   return (
     <div>
-      <label className="text-[13px] font-medium block mb-1.5" style={{ color: '#5A5D60' }}>{label}</label>
-      {children}
+      <label id={id} className="text-[13px] font-medium block mb-1.5" style={{ color: '#4A4E52' }}>{label}</label>
+      {tied}
     </div>
   )
 }
 
-function Input({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function Input({ value, onChange, placeholder, ...aria }: { value: string; onChange: (v: string) => void; placeholder?: string; 'aria-labelledby'?: string }) {
   return (
-    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+    <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} aria-labelledby={aria['aria-labelledby']}
       className="w-full px-3.5 py-2.5 rounded-xl text-sm outline-none transition-all"
       style={{ background: '#fff', border: '1.5px solid rgba(26,27,28,0.12)', color: '#1A1B1C', fontFamily: 'inherit' }}
       onFocus={e => (e.target.style.borderColor = '#E8150A')}
@@ -1130,10 +1492,10 @@ function ImageUploadButton({ onUploaded }: { onUploaded: (url: string) => void }
       <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
       <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
         className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all"
-        style={{ background: '#F6F6F5', border: '1.5px dashed rgba(26,27,28,0.18)', color: uploading ? '#9A9D9F' : '#1A1B1C', cursor: uploading ? 'wait' : 'pointer' }}>
+        style={{ background: '#F6F6F5', border: '1.5px dashed rgba(26,27,28,0.18)', color: uploading ? '#6B6E71' : '#1A1B1C', cursor: uploading ? 'wait' : 'pointer' }}>
         {uploading ? <><Loader2 size={14} className="animate-spin" /> Subiendo...</> : <><Upload size={14} /> Elegir imagen</>}
       </button>
-      <p className="text-xs mt-1.5" style={{ color: '#9A9D9F' }}>Se optimiza sola al subir — hasta 15 MB, JPG/PNG/WebP.</p>
+      <p className="text-xs mt-1.5" style={{ color: '#6B6E71' }}>Se optimiza sola al subir — hasta 15 MB, JPG/PNG/WebP.</p>
     </div>
   )
 }
@@ -1174,7 +1536,7 @@ function ProLock({ feature }: { feature: string }) {
     <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: '#FEF0EF', border: '1px solid #E8150A22' }}>
       <div className="text-xl">🔒</div>
       <div>
-        <p className="text-xs font-semibold" style={{ color: '#E8150A' }}>{feature} · Plan Pro</p>
+        <p className="text-xs font-semibold" style={{ color: '#C8110A' }}>{feature} · Plan Pro</p>
         <a href="/dashboard/upgrade" className="text-xs underline" style={{ color: '#B50F07' }}>Actualizar →</a>
       </div>
     </div>

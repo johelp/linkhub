@@ -7,17 +7,18 @@ import { BLOCK_CATEGORIES, CATEGORY_META, type BlockDef } from '@/lib/blocks/reg
 
 const INK = '#1A1B1C'
 const MUTED = '#5A5D60'
-const LIGHT = '#9A9D9F'
+const LIGHT = '#6B6E71'
 const BORDER = 'rgba(26,27,28,0.09)'
 
 interface Props {
   open: boolean
   limits: PlanLimits
+  hiddenTypes?: string[]   // blocks not enabled for this customer yet (staged rollout)
   onClose: () => void
   onAdd: (type: BlockType) => void
 }
 
-export function AddBlockModal({ open, limits, onClose, onAdd }: Props) {
+export function AddBlockModal({ open, limits, hiddenTypes = [], onClose, onAdd }: Props) {
   const [query, setQuery] = useState('')
 
   // Reset on close (a user-triggered event, not a render-phase effect) so
@@ -32,10 +33,10 @@ export function AddBlockModal({ open, limits, onClose, onAdd }: Props) {
     return Object.entries(BLOCK_CATEGORIES)
       .map(([cat, blocks]) => [
         cat,
-        q ? blocks.filter(b => b.label.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)) : blocks,
+        (q ? blocks.filter(b => b.label.toLowerCase().includes(q) || b.description.toLowerCase().includes(q)) : blocks).filter(b => !hiddenTypes.includes(b.type)),
       ] as [string, BlockDef[]])
       .filter(([, blocks]) => blocks.length > 0)
-  }, [query])
+  }, [query, hiddenTypes])
 
   if (!open) return null
 
@@ -113,7 +114,7 @@ function BlockCard({ def, tint, locked, onClick }: { def: BlockDef; tint: string
       }}>
       {locked && (
         <span className="absolute top-3 right-3 rounded-full flex items-center justify-center"
-          style={{ width: 22, height: 22, background: '#FEF0EF', color: '#E8150A' }} title="Requiere plan Pro">
+          style={{ width: 22, height: 22, background: '#FEF0EF', color: '#C8110A' }} title="Requiere plan Pro">
           <Lock size={11} />
         </span>
       )}

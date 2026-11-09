@@ -22,12 +22,19 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient()
-  const { error } = await admin.from('pages').update({ published }).eq('id', pageId)
+  // Unpublishing from here is moderation: it also blocks the owner from
+  // re-publishing (migration 013). Publishing again clears the block.
+  let { error } = await admin.from('pages').update({ published, moderated_at: published ? null : new Date().toISOString() } as never).eq('id', pageId)
+  // Column missing (migration 013 not applied yet): fall back to the plain toggle.
+  if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+    ;({ error } = await admin.from('pages').update({ published }).eq('id', pageId))
+  }
 
   if (error) {
     console.error('admin toggle-page error', error)
     return NextResponse.json({ error: 'No se pudo actualizar la página' }, { status: 500 })
   }
 
+  await admin.from('admin_audit_log' as never).insert({ actor_email: user.email, action: published ? 'page.publish' : 'page.unpublish', target: pageId } as never)
   return NextResponse.json({ ok: true })
 }

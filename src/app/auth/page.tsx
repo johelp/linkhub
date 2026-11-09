@@ -9,7 +9,7 @@ export default function AuthPage() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F6F6F5' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🔗</div>
-          <p style={{ fontSize: 14, color: '#9A9D9F' }}>Cargando...</p>
+          <p style={{ fontSize: 14, color: '#6B6E71' }}>Cargando...</p>
         </div>
       </div>
     }>

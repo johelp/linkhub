@@ -1,8 +1,11 @@
+import { reportError } from '@/lib/observability'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getMercadoPagoPayment, verifyMercadoPagoSignature } from '@/lib/mercadopago'
 import { sendTicketEmail, emailConfigured } from '@/lib/email'
 import { absoluteUrl, generateId } from '@/lib/utils'
+import { decryptSecret } from '@/lib/crypto'
+import { logPaymentEvent } from '@/lib/payments/events'
 
 const STATUS_MAP: Record<string, 'approved' | 'rejected' | 'pending' | 'refunded'> = {
   approved: 'approved',
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
   let newStatus: 'approved' | 'rejected' | 'pending' | 'refunded'
   let payerEmail: string | null
   try {
-    const payment = await getMercadoPagoPayment(connection.access_token, dataId)
+    const payment = await getMercadoPagoPayment(decryptSecret(connection.access_token), dataId)
 
     // `ref` (which payments row we're about to update) comes from the query
     // string, not from anything Mercado Pago signed -- so before trusting
@@ -72,14 +75,18 @@ export async function POST(request: NextRequest) {
     }
 
     newStatus = STATUS_MAP[payment.status] || 'pending'
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId: paymentRow.page_id, provider: 'mercadopago', type: 'notification.received', message: `Estado: ${payment.status}`, detail: { mpPaymentId: dataId, status: payment.status } })
     payerEmail = payment.payer?.email ?? null
     await admin.from('payments').update({
       status: newStatus,
       provider_payment_id: dataId,
       payer_email: payerEmail,
     }).eq('id', ref)
+    if (newStatus !== paymentRow.status && newStatus !== 'pending') {
+      await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId: paymentRow.page_id, provider: 'mercadopago', type: newStatus === 'approved' ? 'payment.approved' : newStatus === 'refunded' ? 'payment.refunded' : 'payment.rejected', level: newStatus === 'rejected' ? 'warn' : 'info', message: `Pago ${newStatus}` })
+    }
   } catch (err) {
-    console.error('Mercado Pago webhook payment lookup error', err)
+    await reportError('webhook:mercadopago', err)
     return NextResponse.json({ error: 'Lookup failed' }, { status: 500 })
   }
 
@@ -112,7 +119,7 @@ export async function POST(request: NextRequest) {
       // Don't fail the webhook over the ticket/email step -- the payment is
       // already recorded as approved; the buyer can still be helped
       // manually via the payments/tickets tables if this part hiccups.
-      console.error('Mercado Pago ticket issuance error', err)
+      await reportError('mercadopago:ticket', err)
     }
   }
 

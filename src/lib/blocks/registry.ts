@@ -375,6 +375,123 @@ export const BLOCK_REGISTRY: BlockDef[] = [
     }),
   },
   {
+    type: 'faq',
+    label: 'Preguntas frecuentes',
+    description: 'Muestra las preguntas de tu base de conocimiento (también mejora tu aparición en Google y en asistentes de IA)',
+    icon: '❓',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(), type: 'faq', order: 0, visible: true, seasonFilter: 'always',
+      data: { translations: Object.fromEntries((['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]).map(l => [l, { title: l === 'es' ? 'Preguntas frecuentes' : '' }])) as Record<Lang, { title: string }> },
+    } as Block),
+  },
+  {
+    type: 'vcard',
+    label: 'Guardar contacto (vCard)',
+    description: 'Botón para que tus clientes te guarden en su agenda con un toque',
+    icon: '📇',
+    category: 'social',
+    createDefault: () => ({
+      id: generateId(), type: 'vcard', order: 0, visible: true, seasonFilter: 'always',
+      data: {
+        translations: Object.fromEntries((['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]).map(l => [l, { label: l === 'es' ? 'Guardar en mis contactos' : '' }])) as Record<Lang, { label: string }>,
+        fullName: '', jobTitle: '', organization: '', phone: '', email: '', address: '', note: '',
+      },
+    } as Block),
+  },
+  {
+    type: 'map_embed',
+    label: 'Mapa de Google',
+    description: 'Muestra tu ubicación con un mapa incrustado',
+    icon: '🗺️',
+    category: 'content',
+    createDefault: () => ({
+      id: generateId(), type: 'map_embed', order: 0, visible: true, seasonFilter: 'always',
+      data: { query: '', height: 260 },
+    } as Block),
+  },
+  {
+    type: 'appointment_request',
+    label: 'Solicitud de citas',
+    description: 'El cliente elige servicio, día y hora y te pide el turno por WhatsApp',
+    icon: '📅',
+    category: 'content',
+    createDefault: () => {
+      const langs = ['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]
+      const per = <T,>(es: T, blank: T) => Object.fromEntries(langs.map(l => [l, l === 'es' ? es : blank])) as Record<Lang, T>
+      return {
+        id: generateId(),
+        type: 'appointment_request',
+        order: 0,
+        visible: true,
+        seasonFilter: 'always',
+        data: {
+          translations: per({ title: 'Reservá tu turno', description: 'Elegí servicio, día y horario' }, { title: '', description: '' }),
+          whatsapp: '',
+          timezone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'America/Argentina/Buenos_Aires',
+          currency: 'ARS',
+          services: [
+            { id: generateId(), translations: per({ name: 'Consulta', description: '' }, { name: '', description: '' }), durationMin: 60 },
+          ],
+          schedule: [
+            { day: 0, closed: true, open: '09:00', close: '18:00' },
+            { day: 1, closed: false, open: '09:00', close: '18:00' },
+            { day: 2, closed: false, open: '09:00', close: '18:00' },
+            { day: 3, closed: false, open: '09:00', close: '18:00' },
+            { day: 4, closed: false, open: '09:00', close: '18:00' },
+            { day: 5, closed: false, open: '09:00', close: '18:00' },
+            { day: 6, closed: true, open: '10:00', close: '14:00' },
+          ],
+          slotMinutes: 60,
+          daysAhead: 14,
+          minNoticeHours: 2,
+        },
+      } as Block
+    },
+  },
+  {
+    type: 'order_menu',
+    label: 'Pedidos / Mini tienda',
+    description: 'Catálogo con carrito: el cliente arma su pedido y te lo envía por WhatsApp',
+    icon: '🛒',
+    category: 'content',
+    createDefault: () => {
+      const langs = ['es', 'en', 'pt', 'fr', 'de', 'it'] as Lang[]
+      const per = <T,>(es: T, blank: T) => Object.fromEntries(langs.map(l => [l, l === 'es' ? es : blank])) as Record<Lang, T>
+      return {
+        id: generateId(),
+        type: 'order_menu',
+        order: 0,
+        visible: true,
+        seasonFilter: 'always',
+        data: {
+          translations: per({ title: 'Hacé tu pedido', description: 'Armá tu pedido y envialo por WhatsApp' }, { title: '', description: '' }),
+          currency: 'ARS',
+          whatsapp: '',
+          delivery: true,
+          pickup: true,
+          deliveryFee: 0,
+          minOrder: 0,
+          notesPlaceholder: 'Aclaraciones (sin cebolla, timbre, etc.)',
+          categories: [
+            {
+              id: generateId(),
+              translations: per({ name: 'Destacados' }, { name: '' }),
+              items: [
+                {
+                  id: generateId(),
+                  translations: per({ name: 'Producto 1', description: '' }, { name: '', description: '' }),
+                  price: 0,
+                  available: true,
+                },
+              ],
+            },
+          ],
+        },
+      } as Block
+    },
+  },
+  {
     type: 'menu',
     label: 'Menú / Carta',
     description: 'Categorías, productos y precios -- o un link a tu PDF si ya lo tenés armado',
@@ -516,3 +633,11 @@ export const ICON_BG_PRESETS: Record<string, string> = {
   gray:   '#F2F3F4',
   dark:   '#1A1B1C',
 }
+
+// Shown on an empty canvas: the handful of blocks nearly every page starts with.
+export const QUICK_START_BLOCKS: Array<{ type: BlockType; label: string; icon: string }> = [
+  { type: 'link', label: 'Enlace', icon: '🔗' },
+  { type: 'contact_card', label: 'WhatsApp y contacto', icon: '💬' },
+  { type: 'social_grid', label: 'Redes', icon: '📱' },
+  { type: 'business_hours', label: 'Horarios', icon: '🕒' },
+]

@@ -36,7 +36,7 @@ export default async function TicketPage({ params }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: '#F6F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 20, padding: 28, textAlign: 'center', border: '1px solid rgba(26,27,28,0.09)' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: '#9A9D9F', marginBottom: 8 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: '#6B6E71', marginBottom: 8 }}>
           {page?.name || 'Entrada'}
         </p>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1A1B1C', marginBottom: 20 }}>{ticket.tier_name}</h1>
@@ -47,12 +47,12 @@ export default async function TicketPage({ params }: Props) {
         />
 
         {used ? (
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#9A9D9F' }}>Esta entrada ya fue utilizada.</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#6B6E71' }}>Esta entrada ya fue utilizada.</p>
         ) : (
           <p style={{ fontSize: 13, color: '#5A5D60' }}>Presentá este código en la entrada del evento.</p>
         )}
 
-        <p style={{ fontSize: 11, color: '#9A9D9F', marginTop: 16, fontFamily: 'monospace' }}>{ticket.code}</p>
+        <p style={{ fontSize: 11, color: '#6B6E71', marginTop: 16, fontFamily: 'monospace' }}>{ticket.code}</p>
       </div>
     </div>
   )

@@ -9,7 +9,10 @@ export async function POST() {
 
   const admin = createAdminClient()
   const { error } = await admin.from('payment_connections').delete().eq('user_id', user.id).eq('provider', 'mercadopago')
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('mp disconnect error', error)
+    return NextResponse.json({ error: 'No se pudo desconectar' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

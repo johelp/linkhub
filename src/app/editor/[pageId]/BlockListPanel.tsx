@@ -1,19 +1,20 @@
 'use client'
 import { useState } from 'react'
 import { useEditorStore } from '@/hooks/useEditorStore'
-import type { Block } from '@/types'
+import type { Block, Lang } from '@/types'
 import { BLOCK_BY_TYPE, CATEGORY_META } from '@/lib/blocks/registry'
+import { summarizeBlock, findBlockIssues } from '@/lib/blocks/summary'
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Plus, GripVertical, Eye, EyeOff, Trash2, Copy } from 'lucide-react'
+import { Plus, GripVertical, Eye, EyeOff, Trash2, Copy, AlertTriangle, Settings2 } from 'lucide-react'
 
 interface Props {
   onAddBlock: () => void
 }
 
 export function BlockListPanel({ onAddBlock }: Props) {
-  const { page, selectedBlockId, selectBlock, removeBlock, duplicateBlock, toggleBlockVisibility, reorderBlocks } = useEditorStore()
+  const { page, selectedBlockId, selectBlock, removeBlock, duplicateBlock, toggleBlockVisibility, reorderBlocks, previewLang } = useEditorStore()
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -21,6 +22,7 @@ export function BlockListPanel({ onAddBlock }: Props) {
   )
 
   if (!page) return null
+  const issueIds = new Set(findBlockIssues(page.blocks, previewLang, useEditorStore.getState().connectedProviders).map(i => i.blockId))
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -37,12 +39,12 @@ export function BlockListPanel({ onAddBlock }: Props) {
 
       <div className="flex items-center justify-between px-4 py-4 border-b flex-shrink-0"
         style={{borderColor:'rgba(26,27,28,0.09)'}}>
-        <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#9A9D9F'}}>
-          Bloques ({page.blocks.length})
+        <span className="text-xs font-bold uppercase tracking-wider" style={{color:'#6B6E71'}}>
+          Estructura · {page.blocks.length}
         </span>
         <button onClick={onAddBlock}
           className="flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-2 rounded-lg transition-colors"
-          style={{background:'#FEF0EF',color:'#E8150A'}}
+          style={{background:'#FEF0EF',color:'#C8110A'}}
           onMouseEnter={e => (e.currentTarget.style.background = '#FCE0DE')}
           onMouseLeave={e => (e.currentTarget.style.background = '#FEF0EF')}>
           <Plus size={14}/> Añadir
@@ -50,10 +52,19 @@ export function BlockListPanel({ onAddBlock }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-2.5">
+        <button onClick={() => selectBlock(null)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mb-2 text-left transition-colors"
+          style={{ background: selectedBlockId === null ? '#F2F3F4' : 'transparent', border: '1.5px solid transparent' }}>
+          <span className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ width: 32, height: 32, background: '#F2F3F4', color: '#5A5D60' }}><Settings2 size={15} /></span>
+          <span className="min-w-0">
+            <span className="block text-sm font-medium" style={{ color: '#1A1B1C' }}>Diseño y ajustes</span>
+            <span className="block text-xs" style={{ color: '#6B6E71' }}>Color, idiomas, SEO</span>
+          </span>
+        </button>
         {page.blocks.length === 0 ? (
           <div className="text-center py-14">
-            <div className="text-4xl mb-3">📭</div>
-            <p className="text-sm" style={{color:'#9A9D9F'}}>Añadí tu primer bloque</p>
+            <p className="text-sm font-medium" style={{color:'#5A5D60'}}>Tu página está vacía</p>
+            <p className="text-xs mt-1" style={{color:'#6B6E71'}}>Añadí tu primer bloque para empezar</p>
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -63,7 +74,9 @@ export function BlockListPanel({ onAddBlock }: Props) {
                   key={block.id}
                   block={block}
                   isSelected={selectedBlockId === block.id}
-                  onSelect={() => selectBlock(block.id === selectedBlockId ? null : block.id)}
+                  hasIssue={issueIds.has(block.id)}
+                  lang={previewLang}
+                  onSelect={() => selectBlock(block.id)}
                   onDelete={() => removeBlock(block.id)}
                   onDuplicate={() => duplicateBlock(block.id)}
                   onToggleVisibility={() => toggleBlockVisibility(block.id)}
@@ -77,9 +90,11 @@ export function BlockListPanel({ onAddBlock }: Props) {
   )
 }
 
-function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate, onToggleVisibility }: {
+function SortableBlockItem({ block, isSelected, hasIssue, lang, onSelect, onDelete, onDuplicate, onToggleVisibility }: {
   block: Block
   isSelected: boolean
+  hasIssue: boolean
+  lang: Lang
   onSelect: () => void
   onDelete: () => void
   onDuplicate: () => void
@@ -89,6 +104,7 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
   const [hover, setHover] = useState(false)
   const def = BLOCK_BY_TYPE[block.type]
   const tint = def ? (CATEGORY_META[def.category]?.tint ?? '#F2F3F4') : '#F2F3F4'
+  const summary = summarizeBlock(block, lang)
 
   return (
     <div ref={setNodeRef}
@@ -98,9 +114,9 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
         opacity: isDragging ? 0.5 : 1,
         marginBottom: 6,
       }}>
-      <div onClick={onSelect}
+      <div
         onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
-        className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer group transition-all"
+        className="relative flex items-center gap-2.5 pl-1.5 pr-3 py-2 rounded-xl cursor-pointer group transition-all"
         style={{
           background: isSelected ? '#FEF0EF' : (hover ? '#FAFAFA' : 'transparent'),
           border: `1.5px solid ${isSelected ? '#E8150A' : 'transparent'}`,
@@ -109,12 +125,15 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
             hover (desktop); always visible below that, since a touch
             screen never fires :hover and the handle would otherwise be
             impossible to find on tablet/mobile. */}
-        <div {...attributes} {...listeners}
+        <div {...attributes} {...listeners} aria-label={`Arrastrar para reordenar: ${summary.title}`}
           className="drag-handle flex-shrink-0 p-0.5 rounded opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-none"
-          style={{color:'#9A9D9F'}}>
+          style={{color:'#6B6E71'}}>
           <GripVertical size={16}/>
         </div>
 
+        {/* The row's main control is ONE real button (select the block); drag handle and
+            actions are its siblings, never nested inside it. */}
+        <button type="button" onClick={onSelect} aria-pressed={isSelected} className="flex flex-1 min-w-0 items-center gap-2.5 text-left cursor-pointer bg-transparent border-0 p-0">
         {/* Icon tile — same tinted-square language as the "Añadir bloque"
             modal, so a block reads as the same thing in both places. */}
         <div className="flex items-center justify-center rounded-lg flex-shrink-0"
@@ -124,13 +143,21 @@ function SortableBlockItem({ block, isSelected, onSelect, onDelete, onDuplicate,
 
         {/* Label */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#9A9D9F'}}>
-            {def?.label || block.type}
+          <p className="text-sm font-medium truncate" style={{color: block.visible ? '#1A1B1C' : '#6B6E71'}}>
+            {summary.title}
+          </p>
+          <p className="text-xs truncate" style={{color:'#6B6E71'}}>
+            {def?.label}{summary.detail ? ` · ${summary.detail}` : ''}
           </p>
         </div>
+        </button>
 
-        {/* Actions — same hover-reveal-on-desktop-only reasoning as the drag handle */}
-        <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
+        {hasIssue && <span title="Falta completar este bloque" style={{ color: '#D97706' }} className="flex-shrink-0 group-hover:invisible"><AlertTriangle size={14} /></span>}
+
+        {/* Actions float over the row's right edge on hover/focus (and stay
+            visible on touch), so they never steal width from the title. */}
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-0.5 rounded-lg px-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity"
+          style={{ background: isSelected ? '#FEF0EF' : '#fff', boxShadow: '0 0 8px 6px ' + (isSelected ? '#FEF0EF' : '#fff') }}>
           <ActionBtn onClick={e => { e.stopPropagation(); onToggleVisibility() }} title={block.visible ? 'Ocultar' : 'Mostrar'}>
             {block.visible ? <Eye size={14}/> : <EyeOff size={14}/>}
           </ActionBtn>
@@ -155,7 +182,7 @@ function ActionBtn({ onClick, title, danger, children }: {
   return (
     <button onClick={onClick} title={title}
       className="p-1.5 rounded-md transition-colors"
-      style={{color: danger ? '#E8150A' : '#9A9D9F'}}
+      style={{color: danger ? '#E8150A' : '#6B6E71'}}
       onMouseEnter={e => (e.currentTarget.style.background = danger ? '#FEF0EF' : '#F2F3F4')}
       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
       {children}

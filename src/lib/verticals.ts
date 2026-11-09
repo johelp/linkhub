@@ -86,6 +86,22 @@ export const VERTICALS: VerticalConfig[] = [
     demoPage: buildEventExample,
   },
   {
+    slug: 'profesionales-y-clases',
+    label: 'Profesionales y clases',
+    title: 'Página de enlaces para profesionales, clases y consultorios',
+    metaTitle: 'Página de enlaces para profesionales, clases y consultorios — LinkHub',
+    metaDescription: 'Para psicólogos, kinesiólogos, entrenadores, profesores y estudios: tus servicios, horarios y un botón para pedir turno por WhatsApp, en un solo link.',
+    intro: 'Para quien trabaja con turnos: que tus pacientes o alumnos vean tus servicios y horarios, y te pidan una cita sin vueltas.',
+    highlights: [
+      'Botón de WhatsApp con mensaje predefinido ("Hola, quiero reservar un turno") para pedir cita con un toque',
+      'Horarios de atención que muestran "abierto ahora" o "cerrado" solos',
+      'Servicios y tarifas ordenados con el bloque de menú o de pedidos, incluso con precios por sesión o clase',
+      'Solicitud de citas: tus clientes eligen servicio, día y hora libres, y te piden el turno por WhatsApp',
+    ],
+    accent: '#7C3AED',
+    demoPage: () => buildDemoPage('Estudio Aurora', true),
+  },
+  {
     slug: 'turismo-y-temporada',
     label: 'Turismo y negocios de temporada',
     title: 'Página de enlaces para negocios de turismo y temporada',

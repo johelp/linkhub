@@ -19,6 +19,11 @@ export type BlockType =
   | 'loyalty_card'
   | 'text'
   | 'menu'
+  | 'order_menu'
+  | 'appointment_request'
+  | 'vcard'
+  | 'faq'
+  | 'map_embed'
 
 // Blocks available without paying
 export const FREE_BLOCKS: BlockType[] = ['link', 'section_label', 'divider']
@@ -81,10 +86,20 @@ export interface PageSettings {
   backgroundColor: string
   fontFamily: string
   showPoweredBy: boolean
+  animations?: boolean   // public-page motion (reveal, parallax, micro-interactions); default on
   seo: {
     title: string
     description: string
     ogImage: string | null
+    schemaType?: string   // schema.org business type (see lib/seo.ts), default LocalBusiness
+    noindex?: boolean     // keep the page out of search engines and the sitemap
+  }
+  // Header of the public page (hero card). All optional: without them the
+  // page shows the name over a brand-colored gradient with an initial avatar.
+  profile?: {
+    avatarUrl?: string
+    coverUrl?: string
+    tagline?: string
   }
   pixels?: {
     ga4Id?: string        // "G-XXXXXXXXXX"
@@ -276,9 +291,12 @@ export interface EmailCaptureBlock extends BlockBase {
   }
 }
 
+export type PaymentProvider = 'mercadopago' | 'stripe' | 'redsys'
+
 export interface PaymentButtonBlock extends BlockBase {
   type: 'payment_button'
   data: {
+    provider?: PaymentProvider | 'auto'   // which connected gateway charges; default: the seller's only/first one
     translations: Record<Lang, { title: string; description: string }>
     price: number
     currency: string   // ISO currency code Mercado Pago accepts, e.g. 'ARS', 'MXN', 'CLP'
@@ -294,6 +312,7 @@ export interface TicketTier {
 export interface EventTicketsBlock extends BlockBase {
   type: 'event_tickets'
   data: {
+    provider?: PaymentProvider | 'auto'
     translations: Record<Lang, { title: string; description: string }>
     tiers: TicketTier[]
     currency: string
@@ -321,11 +340,97 @@ export interface MenuBlock extends BlockBase {
   }
 }
 
+// Mini tienda / pedidos: the visitor builds a cart on the page and sends the
+// order to the owner's WhatsApp (no payment processed by LinkHub).
+export interface OrderItem {
+  id: string
+  translations: Record<Lang, { name: string; description?: string }>
+  price: number
+  imageUrl?: string
+  available: boolean
+}
+
+export interface OrderCategory {
+  id: string
+  translations: Record<Lang, { name: string }>
+  items: OrderItem[]
+}
+
+export interface OrderMenuBlock extends BlockBase {
+  type: 'order_menu'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    currency: string
+    whatsapp: string            // owner's number, any format; digits are extracted
+    categories: OrderCategory[]
+    delivery: boolean
+    pickup: boolean
+    deliveryFee: number         // 0 = free / not charged
+    minOrder: number            // 0 = no minimum
+    notesPlaceholder: string
+  }
+}
+
+// Solicitud de citas (fase 1): the visitor picks a service, a day and a time
+// slot generated from the weekly schedule, and sends the request to the
+// owner's WhatsApp. It is a request -- the owner confirms by chat.
+export interface AppointmentService {
+  id: string
+  translations: Record<Lang, { name: string; description?: string }>
+  durationMin: number
+  price?: number          // optional, shown next to the service
+}
+
+export interface AppointmentRequestBlock extends BlockBase {
+  type: 'appointment_request'
+  data: {
+    translations: Record<Lang, { title: string; description: string }>
+    whatsapp: string
+    timezone: string          // IANA tz of the business
+    currency: string
+    services: AppointmentService[]
+    schedule: DaySchedule[]   // weekly availability, same shape as business_hours
+    slotMinutes: number       // step between offered start times
+    daysAhead: number         // how many days into the future can be requested
+    minNoticeHours: number    // no slots sooner than this from now
+  }
+}
+
+// "Save to contacts": downloads a vCard (.vcf) with the business details.
+export interface VCardBlock extends BlockBase {
+  type: 'vcard'
+  data: {
+    translations: Record<Lang, { label: string }>
+    fullName: string       // optional overrides; empty = use the page's own data
+    jobTitle: string
+    organization: string
+    phone: string
+    email: string
+    address: string
+    note: string
+  }
+}
+
+// Frequently asked questions, fed from the owner's knowledge base (public entries).
+export interface FaqBlock extends BlockBase {
+  type: 'faq'
+  data: { translations: Record<Lang, { title: string }> }
+}
+
+// Google Maps embed (iframe) of the business location.
+export interface MapEmbedBlock extends BlockBase {
+  type: 'map_embed'
+  data: {
+    query: string          // an address / place name, or a pasted Google Maps embed link / iframe
+    height: number         // px
+  }
+}
+
 export type Block =
   | LinkBlock | ExpandableBlock | FeaturedBlock
   | SectionLabelBlock | SocialGridBlock | ContactCardBlock
   | ImageBannerBlock | VideoEmbedBlock | EmailCaptureBlock | PaymentButtonBlock | EventTicketsBlock
-  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock
+  | BusinessHoursBlock | GoogleReviewsBlock | LoyaltyCardBlock | TextBlock | DividerBlock | MenuBlock | OrderMenuBlock | AppointmentRequestBlock | VCardBlock | MapEmbedBlock | FaqBlock
 
 // ─── Analytics ──────────────────────────────────────────────────
 export interface AnalyticsEvent {

@@ -3,7 +3,7 @@ import { UsersTable, type AdminUserRow } from './UsersTable'
 import type { Plan } from '@/types'
 
 const INK = '#1A1B1C'
-const LIGHT = '#9A9D9F'
+const LIGHT = '#6B6E71'
 
 export const metadata = { title: 'Usuarios | Admin | LinkHub' }
 

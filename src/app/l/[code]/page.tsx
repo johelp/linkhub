@@ -42,7 +42,7 @@ export default async function LoyaltyCardPage({ params }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: '#F6F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 20, padding: 28, textAlign: 'center', border: '1px solid rgba(26,27,28,0.09)' }}>
-        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: '#9A9D9F', marginBottom: 8 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', textTransform: 'uppercase', color: '#6B6E71', marginBottom: 8 }}>
           {pageRow?.name || 'Tarjeta de sellos'}
         </p>
 
@@ -74,9 +74,9 @@ export default async function LoyaltyCardPage({ params }: Props) {
 
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}
           dangerouslySetInnerHTML={{ __html: qrSvg }} />
-        <p style={{ fontSize: 11, color: '#9A9D9F' }}>Mostrá este código para que te sumen un sello.</p>
+        <p style={{ fontSize: 11, color: '#6B6E71' }}>Mostrá este código para que te sumen un sello.</p>
 
-        <p style={{ fontSize: 11, color: '#9A9D9F', marginTop: 16, fontFamily: 'monospace' }}>{card.code}</p>
+        <p style={{ fontSize: 11, color: '#6B6E71', marginTop: 16, fontFamily: 'monospace' }}>{card.code}</p>
       </div>
     </div>
   )

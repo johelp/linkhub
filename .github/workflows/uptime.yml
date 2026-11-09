@@ -1,0 +1,22 @@
+name: Uptime
+# Pings /api/health every 15 minutes. A failed run emails the repo watchers.
+# Set the repository variable HEALTHCHECK_URL (Settings → Variables), e.g.
+# https://linkhub.johelpastorino.com/api/health. Without it the job does nothing.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check /api/health
+        env:
+          URL: ${{ vars.HEALTHCHECK_URL }}
+        run: |
+          if [ -z "$URL" ]; then echo "HEALTHCHECK_URL not set; skipping"; exit 0; fi
+          curl --fail --silent --show-error --max-time 20 --retry 2 --retry-delay 5 "$URL" | tee /dev/stderr | grep -q '"status":"ok"'

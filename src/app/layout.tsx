@@ -3,6 +3,7 @@ import { DM_Sans } from 'next/font/google'
 import Script from 'next/script'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
+import { appEnv } from '@/lib/env'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -40,6 +41,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ fontFamily: "var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif" }}>
         {endorselyOrgId && (
           <Script async src="https://assets.endorsely.com/endorsely.js" data-endorsely={endorselyOrgId} strategy="afterInteractive" />
+        )}
+        {appEnv() === 'staging' && (
+          <div role="status" style={{ position: 'sticky', top: 0, zIndex: 100, background: '#1A1B1C', color: '#FFD166', textAlign: 'center', fontSize: 12, fontWeight: 600, padding: '5px 12px' }}>
+            Entorno de PRUEBAS · los datos no son reales y los cobros usan modo sandbox
+          </div>
         )}
         {children}
         <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />

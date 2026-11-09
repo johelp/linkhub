@@ -16,7 +16,7 @@ export function buildDemoPage(businessName?: string, generic = false): Page {
   const name = businessName?.trim() || 'Sierra Nevada Ski'
   return {
     id: 'demo', user_id: 'demo', slug: 'sierra-nevada-ski',
-    name: 'Demo', published: true, qr_url: null, custom_domain: null, views: 0,
+    name, published: true, qr_url: null, custom_domain: null, views: 0,
     created_at: '', updated_at: '',
     settings: {
       defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',
@@ -298,9 +298,57 @@ export function buildRestaurantExample(): Page {
   }
 }
 
+// A freelance professional (the core customer): services booked by WhatsApp,
+// opening hours and her networks. Spanish market defaults.
+export function buildProfessionalExample(): Page {
+  const L = <T extends Record<string, string>>(es: T) => ({ es, en: { ...es, ...Object.fromEntries(Object.keys(es).map(k => [k, ''])) }, pt: Object.fromEntries(Object.keys(es).map(k => [k, ''])), fr: Object.fromEntries(Object.keys(es).map(k => [k, ''])), de: Object.fromEntries(Object.keys(es).map(k => [k, ''])), it: Object.fromEntries(Object.keys(es).map(k => [k, ''])) }) as never
+  return {
+    id: 'demo-pro', user_id: 'demo', slug: 'laura-gomez',
+    name: 'Laura Gómez', published: true, qr_url: null, custom_domain: null, views: 0,
+    created_at: '', updated_at: '',
+    settings: {
+      defaultLang: 'es', enabledLangs: ['es'], seasonMode: 'always',
+      primaryColor: '#0F766E', backgroundColor: '#F7F7F5', fontFamily: 'DM Sans', showPoweredBy: false,
+      profile: { tagline: 'Psicóloga sanitaria · Consulta online y presencial en Madrid' },
+      seo: { title: '', description: '', ogImage: null },
+    },
+    blocks: [
+      {
+        id: 'p1', type: 'appointment_request', order: 0, visible: true, seasonFilter: 'always',
+        data: {
+          translations: L({ title: 'Pide tu cita', description: 'Elige el servicio y un horario libre' }),
+          whatsapp: '34600000000', timezone: 'Europe/Madrid', currency: 'EUR',
+          services: [
+            { id: 'sv1', translations: L({ name: 'Primera consulta', description: '' }), durationMin: 60, price: 60 },
+            { id: 'sv2', translations: L({ name: 'Sesión de seguimiento', description: '' }), durationMin: 50, price: 55 },
+          ],
+          schedule: [0, 1, 2, 3, 4, 5, 6].map(d => ({ day: d, closed: d === 0 || d === 6, open: '10:00', close: '19:00' })),
+          slotMinutes: 60, daysAhead: 14, minNoticeHours: 12,
+        },
+      },
+      {
+        id: 'p2', type: 'business_hours', order: 1, visible: true, seasonFilter: 'always',
+        data: {
+          translations: { es: { title: 'Horario de consulta' }, en: { title: '' }, pt: { title: '' }, fr: { title: '' }, de: { title: '' }, it: { title: '' } },
+          timezone: 'Europe/Madrid',
+          schedule: [0, 1, 2, 3, 4, 5, 6].map(d => ({ day: d, closed: d === 0 || d === 6, open: '10:00', close: '19:00' })),
+        },
+      },
+      {
+        id: 'p3', type: 'contact_card', order: 2, visible: true, seasonFilter: 'always',
+        data: { whatsapp: '34600000000', whatsappMessage: 'Hola Laura, me gustaría pedir cita', address: 'Calle de Alcalá 120, Madrid' },
+      },
+      {
+        id: 'p4', type: 'social_grid', order: 3, visible: true, seasonFilter: 'always',
+        data: { items: [{ id: 's1', platform: 'instagram', url: '#', label: 'Instagram' }, { id: 's2', platform: 'linkedin', url: '#', label: 'LinkedIn' }] },
+      },
+    ],
+  } as Page
+}
+
 export const HERO_EXAMPLES: { label: string; page: Page }[] = [
-  { label: 'Esquí', page: buildDemoPage() },
+  { label: 'Profesional', page: buildProfessionalExample() },
   { label: 'Estética', page: buildSalonExample() },
-  { label: 'Evento', page: buildEventExample() },
-  { label: 'Tarjeta de sellos', page: buildCafeExample() },
+  { label: 'Cafetería', page: buildCafeExample() },
+  { label: 'Eventos', page: buildEventExample() },
 ]

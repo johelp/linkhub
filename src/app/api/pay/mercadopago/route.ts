@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createMercadoPagoPreference } from '@/lib/mercadopago'
 import { absoluteUrl } from '@/lib/utils'
+import { decryptSecret } from '@/lib/crypto'
+import { logPaymentEvent } from '@/lib/payments/events'
 import type { Page, PaymentButtonBlock, EventTicketsBlock } from '@/types'
 
 // Public route: a visitor clicks a "payment_button" or "event_tickets"
@@ -72,6 +74,11 @@ export async function GET(request: NextRequest) {
     tier = { id: found.id, name: found.name }
   }
 
+  // The block is owner-authored JSON, so re-validate the money fields here.
+  if (!Number.isFinite(price) || price <= 0 || price > 10_000_000 || !/^[A-Z]{3}$/.test(currency)) {
+    return errorRedirect(typedPage.slug, 'failed')
+  }
+
   const admin = createAdminClient()
   const { data: connection } = await admin
     .from('payment_connections')
@@ -108,7 +115,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const preference = await createMercadoPagoPreference({
-      accessToken: connection.access_token,
+      accessToken: decryptSecret(connection.access_token),
       title,
       price,
       currency,
@@ -119,10 +126,12 @@ export async function GET(request: NextRequest) {
     })
 
     await admin.from('payments').update({ provider_preference_id: preference.id }).eq('id', paymentRow.id)
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId, provider: 'mercadopago', type: 'checkout.started', message: title, detail: { amount: price, currency, preferenceId: preference.id } })
 
     return NextResponse.redirect(preference.init_point)
   } catch (err) {
     console.error('Mercado Pago preference creation error', err)
+    await logPaymentEvent(admin, { paymentId: paymentRow.id, pageId, provider: 'mercadopago', type: 'checkout.failed', level: 'error', message: 'Mercado Pago no pudo crear la preferencia de pago' })
     return errorRedirect(typedPage.slug, 'failed')
   }
 }

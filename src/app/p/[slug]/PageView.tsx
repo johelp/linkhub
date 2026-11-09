@@ -1,23 +1,24 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
+import { Camera } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock } from '@/types'
+import type { Page, Lang, Block, SeasonMode, LinkBlock, FeaturedBlock, ExpandableBlock, SectionLabelBlock, SocialGridBlock, ContactCardBlock, TextBlock, ImageBannerBlock, VideoEmbedBlock, EmailCaptureBlock, PaymentButtonBlock, EventTicketsBlock, BusinessHoursBlock, DaySchedule, GoogleReviewsBlock, LoyaltyCardBlock, MenuBlock, OrderMenuBlock, AppointmentRequestBlock, VCardBlock, MapEmbedBlock, FaqBlock } from '@/types'
 import { createClient } from '@/lib/supabase/client'
 import { parseVideoEmbed, getBusinessOpenStatus, generateId } from '@/lib/utils'
 import { normalizeBlock } from '@/lib/blocks/registry'
+import { sanitizeBlocks } from '@/lib/security'
+import { mapEmbedUrl } from '@/lib/maps'
+import { summarizeBlock } from '@/lib/blocks/summary'
+import type { KnowledgeEntry } from '@/lib/knowledge'
+import { OrderMenu } from './OrderMenu'
+import { AppointmentRequest } from './AppointmentRequest'
 
 const ASPECT_RATIO: Record<string, number> = {
   '16:9': 16 / 9, '9:16': 9 / 16, '1:1': 1, '4:3': 4 / 3, '3:1': 3,
 }
 
-function formatMoney(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(amount)
-  } catch {
-    return `${amount} ${currency}`
-  }
-}
+import { formatMoney } from '@/lib/orders'
 
 function buildWhatsAppUrl(phone: string, message?: string): string {
   const digits = phone.replace(/\D/g, '')
@@ -26,7 +27,21 @@ function buildWhatsAppUrl(phone: string, message?: string): string {
     : `https://wa.me/${digits}`
 }
 
-interface Props { page: Page; editing?: boolean }
+// Extra wiring used only by the editor canvas: which block is selected, how to
+// select one, and how to act on it directly from the preview.
+export interface EditingControls {
+  lang: Lang
+  selectedBlockId: string | null
+  onSelect: (id: string | null) => void
+  onInsertAt: (index: number) => void
+  onMove: (id: string, dir: -1 | 1) => void
+  onDuplicate: (id: string) => void
+  onToggleVisibility: (id: string) => void
+  onDelete: (id: string) => void
+  onEditCover?: () => void   // opens the cover photo field of the page settings
+}
+
+interface Props { page: Page; editing?: boolean; controls?: EditingControls; knowledge?: KnowledgeEntry[] }
 
 const SOCIAL_ICONS: Record<string, string> = {
   instagram: '📷', facebook: '👥', tiktok: '🎵',
@@ -47,8 +62,68 @@ const PAYMENT_ERROR_MESSAGES: Record<string, string> = {
   failed: 'No se pudo iniciar el pago. Intentá de nuevo en un momento.',
 }
 
-export function PageView({ page, editing = false }: Props) {
-  const [lang, setLang] = useState<Lang>(page.settings.defaultLang)
+// Demo / example pages are not real pages: no analytics, no payments.
+const isSynthetic = (id: string) => id.startsWith('demo') || id.startsWith('example')
+
+// ─── Public-page motion ──────────────────────────────────────────
+// One IntersectionObserver reveals `.lh-reveal` cells as they enter the
+// viewport; a rAF-throttled scroll listener feeds `--lh-y` (cover parallax).
+// Everything is gated by `enabled` (off in the editor and in demo mockups) and
+// the CSS only animates when the visitor hasn't asked for reduced motion.
+function useMotion(root: React.RefObject<HTMLDivElement | null>, enabled: boolean, dep: unknown) {
+  useEffect(() => {
+    const el = root.current
+    if (!enabled || !el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(entries => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' })
+    el.querySelectorAll('.lh-reveal:not(.in)').forEach(n => io.observe(n))
+    return () => io.disconnect()
+  }, [root, enabled, dep])
+
+  useEffect(() => {
+    const el = root.current
+    if (!enabled || !el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let frame = 0
+    const update = () => { frame = 0; el.style.setProperty('--lh-y', String(Math.min(window.scrollY, 800))) }
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { window.removeEventListener('scroll', onScroll); if (frame) cancelAnimationFrame(frame) }
+  }, [root, enabled])
+}
+
+// Slim bar that slides in once the profile card has scrolled away, so the
+// page's identity stays visible on long pages.
+function MiniBar({ target, name, avatarUrl, initial, pc }: { target: React.RefObject<HTMLElement | null>; name: string; avatarUrl?: string; initial: string; pc: string }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const el = target.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0), { threshold: 0 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [target])
+  return (
+    <div aria-hidden={!show} className="lh-minibar" data-show={show}>
+      <button type="button" tabIndex={show ? 0 : -1} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Volver arriba">
+        {avatarUrl
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={avatarUrl} alt="" width={28} height={28} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+          : <span style={{ width: 28, height: 28, borderRadius: '50%', background: pc, color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initial}</span>}
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6B6E71' }}>↑</span>
+      </button>
+    </div>
+  )
+}
+
+export function PageView({ page, editing = false, controls, knowledge = [] }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
+  const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)
+  // In the editor the language is driven from outside, so the canvas always
+  // shows the language whose fields the inspector is editing.
+  const lang: Lang = controls?.lang ?? visitorLang
   const [season, setSeason] = useState<SeasonMode>(page.settings.seasonMode)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -57,8 +132,15 @@ export function PageView({ page, editing = false }: Props) {
   // useSearchParams() would force it into a Suspense-wrapped client-only
   // subtree just to show a one-off banner after a failed payment redirect.
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [paid, setPaid] = useState(false)
   useEffect(() => {
-    const err = new URLSearchParams(window.location.search).get('payment_error')
+    const qs = new URLSearchParams(window.location.search)
+    const err = qs.get('payment_error')
+    if (qs.get('paid') === '1') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
+      setPaid(true)
+      const u = new URL(window.location.href); u.searchParams.delete('paid'); window.history.replaceState(null, '', u.toString())
+    }
     if (err) {
       setPaymentError(err)
       // Drop it from the URL so reloading/sharing the link doesn't re-show it.
@@ -81,12 +163,13 @@ export function PageView({ page, editing = false }: Props) {
     for (const b of page.blocks) {
       if (b.type === 'business_hours') map[b.id] = getBusinessOpenStatus(b.data.timezone, b.data.schedule).isOpen
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
     setBusinessStatus(map)
   }, [page.blocks])
 
   // Track page view (skipped for the marketing-site demo mockup, which isn't a real page)
   useEffect(() => {
-    if (page.id.startsWith('demo')) return
+    if (editing || isSynthetic(page.id)) return
     const supabase = createClient()
     const device = window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop'
     supabase.from('analytics_events').insert({
@@ -99,7 +182,7 @@ export function PageView({ page, editing = false }: Props) {
   }, [])
 
   const trackClick = useCallback((blockId: string, blockType: string, url: string) => {
-    if (page.id.startsWith('demo')) return
+    if (editing || isSynthetic(page.id)) return
     const supabase = createClient()
     supabase.from('analytics_events').insert({
       page_id: page.id,
@@ -109,18 +192,19 @@ export function PageView({ page, editing = false }: Props) {
       url,
       lang,
     }).then(() => {})
-  }, [page.id, lang])
+  }, [page.id, lang, editing])
 
   // Filter blocks by season and by their conditional visibility (if any).
   // normalizeBlock upgrades any block left over from a retired type (e.g.
   // `menu_pdf`, renamed to `menu`) so an old page doesn't just silently
   // drop that block on the public page -- see registry.ts.
-  const visibleBlocks = page.blocks
-    .map(normalizeBlock)
-    .filter(b => b.visible)
-    .filter(b => b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
+  // The editor canvas shows every block (hidden / seasonal / conditional ones
+  // dimmed and tagged) so nothing the owner built ever "disappears" from view.
+  const visibleBlocks = sanitizeBlocks(page.blocks.map(normalizeBlock))
+    .filter(b => editing || b.visible)
+    .filter(b => editing || b.seasonFilter === 'always' || b.seasonFilter === season || season === 'always')
     .filter(b => {
-      if (!b.condition) return true
+      if (editing || !b.condition) return true
       const isOpen = businessStatus[b.condition.sourceBlockId]
       if (isOpen === undefined) return false
       return b.condition.when === 'open' ? isOpen : !isOpen
@@ -130,84 +214,258 @@ export function PageView({ page, editing = false }: Props) {
   const enabledLangs = page.settings.enabledLangs || ['es']
   const showLangBar = enabledLangs.length > 1
 
+  const profile = page.settings.profile
+  // Motion: on by default; off in the editor canvas, in landing demos, or when the owner turns it off.
+  const fx = !editing && !page.id.startsWith('demo') && page.settings.animations !== false
+  const preview = page.id.startsWith('example')   // example pages never open a real WhatsApp chat
+  useMotion(rootRef, fx, visibleBlocks.length)
+  const initial = (page.name.trim()[0] || '•').toUpperCase()
+  // Simple link cards sit two-per-row on wide layouts; everything richer
+  // (menus, stores, video, accordions...) spans the full row.
+  const SINGLE_CELL: Block['type'][] = ['link']
+
+  const langBar = showLangBar && !editing && (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+      {enabledLangs.map((l: Lang) => (
+        <button key={l} onClick={() => setLang(l)}
+          style={{
+            fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20,
+            border: `1px solid ${l === lang ? pc : 'rgba(26,27,28,0.15)'}`,
+            background: l === lang ? pc : 'rgba(255,255,255,0.7)',
+            color: l === lang ? '#fff' : '#5A5D60',
+            cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px',
+          }}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
+
   return (
-    <div style={{ background: bg, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
+    // `@container`: the layout reacts to the width of THIS box, not the
+    // browser window, so the editor's phone/tablet/desktop preview frames and
+    // the real public page share one set of rules.
+    <div ref={rootRef} className={`@container lh-root${fx ? ' lh-fx' : ''}`} style={{ background: bg, minHeight: editing ? 420 : '100vh', position: 'relative', overflow: 'hidden' }}>
+      {fx && <MiniBar target={heroRef} name={page.name} avatarUrl={profile?.avatarUrl} initial={initial} pc={pc} />}
 
-        {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
-        {paymentError && (
-          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <p style={{ fontSize: 12.5, color: '#1A1B1C', lineHeight: 1.5, flex: 1 }}>
-              {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
-            </p>
-            <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
-              style={{ border: 'none', background: 'none', color: '#9A9D9F', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+      {/* Soft brand glow behind everything -- gives wide screens depth instead of a flat grey field */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: `radial-gradient(900px 420px at 15% -5%, ${pc}26, transparent 70%), radial-gradient(700px 380px at 95% 0%, ${pc}14, transparent 65%)`,
+      }} />
+
+      <div className="relative mx-auto w-full max-w-[520px] px-4 pb-16 @2xl:max-w-[720px] @2xl:px-8 @4xl:grid @4xl:max-w-[1120px] @4xl:grid-cols-[340px_minmax(0,1fr)] @4xl:items-start @4xl:gap-14 @4xl:px-10 @4xl:pt-14 @4xl:pb-24">
+
+        {/* Hero / profile: stacked on top for phones & tablets, sticky left panel on desktop */}
+        <header ref={heroRef} className="pt-5 @4xl:sticky @4xl:top-10 @4xl:pt-0">
+          <div style={{ borderRadius: 24, overflow: 'hidden', background: '#fff', border: '1px solid rgba(26,27,28,0.08)', boxShadow: '0 10px 30px rgba(26,27,28,0.07)' }}>
+            <div className="h-28 @2xl:h-36 @4xl:h-44 lh-cover" style={{
+              background: profile?.coverUrl
+                ? `center / cover no-repeat url("${profile.coverUrl.replace(/"/g, '%22')}")`
+                : `linear-gradient(135deg, ${pc}, ${pc}99 55%, ${pc}55)`,
+              ...(profile?.coverUrl ? { backgroundPosition: 'center calc(50% + var(--lh-y, 0) * 0.05%)' } : {}),
+              position: 'relative',
+            }}>
+              {editing && controls?.onEditCover && (
+                <button type="button" onClick={e => { e.stopPropagation(); controls.onEditCover?.() }}
+                  style={{ position: 'absolute', right: 10, top: 10, display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 12px', borderRadius: 999, border: 'none', background: 'rgba(255,255,255,.95)', color: '#1A1B1C', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(0,0,0,.18)', fontFamily: 'inherit' }}>
+                  <Camera size={14} aria-hidden /> {profile?.coverUrl ? 'Cambiar portada' : 'Añadir foto de portada'}
+                </button>
+              )}
+            </div>
+            <div style={{ padding: '0 20px 22px', textAlign: 'center' }}>
+              {profile?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="lh-avatar" src={profile.avatarUrl} alt="" width={88} height={88}
+                  style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', marginTop: -44, background: '#fff', boxShadow: '0 4px 14px rgba(26,27,28,0.15)' }} />
+              ) : (
+                <div aria-hidden className="lh-avatar" style={{
+                  width: 88, height: 88, borderRadius: '50%', margin: '-44px auto 0', border: '4px solid #fff', background: pc, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, fontWeight: 700, boxShadow: '0 4px 14px rgba(26,27,28,0.15)',
+                }}>{initial}</div>
+              )}
+              <h1 className="lh-hero-text" style={{ fontSize: 22, fontWeight: 800, color: '#1A1B1C', marginTop: 12, letterSpacing: '-0.3px', lineHeight: 1.2 }}>{page.name}</h1>
+              {profile?.tagline && <p className="lh-hero-text lh-d2" style={{ fontSize: 14, color: '#5A5D60', marginTop: 6, lineHeight: 1.5 }}>{profile.tagline}</p>}
+              {langBar && <div style={{ marginTop: 14 }}>{langBar}</div>}
+            </div>
           </div>
-        )}
 
-        {/* Lang bar */}
-        {showLangBar && (
-          <div style={{ display: 'flex', gap: 6, padding: '14px 0 0', justifyContent: 'flex-end' }}>
-            {enabledLangs.map((l: Lang) => (
-              <button key={l} onClick={() => setLang(l)}
-                style={{
-                  fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
-                  border: `1px solid ${l === lang ? pc : 'rgba(26,27,28,0.15)'}`,
-                  background: l === lang ? pc : 'transparent',
-                  color: l === lang ? '#fff' : '#9A9D9F',
-                  cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px',
-                }}>
-                {l.toUpperCase()}
-              </button>
-            ))}
+          {/* Season admin (only if page has season blocks) */}
+          {page.settings.seasonMode !== 'always' && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0', gap: 4 }}>
+              {(['winter','summer','off'] as SeasonMode[]).map(s => (
+                <button key={s} onClick={() => setSeason(s)}
+                  style={{
+                    fontSize: 11, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
+                    border: `1px solid ${s === season ? pc : 'rgba(26,27,28,0.15)'}`,
+                    background: s === season ? pc : 'rgba(255,255,255,0.7)',
+                    color: s === season ? '#fff' : '#5A5D60', cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                  {s === 'winter' ? '❄️' : s === 'summer' ? '☀️' : '⏸'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {page.settings.showPoweredBy && (
+            <div className="hidden @4xl:block" style={{ textAlign: 'center', marginTop: 18 }}>
+              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#6B6E71', textDecoration: 'none' }}>
+                Creado con LinkHub
+              </a>
+            </div>
+          )}
+        </header>
+
+        <main className="min-w-0">
+          {paid && (
+            <div role="status" style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#ECFDF3', border: '1px solid #BBF7D0', display: 'flex', gap: 10, alignItems: 'center' }}>
+              <p style={{ fontSize: 13, color: '#14532D', lineHeight: 1.5, flex: 1 }}>¡Gracias por tu compra! Si compraste entradas, te llegan por email en unos minutos.</p>
+              <button onClick={() => setPaid(false)} aria-label="Cerrar" style={{ border: 'none', background: 'none', color: '#14532D', fontSize: 14, cursor: 'pointer', padding: 2 }}>✕</button>
+            </div>
+          )}
+
+          {/* Payment error banner (after a failed /api/pay/mercadopago redirect) */}
+          {paymentError && (
+            <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 12, background: '#FEF0EF', border: '1px solid rgba(232,21,10,0.25)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <p style={{ fontSize: 12.5, color: '#1A1B1C', lineHeight: 1.5, flex: 1 }}>
+                {PAYMENT_ERROR_MESSAGES[paymentError] || PAYMENT_ERROR_MESSAGES.failed}
+              </p>
+              <button onClick={() => setPaymentError(null)} aria-label="Cerrar"
+                style={{ border: 'none', background: 'none', color: '#6B6E71', fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: 2 }}>✕</button>
+            </div>
+          )}
+
+          {/* Blocks: 1 column on phones, 2-up grid from tablet width */}
+          <div className="mt-4 grid grid-cols-1 gap-x-3 @2xl:grid-cols-2 @4xl:mt-0 @4xl:gap-x-4">
+            {editing && controls && (
+              <div className="@2xl:col-span-2"><InsertSlot index={0} onInsertAt={controls.onInsertAt} alwaysVisible={visibleBlocks.length === 0} /></div>
+            )}
+            {visibleBlocks.map((block, i) => {
+              const motion = fx ? (i < 3 ? ` lh-enter lh-e${i}` : ` lh-reveal lh-r${i % 2}`) : ''
+              const cell = (SINGLE_CELL.includes(block.type) ? 'lh-cell' : 'lh-cell @2xl:col-span-2') + motion
+              const rendered = (
+                <BlockRenderer
+                  block={block}
+                  lang={lang}
+                  pc={pc}
+                  pageId={page.id}
+                  pageSlug={page.slug}
+                  pageName={page.name}
+                  knowledge={knowledge}
+                  preview={preview}
+                  expandedId={expandedId}
+                  setExpandedId={setExpandedId}
+                  onTrackClick={trackClick}
+                  editing={editing}
+                />
+              )
+              if (!editing || !controls) return <div key={block.id} className={cell}>{rendered}</div>
+              return (
+                <div key={block.id} className={cell}>
+                  <SelectableBlock block={block} index={i} total={visibleBlocks.length} controls={controls}>
+                    {rendered}
+                  </SelectableBlock>
+                  <InsertSlot index={i + 1} onInsertAt={controls.onInsertAt} />
+                </div>
+              )
+            })}
           </div>
-        )}
 
-        {/* Season admin (only if page has season blocks) */}
-        {page.settings.seasonMode !== 'always' && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 0 0' }}>
-            {(['winter','summer','off'] as SeasonMode[]).map(s => (
-              <button key={s} onClick={() => setSeason(s)}
-                style={{
-                  fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
-                  border: `1px solid ${s === season ? pc : 'rgba(26,27,28,0.15)'}`,
-                  background: s === season ? pc : 'transparent',
-                  color: s === season ? '#fff' : '#9A9D9F',
-                  marginLeft: 4, cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                {s === 'winter' ? '❄️' : s === 'summer' ? '☀️' : '⏸'}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Powered by (phones & tablets; on desktop it lives under the profile card) */}
+          {page.settings.showPoweredBy && (
+            <div className="@4xl:hidden" style={{ textAlign: 'center', marginTop: 32 }}>
+              <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 11, color: '#6B6E71', textDecoration: 'none' }}>
+                Creado con LinkHub
+              </a>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}
 
-        {/* Blocks */}
-        <div style={{ marginTop: 16 }}>
-          {visibleBlocks.map(block => (
-            <BlockRenderer
-              key={block.id}
-              block={block}
-              lang={lang}
-              pc={pc}
-              pageId={page.id}
-              expandedId={expandedId}
-              setExpandedId={setExpandedId}
-              onTrackClick={trackClick}
-              editing={editing}
-            />
+// ─── Editor-only: selectable wrapper + insertion slots ───────────
+const TOOL_BTN: React.CSSProperties = {
+  width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: 'none', background: 'transparent', color: '#fff', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit',
+}
+
+function SelectableBlock({ block, index, total, controls, children }: {
+  block: Block; index: number; total: number; controls: EditingControls; children: React.ReactNode
+}) {
+  const [hover, setHover] = useState(false)
+  const selected = controls.selectedBlockId === block.id
+  const tags = [
+    !block.visible && 'Oculto',
+    block.seasonFilter !== 'always' && `Solo ${block.seasonFilter === 'winter' ? 'invierno' : block.seasonFilter === 'summer' ? 'verano' : 'fuera de temporada'}`,
+    block.condition && (block.condition.when === 'open' ? 'Solo si está abierto' : 'Solo si está cerrado'),
+  ].filter(Boolean) as string[]
+
+  const tool = (label: string, onClick: () => void, content: React.ReactNode, disabled = false) => (
+    <button type="button" aria-label={label} title={label} disabled={disabled}
+      onClick={e => { e.stopPropagation(); onClick() }}
+      style={{ ...TOOL_BTN, opacity: disabled ? 0.35 : 1, cursor: disabled ? 'default' : 'pointer' }}>
+      {content}
+    </button>
+  )
+
+  return (
+    <div
+      role="group" tabIndex={0} aria-current={selected ? 'true' : undefined} aria-roledescription="bloque editable"
+      aria-label={`Seleccionar bloque ${index + 1}: ${summarizeBlock(block, controls.lang).title}`}
+      data-block-id={block.id}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      // Capture phase: the click is consumed here, so links, accordions and
+      // payment buttons inside the preview never fire while editing.
+      onClickCapture={e => { e.preventDefault(); e.stopPropagation(); controls.onSelect(block.id) }}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); controls.onSelect(block.id) } }}
+      style={{
+        position: 'relative', borderRadius: 16, cursor: 'pointer', outlineOffset: 2,
+        outline: selected ? '2px solid #E8150A' : hover ? '2px solid rgba(232,21,10,0.35)' : '2px solid transparent',
+        opacity: block.visible ? 1 : 0.45, transition: 'outline-color .12s',
+      }}>
+      <div style={{ pointerEvents: 'none' }} inert>{children}</div>
+
+      {tags.length > 0 && (
+        <div style={{ position: 'absolute', left: 6, top: 6, display: 'flex', gap: 4, pointerEvents: 'none' }}>
+          {tags.map(t => (
+            <span key={t} style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'rgba(26,27,28,0.82)', color: '#fff' }}>{t}</span>
           ))}
         </div>
+      )}
 
-        {/* Powered by */}
-        {page.settings.showPoweredBy && (
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <a href="https://linkhub.app" target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 11, color: '#9A9D9F', textDecoration: 'none' }}>
-              Creado con LinkHub
-            </a>
-          </div>
-        )}
-      </div>
+      {selected && (
+        <div style={{
+          position: 'absolute', right: 6, top: -38, zIndex: 5, display: 'flex', gap: 2, padding: 3,
+          background: '#1A1B1C', borderRadius: 11, boxShadow: '0 4px 14px rgba(26,27,28,0.3)',
+        }} onClickCapture={e => e.stopPropagation()}>
+          {tool('Subir', () => controls.onMove(block.id, -1), '↑', index === 0)}
+          {tool('Bajar', () => controls.onMove(block.id, 1), '↓', index === total - 1)}
+          {tool('Duplicar', () => controls.onDuplicate(block.id), '⧉')}
+          {tool(block.visible ? 'Ocultar' : 'Mostrar', () => controls.onToggleVisibility(block.id), block.visible ? '◉' : '○')}
+          {tool('Eliminar', () => controls.onDelete(block.id), '🗑')}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InsertSlot({ index, onInsertAt, alwaysVisible }: { index: number; onInsertAt: (i: number) => void; alwaysVisible?: boolean }) {
+  const [hover, setHover] = useState(false)
+  const show = hover || alwaysVisible
+  return (
+    <div onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{ height: show ? 30 : 12, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', transition: 'height .12s' }}>
+      <button type="button" aria-label="Añadir bloque aquí" onClick={() => onInsertAt(index)}
+        style={{
+          opacity: show ? 1 : 0, transition: 'opacity .12s', display: 'flex', alignItems: 'center', gap: 6,
+          padding: '4px 12px', borderRadius: 20, border: '1.5px dashed #E8150A', background: '#FEF0EF',
+          color: '#C8110A', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+        + Añadir bloque
+      </button>
     </div>
   )
 }
@@ -223,14 +481,14 @@ function EmptyBlockPlaceholder({ icon, label }: { icon: string; label: string })
       border: '1.5px dashed rgba(26,27,28,0.15)', background: '#F6F6F5',
     }}>
       <span style={{ fontSize: 22 }}>{icon}</span>
-      <span style={{ fontSize: 12, color: '#9A9D9F', textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: 12, color: '#6B6E71', textAlign: 'center' }}>{label}</span>
     </div>
   )
 }
 
 // ─── Block Renderer ──────────────────────────────────────────────
-function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onTrackClick, editing }: {
-  block: Block; lang: Lang; pc: string; pageId: string
+function BlockRenderer({ block, lang, pc, pageId, pageSlug, pageName, knowledge, preview, expandedId, setExpandedId, onTrackClick, editing }: {
+  block: Block; lang: Lang; pc: string; pageId: string; pageSlug: string; pageName: string; knowledge: KnowledgeEntry[]; preview: boolean
   expandedId: string | null; setExpandedId: (id: string | null) => void
   onTrackClick: (id: string, type: string, url: string) => void
   editing: boolean
@@ -248,9 +506,9 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
     case 'section_label': {
       const b = block as SectionLabelBlock
       return (
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', margin: '22px 0 8px 2px', letterSpacing: '.8px', textTransform: 'uppercase' }}>
+        <h2 style={{ fontSize: 11, fontWeight: 700, color: '#6B6E71', margin: '22px 0 8px 2px', letterSpacing: '.8px', textTransform: 'uppercase' }}>
           {b.data.translations[lang]?.text || b.data.translations['es']?.text || ''}
-        </div>
+        </h2>
       )
     }
 
@@ -277,11 +535,65 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
-            {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+            {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
           </div>
-          <div style={{ fontSize: 13, color: '#9A9D9F' }}>→</div>
+          <div style={{ fontSize: 13, color: '#6B6E71' }}>→</div>
         </a>
       )
+    }
+
+    case 'faq': {
+      const b = block as FaqBlock
+      const faqs = knowledge.filter(k => k.kind === 'faq')
+      if (faqs.length === 0) return editing ? <EmptyBlockPlaceholder icon="❓" label="Añade preguntas en Conocimiento (menú del panel) y aparecerán aquí" /> : null
+      const title = b.data.translations[lang]?.title || b.data.translations.es?.title || 'Preguntas frecuentes'
+      return (
+        <section style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '14px 16px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1A1B1C', marginBottom: 6 }}>{title}</h2>
+          {faqs.map(f => (
+            <details key={f.id} style={{ borderTop: '1px solid rgba(26,27,28,0.08)' }}>
+              <summary style={{ cursor: 'pointer', padding: '11px 0', fontSize: 14, fontWeight: 600, color: '#1A1B1C', listStyle: 'none' }}>{f.title}</summary>
+              <p style={{ fontSize: 13.5, color: '#3F4346', lineHeight: 1.6, paddingBottom: 12, whiteSpace: 'pre-line' }}>{f.content}</p>
+            </details>
+          ))}
+        </section>
+      )
+    }
+
+    case 'vcard': {
+      const b = block as VCardBlock
+      const label = b.data.translations[lang]?.label || b.data.translations.es?.label || 'Guardar en mis contactos'
+      return (
+        <a href={`/p/${pageSlug}/contact.vcf`} download onClick={() => onTrackClick(b.id, 'vcard', 'vcard')} style={card}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F2F3F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }} aria-hidden>📇</div>
+          <div style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{label}</div>
+          <div style={{ fontSize: 18, color: '#6B6E71' }} aria-hidden>↓</div>
+        </a>
+      )
+    }
+
+    case 'map_embed': {
+      const b = block as MapEmbedBlock
+      const src = mapEmbedUrl(b.data.query)
+      if (!src) return editing ? <EmptyBlockPlaceholder icon="🗺️" label="Escribe tu dirección para mostrar el mapa" /> : null
+      return (
+        <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(26,27,28,0.09)', marginBottom: 8, background: '#F2F3F4' }}>
+          <iframe src={src} title="Ubicación en Google Maps" loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+            style={{ border: 0, width: '100%', height: Math.min(Math.max(b.data.height || 260, 160), 520), display: 'block' }} allowFullScreen />
+        </div>
+      )
+    }
+
+    case 'appointment_request': {
+      const b = block as AppointmentRequestBlock
+      return <AppointmentRequest block={b} lang={lang} pc={pc} pageName={pageName} editing={editing} preview={preview}
+        onSent={url => onTrackClick(b.id, 'appointment_request', url)} />
+    }
+
+    case 'order_menu': {
+      const b = block as OrderMenuBlock
+      return <OrderMenu block={b} lang={lang} pc={pc} pageName={pageName} editing={editing} preview={preview}
+        onSent={url => onTrackClick(b.id, 'order_menu', url)} />
     }
 
     case 'menu': {
@@ -296,7 +608,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
           {(t.title || t.description) && (
             <div style={{ marginBottom: 10 }}>
               {t.title && <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
-              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
             </div>
           )}
           {sections.map(section => {
@@ -304,7 +616,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
             return (
               <div key={section.id} style={{ marginBottom: 10 }}>
                 {st.name && (
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#9A9D9F', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6B6E71', letterSpacing: '.6px', textTransform: 'uppercase', marginBottom: 4 }}>
                     {st.name}
                   </div>
                 )}
@@ -314,7 +626,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, padding: '7px 0', borderBottom: '1px solid rgba(26,27,28,0.06)' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#1A1B1C' }}>{it.name}</div>
-                        {it.description && <div style={{ fontSize: 11, color: '#9A9D9F', marginTop: 2 }}>{it.description}</div>}
+                        {it.description && <div style={{ fontSize: 11, color: '#6B6E71', marginTop: 2 }}>{it.description}</div>}
                       </div>
                       {item.price && <div style={{ fontSize: 13, fontWeight: 700, color: pc, flexShrink: 0 }}>{item.price}</div>}
                     </div>
@@ -368,12 +680,13 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#1A1B1C' }}>{t.title}</div>
-              <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.subtitle}</div>
+              <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.subtitle}</div>
             </div>
-            <div style={{ fontSize: 11, color: '#9A9D9F', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
+            <div style={{ fontSize: 11, color: '#6B6E71', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▼</div>
           </div>
-          {isOpen && (
-            <div style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {/* Always in the DOM (hidden when closed) so crawlers and AI assistants can read every option */}
+          {(
+            <div className={isOpen ? 'lh-expand' : undefined} style={{ borderTop: '1px solid rgba(26,27,28,0.09)', padding: 11, display: isOpen ? 'flex' : 'none', flexWrap: 'wrap', gap: 8 }}>
               {b.data.children.map(child => {
                 const ct = child.translations[lang] || child.translations['es'] || { label: '' }
                 return (
@@ -479,7 +792,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
             )}
           </div>
-          {b.data.caption && <p style={{ fontSize: 12, color: '#9A9D9F', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
+          {b.data.caption && <p style={{ fontSize: 12, color: '#6B6E71', marginTop: 6, textAlign: 'center' }}>{b.data.caption}</p>}
         </div>
       )
     }
@@ -494,14 +807,14 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
       const b = block as PaymentButtonBlock
       const t = b.data.translations[lang] || b.data.translations['es'] || { title: '', description: '' }
       return (
-        <a href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}`}
+        <a href={`/api/pay?pageId=${pageId}&blockId=${b.id}`}
           style={{ ...card, background: pc, border: 'none', color: '#fff' }}>
           <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
             💳
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{t.title}</div>
-            {t.description && <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>{t.description}</div>}
+            {t.description && <div style={{ fontSize: 12, opacity: 1, marginTop: 2 }}>{t.description}</div>}
           </div>
           <div style={{ fontSize: 13, fontWeight: 700 }}>{formatMoney(b.data.price, b.data.currency)}</div>
         </a>
@@ -516,11 +829,11 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
           {(t.title || t.description) && (
             <div style={{ marginBottom: 8 }}>
               {t.title && <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C' }}>{t.title}</div>}
-              {t.description && <div style={{ fontSize: 12, color: '#9A9D9F', marginTop: 2 }}>{t.description}</div>}
+              {t.description && <div style={{ fontSize: 12, color: '#6B6E71', marginTop: 2 }}>{t.description}</div>}
             </div>
           )}
           {b.data.tiers.map(tier => (
-            <a key={tier.id} href={`/api/pay/mercadopago?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
+            <a key={tier.id} href={`/api/pay?pageId=${pageId}&blockId=${b.id}&tierId=${tier.id}`}
               style={{ ...card, background: pc, border: 'none', color: '#fff', marginBottom: 6 }}>
               <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 10, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>
                 🎫
@@ -554,7 +867,7 @@ function BlockRenderer({ block, lang, pc, pageId, expandedId, setExpandedId, onT
               {'★'.repeat(fullStars)}<span style={{ color: '#E5E7EB' }}>{'★'.repeat(5 - fullStars)}</span>
             </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: '#1A1B1C' }}>{b.data.rating.toFixed(1)}</span>
-            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#9A9D9F' }}>({b.data.reviewCount} reseñas)</span>}
+            {b.data.reviewCount > 0 && <span style={{ fontSize: 12, color: '#6B6E71' }}>({b.data.reviewCount} reseñas)</span>}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {b.data.mapsUrl && (
@@ -616,7 +929,7 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
       ) : (
         <form onSubmit={submit}>
           {headline && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{headline}</p>}
-          {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 12 }}>{description}</p>}
+          {description && <p style={{ fontSize: 12, color: '#6B6E71', marginBottom: 12 }}>{description}</p>}
           <div style={{ display: 'flex', gap: 6 }}>
             <input
               type="email" required value={email} onChange={e => setEmail(e.target.value)}
@@ -628,7 +941,7 @@ function EmailCaptureForm({ pageId, lang, pc, headline, description, buttonLabel
               {buttonLabel}
             </button>
           </div>
-          {status === 'error' && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
+          {status === 'error' && <p style={{ fontSize: 11, color: '#C8110A', marginTop: 6 }}>Algo salió mal, probá de nuevo.</p>}
         </form>
       )}
     </div>
@@ -649,6 +962,7 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
 
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
       setCode(localStorage.getItem(storageKey))
     } catch {
       // Private browsing / blocked storage -- just can't remember the card, no big deal.
@@ -680,8 +994,8 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
     <div style={{ background: '#fff', border: '1px solid rgba(26,27,28,0.09)', borderRadius: 14, marginBottom: 8, padding: '16px 14px', textAlign: 'center' }}>
       <div style={{ fontSize: 28, marginBottom: 6 }}>{stampIcon}</div>
       {title && <p style={{ fontSize: 14, fontWeight: 700, color: '#1A1B1C', marginBottom: 4 }}>{title}</p>}
-      {description && <p style={{ fontSize: 12, color: '#9A9D9F', marginBottom: 4 }}>{description}</p>}
-      <p style={{ fontSize: 11, color: '#9A9D9F', marginBottom: 12 }}>
+      {description && <p style={{ fontSize: 12, color: '#6B6E71', marginBottom: 4 }}>{description}</p>}
+      <p style={{ fontSize: 11, color: '#6B6E71', marginBottom: 12 }}>
         {targetStamps} sellos = {rewardDescription || 'un premio'}
       </p>
       {code ? (
@@ -695,8 +1009,8 @@ function LoyaltyCardWidget({ pageId, blockId, pc, title, description, stampIcon,
           {loading ? 'Un momento...' : 'Obtener mi tarjeta'}
         </button>
       )}
-      {error && <p style={{ fontSize: 11, color: '#E8150A', marginTop: 8 }}>{error}</p>}
-      {isDemo && <p style={{ fontSize: 10, color: '#9A9D9F', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
+      {error && <p style={{ fontSize: 11, color: '#C8110A', marginTop: 8 }}>{error}</p>}
+      {isDemo && <p style={{ fontSize: 10, color: '#6B6E71', marginTop: 8 }}>(demo — funciona en tu página real)</p>}
     </div>
   )
 }
@@ -713,6 +1027,7 @@ function BusinessHoursCard({ title, timezone, schedule, pc }: {
   const [status, setStatus] = useState<{ isOpen: boolean; today: DaySchedule | null } | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only value (clock/URL/localStorage); reading it during render would break hydration
     setStatus(getBusinessOpenStatus(timezone, schedule))
   }, [timezone, schedule])
 
@@ -724,7 +1039,7 @@ function BusinessHoursCard({ title, timezone, schedule, pc }: {
           <span style={{
             fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 20,
             background: status.isOpen ? '#ECFDF5' : '#FEF0EF',
-            color: status.isOpen ? '#16A34A' : '#E8150A',
+            color: status.isOpen ? '#15803D' : '#B91C1C',
           }}>
             {status.isOpen ? '● Abierto ahora' : '○ Cerrado ahora'}
           </span>

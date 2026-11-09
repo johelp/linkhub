@@ -6,14 +6,19 @@
   --red-l:  #FEF0EF;
   --ink:    #1A1B1C;
   --ink-m:  #5A5D60;
-  --ink-l:  #9A9D9F;
+  --ink-l:  #6B6E71;
   --snow:   #F6F6F5;
   --gray-l: #F2F3F4;
   --border: rgba(26,27,28,0.09);
   --sun:    #FF8C00;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Layered on purpose: an unlayered `* { margin:0; padding:0 }` outranks every
+   Tailwind utility (p-5, mx-auto, gap...) and silently disabled them app-wide.
+   Tailwind's preflight already zeroes margin/padding. */
+@layer base {
+  * { box-sizing: border-box; }
+}
 
 body {
   font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
@@ -89,4 +94,136 @@ body {
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* Public page: gentle lift on interactive cards (disabled in the editor canvas,
+   where blocks are wrapped with pointer-events: none). */
+.lh-cell a[href] { transition: transform .15s ease, box-shadow .15s ease; }
+@media (hover: hover) {
+  .lh-cell a[href]:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(26,27,28,0.10); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lh-cell a[href] { transition: none; }
+  .lh-cell a[href]:hover { transform: none; }
+}
+
+/* Landing: scroll reveal. Only hides content when JS can reveal it again and
+   the visitor hasn't asked for reduced motion. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+}
+.lh-navlink:hover { color: #1A1B1C !important; }
+@keyframes chipFloat { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+.hero-chip { animation: chipFloat 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hero-chip { animation: none; } }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Dashboard: visible keyboard focus on every navigation target. */
+.dash-link:focus-visible { outline: 2px solid #1A1B1C; outline-offset: 2px; border-radius: 10px; }
+
+/* ─── Public client pages: motion ─────────────────────────────────
+   Only animates with JS available AND no reduced-motion preference; everything
+   else renders statically. Hero + first blocks animate by CSS alone (no JS wait,
+   keeps LCP fast); the rest reveal as they scroll into view. */
+@keyframes lhUp { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+@keyframes lhPop { from { opacity: 0; transform: scale(.6) } 60% { transform: scale(1.06) } to { opacity: 1; transform: none } }
+@keyframes lhZoom { from { transform: scale(1.12) } to { transform: scale(1) } }
+@keyframes lhBump { 0% { transform: scale(1) } 40% { transform: scale(1.35) } 100% { transform: scale(1) } }
+@keyframes lhSlideUp { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: none } }
+@keyframes lhDrop { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: none } }
+
+.lh-press:active { transform: scale(.96); }
+.lh-press { transition: transform .12s ease, filter .15s ease; }
+@media (hover: hover) { .lh-press:hover { filter: brightness(1.04); } }
+.lh-cell a[href]:active { transform: scale(.985); }
+.lh-cell a[href] > :last-child { transition: transform .18s ease; }
+@media (hover: hover) { .lh-cell a[href]:hover > :last-child { transform: translateX(4px); } }
+
+.lh-minibar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; transform: translateY(-110%); transition: transform .28s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.lh-minibar[data-show="true"] { transform: none; pointer-events: auto; }
+.lh-minibar button { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 720px; margin: 0 auto; padding: 10px 18px; border: 0; background: rgba(255,255,255,.86); backdrop-filter: saturate(180%) blur(14px); -webkit-backdrop-filter: saturate(180%) blur(14px); box-shadow: 0 1px 0 rgba(26,27,28,.08), 0 8px 24px rgba(26,27,28,.06); cursor: pointer; font-family: inherit; text-align: left; border-radius: 0 0 16px 16px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lh-expand { animation: lhSlideUp .22s ease both; }
+  .lh-bump { animation: lhBump .25s ease; display: inline-block; }
+  .lh-pop { animation: lhSlideUp .25s ease both; }
+  .lh-cell a[href]:hover { transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s; }
+}
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .lh-fx .lh-cover { animation: lhZoom 1.4s cubic-bezier(.2,.7,.2,1) both; }
+  .lh-fx .lh-avatar { animation: lhPop .7s cubic-bezier(.2,.9,.3,1.2) .15s both; }
+  .lh-fx .lh-hero-text { animation: lhUp .6s ease .3s both; }
+  .lh-fx .lh-hero-text.lh-d2 { animation-delay: .4s; }
+  .lh-fx .lh-enter { animation: lhUp .6s cubic-bezier(.2,.7,.2,1) both; }
+  .lh-fx .lh-e0 { animation-delay: .35s; } .lh-fx .lh-e1 { animation-delay: .45s; } .lh-fx .lh-e2 { animation-delay: .55s; }
+  .lh-fx .lh-reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1); }
+  .lh-fx .lh-reveal.lh-r1 { transition-delay: 70ms; }
+  .lh-fx .lh-reveal.in { opacity: 1; transform: none; }
+}
+
+/* ─── Paused public page (plan lapsed): calm, neutral, never says why ───── */
+.lh-paused { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 24px; position: relative; overflow: hidden;
+  background: radial-gradient(1000px 600px at 50% 35%, color-mix(in srgb, var(--c) 10%, #fff), #F6F6F4 70%); color: #1A1B1C; }
+.lh-paused-stage { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.lh-paused-avatar { width: 88px; height: 88px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 34px; font-weight: 700; border: 4px solid #fff; box-shadow: 0 6px 24px rgba(26,27,28,.14); filter: saturate(.7); position: relative; z-index: 2; }
+.lh-ring { position: absolute; inset: 0; margin: auto; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--c) 40%, transparent); width: 110px; height: 110px; opacity: .5; }
+.lh-paused-name { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-top: 4px; }
+.lh-paused-text { font-size: 18px; font-weight: 600; margin-top: 10px; color: #3F4346; }
+.lh-paused-sub { font-size: 15px; margin-top: 6px; color: #5B6064; max-width: 320px; }
+.lh-paused-bar { width: 160px; height: 3px; border-radius: 3px; background: rgba(26,27,28,.1); overflow: hidden; margin-top: 28px; }
+.lh-paused-bar span { display: block; height: 100%; width: 40%; border-radius: 3px; background: var(--c); opacity: .7; }
+.lh-paused-owner { position: absolute; bottom: 22px; font-size: 12.5px; color: #6B6E71; text-decoration: none; padding: 8px 12px; }
+.lh-paused-owner:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) {
+  .lh-ring { animation: lhRing 4.2s ease-out infinite; }
+  .lh-ring.r2 { animation-delay: 1.4s; } .lh-ring.r3 { animation-delay: 2.8s; }
+  .lh-paused-bar span { animation: lhSlide 1.8s ease-in-out infinite; }
+  .lh-paused-avatar { animation: lhBreath 4.2s ease-in-out infinite; }
+  .lh-paused-name, .lh-paused-text, .lh-paused-sub { animation: lhUp .8s ease both; }
+  .lh-paused-text { animation-delay: .15s; } .lh-paused-sub { animation-delay: .3s; }
+}
+@keyframes lhRing { 0% { transform: scale(1); opacity: .55 } 100% { transform: scale(2); opacity: 0 } }
+@keyframes lhSlide { 0% { transform: translateX(-110%) } 100% { transform: translateX(260%) } }
+@keyframes lhBreath { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+
+/* ─── Landing hero v2: staged entrance ─────────────────────────────
+   Everything is visible by default; motion is added only when the visitor
+   hasn't asked for reduced motion. */
+.hw { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+.hw > span { display: inline-block; }
+.hero-em { background-image: linear-gradient(var(--hero-accent, #E8150A), var(--hero-accent, #E8150A)); background-repeat: no-repeat; background-position: 0 92%; background-size: 100% .09em; }
+.hero-glow-bg { position: absolute; inset: 5% 0 auto auto; width: 80%; height: 80%; pointer-events: none; z-index: 0;
+  background: radial-gradient(closest-side, rgba(232,21,10,.14), rgba(232,21,10,0)); filter: blur(10px); }
+.hero-chip-pos { position: absolute; z-index: 2; }
+@keyframes lhWord { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes lhUnderline { from { background-size: 0 .09em; } to { background-size: 100% .09em; } }
+@keyframes lhPhoneIn { from { opacity: 0; transform: translateY(40px) rotate(2.5deg) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes lhChipIn { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes lhGlow { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hw > span { animation: lhWord .8s cubic-bezier(.16,.84,.3,1) both; animation-delay: calc(.1s + var(--i, 0) * .07s); }
+  .hero-em { animation: lhUnderline .9s cubic-bezier(.65,0,.35,1) .95s both; }
+  .hero-phone-in { animation: lhPhoneIn 1s cubic-bezier(.16,.84,.3,1) .25s both; }
+  .hero-chip-in { animation: lhChipIn .6s cubic-bezier(.2,.9,.3,1.2) both; animation-delay: calc(.9s + var(--c, 0) * .18s); }
+  .hero-glow-bg { animation: lhGlow 1.4s ease-out .1s both; }
+}
+
+/* ─── Landing: story chat + niches marquee ───────────────────────── */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .story:not(.play) .story-b { opacity: 0; transform: translateY(10px); }
+  .story.play .story-b { animation: lhChipIn .55s cubic-bezier(.2,.9,.3,1.1) both; animation-delay: calc(var(--d, 0) * 1s); }
+}
+@keyframes lhMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { overflow: hidden; -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent); }
+.marquee-track { display: flex; width: max-content; gap: 12px; }
+@media (prefers-reduced-motion: no-preference) {
+  .marquee-track { animation: lhMarquee 55s linear infinite; }
+  .marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .marquee-dup { display: none; }
 }

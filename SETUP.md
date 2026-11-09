@@ -276,3 +276,11 @@ Panel para vos como operador de LinkHub — ver y gestionar **todos** los usuari
 - El acceso se revisa en el servidor en cada request (`src/lib/admin.ts` + `src/app/admin/layout.tsx`), no solo se oculta un link en el menú.
 - Las dos acciones de gestión (`/api/admin/set-plan`, `/api/admin/toggle-page`) vuelven a chequear que quien llama es admin, server-side, cada vez — nunca confían en que si alguien "llegó hasta ahí" ya está autorizado.
 - Ambas rutas escriben con el cliente de service role (`src/lib/supabase/admin.ts`), porque actúan sobre filas que no son del usuario logueado — RLS no lo permitiría con el cliente normal.
+
+## Endurecimiento de seguridad (auditoría)
+
+1. **Migraciones:** aplicá en orden `supabase/migrations/011_security_hardening.sql`, `012_dashboard_stats.sql` y `013_hardening_phase2.sql` (primero en staging). Son idempotentes.
+2. **Cifrado de tokens de Mercado Pago:** generá una clave con `openssl rand -base64 32`, cargala en Vercel como `TOKEN_ENCRYPTION_KEY` (Production y Preview) y, si ya había vendedores conectados, ejecutá una vez `node --experimental-strip-types scripts/encrypt-existing-tokens.mjs` (vista previa) y luego con `--apply`. Sin la clave todo sigue funcionando, con los tokens en texto plano como antes.
+3. **Rotación de claves de Supabase:** ver `security/06-runbooks.md` §1. Es la acción más urgente.
+4. **Protección de `main`:** en GitHub → Settings → Branches, exigí PR y los checks de CI (`checks`, `secrets`).
+5. Informe completo y plan: carpeta `security/`.
