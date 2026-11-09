@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v1
         with: { version: latest }
       - name: Apply migrations (staging)
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production   # required reviewers = manual approval gate
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v1
         with: { version: latest }
       - name: Apply migrations (production)
