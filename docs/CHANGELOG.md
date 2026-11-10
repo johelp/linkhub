@@ -2,6 +2,11 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-10 — Portada y logo
+
+**Corregido**
+- Con una foto de portada, la imagen tapaba el marcador de posición del logo (el botón de portada del editor hizo que la portada se pintara por encima). El avatar tiene ahora `z-index` propio.
+
 ## 2026-11-09 — Código de un solo uso, botón Guardar y arreglo de dominios
 
 **Cambiado**
