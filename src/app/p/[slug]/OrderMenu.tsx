@@ -74,8 +74,11 @@ export function OrderMenu({ block, lang, pc, pageName, editing, preview, onSent 
         {t?.description && <div style={{ fontSize: 13, color: MUTED, marginTop: 2 }}>{t.description}</div>}
       </div>
 
+      {editing && d.whatsapp.replace(/\D/g, '').length < 8 && (
+        <div style={{ margin: '0 16px 6px', fontSize: 11.5, color: '#B45309' }}>⚠ Falta tu número de WhatsApp para recibir pedidos: añádelo en Diseño y ajustes → Cabecera.</div>
+      )}
       {isEmpty && editing && (
-        <div style={{ padding: '18px 16px', fontSize: 12, color: '#6B6E71', textAlign: 'center' }}>Agregá productos para armar tu catálogo</div>
+        <div style={{ padding: '18px 16px', fontSize: 12, color: '#6B6E71', textAlign: 'center' }}>Añade productos para armar tu catálogo</div>
       )}
 
       {step === 'browse' && (

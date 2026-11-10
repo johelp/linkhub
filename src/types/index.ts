@@ -100,6 +100,7 @@ export interface PageSettings {
     avatarUrl?: string
     coverUrl?: string
     tagline?: string
+    whatsapp?: string   // default WhatsApp for orders and appointment requests
   }
   pixels?: {
     ga4Id?: string        // "G-XXXXXXXXXX"

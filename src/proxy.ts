@@ -32,17 +32,22 @@ function buildCsp(nonce: string): string {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // A customer's own domain: serve only their public page (and what it needs).
-  // No session, no dashboard, no admin: those exist only on the platform host.
+  // A customer's own domain (an ACTIVE row in custom_domains): serve only their
+  // public page and what it needs. No session, no dashboard, no admin there.
+  // Any other host is treated as the platform itself (production domain, the
+  // test subdomain, previews...), so a new alias can never take the site down;
+  // Vercel only routes hosts that someone added to the project.
   const host = request.headers.get('host') ?? ''
   if (!isPlatform(host)) {
     const slug = await lookupActiveSlug(host)
-    if (!slug) return new NextResponse('Not found', { status: 404 })
-    const route = routeForCustomerHost(pathname, slug)
-    if (route.kind === 'deny') return new NextResponse('Not found', { status: 404 })
-    if (route.kind === 'rewrite') { const url = request.nextUrl.clone(); url.pathname = route.path; return NextResponse.rewrite(url) }
-    return NextResponse.next()
+    if (slug) {
+      const route = routeForCustomerHost(pathname, slug)
+      if (route.kind === 'deny') return new NextResponse('Not found', { status: 404 })
+      if (route.kind === 'rewrite') { const url = request.nextUrl.clone(); url.pathname = route.path; return NextResponse.rewrite(url) }
+      return NextResponse.next()
+    }
   }
+
   // Dev needs eval/HMR, so the CSP is production-only.
   const csp = process.env.NODE_ENV === 'production' && CSP_PATHS.some(r => pathname.startsWith(r))
     ? buildCsp(Buffer.from(crypto.randomUUID()).toString('base64'))

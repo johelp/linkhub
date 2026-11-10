@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { Camera } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ import { sanitizeBlocks } from '@/lib/security'
 import { mapEmbedUrl } from '@/lib/maps'
 import { summarizeBlock } from '@/lib/blocks/summary'
 import type { KnowledgeEntry } from '@/lib/knowledge'
+import { withPageWhatsapp } from '@/lib/whatsapp'
 import { OrderMenu } from './OrderMenu'
 import { AppointmentRequest } from './AppointmentRequest'
 
@@ -117,7 +118,8 @@ function MiniBar({ target, name, avatarUrl, initial, pc }: { target: React.RefOb
   )
 }
 
-export function PageView({ page, editing = false, controls, knowledge = [] }: Props) {
+export function PageView({ page: rawPage, editing = false, controls, knowledge = [] }: Props) {
+  const page = useMemo(() => withPageWhatsapp(rawPage), [rawPage])
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)
@@ -277,10 +279,10 @@ export function PageView({ page, editing = false, controls, knowledge = [] }: Pr
               {profile?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="lh-avatar" src={profile.avatarUrl} alt="" width={88} height={88}
-                  style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', marginTop: -44, background: '#fff', boxShadow: '0 4px 14px rgba(26,27,28,0.15)' }} />
+                  style={{ position: 'relative', zIndex: 2, width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', border: '4px solid #fff', marginTop: -44, background: '#fff', boxShadow: '0 4px 14px rgba(26,27,28,0.15)' }} />
               ) : (
                 <div aria-hidden className="lh-avatar" style={{
-                  width: 88, height: 88, borderRadius: '50%', margin: '-44px auto 0', border: '4px solid #fff', background: pc, color: '#fff',
+                  position: 'relative', zIndex: 2, width: 88, height: 88, borderRadius: '50%', margin: '-44px auto 0', border: '4px solid #fff', background: pc, color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, fontWeight: 700, boxShadow: '0 4px 14px rgba(26,27,28,0.15)',
                 }}>{initial}</div>
               )}

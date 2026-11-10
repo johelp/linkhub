@@ -25,6 +25,7 @@ export async function listFlagConfig() {
   ])
   return {
     ready: !rows.error,
+    rowsError: rows.error ?? null,
     rows: (rows.error ? [] : rows.data ?? []) as unknown as (FlagRow & { note: string | null })[],
     overrides: (overrides.error ? [] : overrides.data ?? []) as unknown as { flag_key: string; user_id: string; enabled: boolean; created_at: string; profiles: { email: string } | { email: string }[] | null }[],
   }

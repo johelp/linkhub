@@ -28,6 +28,10 @@ export interface EmailParts {
 
 export const para = (html: string) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:${BODY};">${html}</p>`
 
+/** Large one-time code, easy to read and copy (the value is a Supabase placeholder or a real code). */
+export const codeBox = (value: string) =>
+  `<p style="margin:0 0 20px;padding:18px 20px;background:#F4F4F1;border:1px solid ${LINE};border-radius:12px;text-align:center;font-size:34px;line-height:1;font-weight:700;letter-spacing:0.28em;color:${INK};font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;">${value}</p>`
+
 export function emailLayout(p: EmailParts): string {
   const button = p.cta
     ? `<tr><td style="padding:8px 0 24px;"><a href="${p.cta.url}" style="display:inline-block;background:${ACCENT};color:#FFFFFF;font-size:16px;font-weight:600;text-decoration:none;padding:14px 28px;border-radius:999px;">${p.cta.label}</a></td></tr>

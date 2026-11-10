@@ -1,3 +1,4 @@
+import { classifyDbError } from '@/lib/dbErrors'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { appEnv } from '@/lib/env'
 import { FLAG_KEYS } from '@/lib/flags'
@@ -26,17 +27,19 @@ const ENV: { name: string; need: 'required' | 'recommended' | 'optional'; what: 
   { name: 'RESEND_API_KEY', need: 'recommended', what: 'Email de entradas' },
 ]
 
-async function probe(admin: ReturnType<typeof createAdminClient>, table: string, col = '*') {
+async function probe(admin: ReturnType<typeof createAdminClient>, errors: unknown[], table: string, col = '*') {
   const { error } = await admin.from(table as never).select(col, { head: true, count: 'estimated' }).limit(1)
+  if (error) errors.push(error)
   return !error
 }
 
 export default async function SystemPage() {
   const admin = createAdminClient()
+  const probeErrors: unknown[] = []
   const [db, m011, m013a, m013b, m014, m015, m016, m017, m018, m019, m020, m021] = await Promise.all([
-    probe(admin, 'profiles', 'id'), probe(admin, 'pages', 'moderated_at'), probe(admin, 'processed_webhook_events', 'id'), probe(admin, 'admin_audit_log', 'id'),
-    probe(admin, 'payment_connections', 'config'), probe(admin, 'payment_events', 'id'), probe(admin, 'feature_flags', 'key'),
-    probe(admin, 'profiles', 'billing_lapsed_at'), probe(admin, 'api_keys', 'id'), probe(admin, 'knowledge_entries', 'id'), probe(admin, 'roadmap_votes', 'item_key'), probe(admin, 'custom_domains', 'status'),
+    probe(admin, probeErrors, 'profiles', 'id'), probe(admin, probeErrors, 'pages', 'moderated_at'), probe(admin, probeErrors, 'processed_webhook_events', 'id'), probe(admin, probeErrors, 'admin_audit_log', 'id'),
+    probe(admin, probeErrors, 'payment_connections', 'config'), probe(admin, probeErrors, 'payment_events', 'id'), probe(admin, probeErrors, 'feature_flags', 'key'),
+    probe(admin, probeErrors, 'profiles', 'billing_lapsed_at'), probe(admin, probeErrors, 'api_keys', 'id'), probe(admin, probeErrors, 'knowledge_entries', 'id'), probe(admin, probeErrors, 'roadmap_votes', 'item_key'), probe(admin, probeErrors, 'custom_domains', 'status'),
   ])
   const rpc = await admin.rpc('owner_daily_stats' as never, { days: 1 } as never)
   const migrations = [
@@ -57,6 +60,12 @@ export default async function SystemPage() {
           <div key={k} className="bg-white rounded-2xl p-4" style={card}><p className="text-xs text-[#6B6E71]">{k}</p><p className="text-[18px] font-bold mt-1" style={{ color: v.includes('falta') || v.includes('Sin') ? '#B91C1C' : '#1A1B1C' }}>{v}</p></div>
         ))}
       </div>
+
+      {probeErrors.some(e => classifyDbError(e as Parameters<typeof classifyDbError>[0]) === 'key') && (
+        <p role="alert" className="rounded-xl p-3.5 mb-6 text-[13px]" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}>
+          La base de datos rechaza la clave de servidor (<code>SUPABASE_SERVICE_ROLE_KEY</code>): es inválida o de otro proyecto. Por eso las migraciones salen en rojo aunque estén aplicadas. Cámbiala en Vercel y redespliega.
+        </p>
+      )}
 
       <h2 className="text-[16px] font-bold text-[#1A1B1C] mb-3">Migraciones de base de datos</h2>
       <ul className="bg-white rounded-2xl mb-6" style={card}>{migrations.map(([n, ok]) => (

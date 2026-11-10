@@ -2,6 +2,7 @@
 // PUBLISHED, indexable, non-paused page. No credentials, no side effects: the
 // "link" tools only build a prefilled WhatsApp URL for the human to open --
 // nothing is stored or sent from the server.
+import { withPageWhatsapp } from '../whatsapp.ts'
 import type { AppointmentRequestBlock, Lang, OrderMenuBlock, Page } from '../../types/index.ts'
 import { buildStructuredData, defaultMeta, extractFacts, resolveSchemaType } from '../seo.ts'
 import { buildAppointmentMessage, buildDays, localNow, validateAppointment } from '../appointments.ts'
@@ -19,7 +20,7 @@ async function loadPage(slug: unknown, ctx: ToolContext): Promise<Page> {
   const page = await ctx.deps.publicStore.getPublicPage(String(slug))
   // Same answer for "doesn't exist", "unpublished", "noindex" and "paused": nothing to learn.
   if (!page) throw new ToolError('Página no encontrada o no disponible para asistentes.')
-  return page
+  return withPageWhatsapp(page)
 }
 
 const pickLang = (page: Page, lang: unknown): Lang => (typeof lang === 'string' ? lang : page.settings.defaultLang) as Lang

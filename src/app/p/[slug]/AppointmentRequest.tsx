@@ -142,7 +142,7 @@ export function AppointmentRequest({ block, lang, pc, pageName, editing, preview
         )}
         {error && !time && <div role="alert" style={{ marginTop: 8, fontSize: 12.5, color: '#B50F07' }}>{error}</div>}
         {editing && d.whatsapp.replace(/\D/g, '').length < 8 && (
-          <div style={{ marginTop: 10, fontSize: 11.5, color: '#B45309' }}>⚠ Falta tu número de WhatsApp para recibir solicitudes</div>
+          <div style={{ marginTop: 10, fontSize: 11.5, color: '#B45309' }}>⚠ Falta tu número de WhatsApp para recibir solicitudes: añádelo en Diseño y ajustes → Cabecera.</div>
         )}
       </div>
     </div>

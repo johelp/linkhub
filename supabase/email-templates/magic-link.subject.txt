@@ -1,1 +1,1 @@
-Tu enlace para acceder a LinkHub
+Tu código de acceso a LinkHub: {{ .Token }}

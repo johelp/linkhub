@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowLeft, Globe, Check, Loader2, AlertCircle, Smartphone, Monitor, Tablet, Undo2, Redo2, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Globe, Save, Check, Loader2, AlertCircle, Smartphone, Monitor, Tablet, Undo2, Redo2, ExternalLink } from 'lucide-react'
 import { useEditorStore, selectSaveStatus } from '@/hooks/useEditorStore'
 import type { Lang } from '@/types'
 
@@ -100,6 +100,8 @@ export function EditorTopBar({ onSaveNow, onPublishClick }: Props) {
         </Link>
       )}
 
+      <SaveButton status={status} onSave={onSaveNow} />
+
       <button onClick={onPublishClick}
         className="flex items-center gap-2 text-[13px] font-semibold px-4 py-2.5 rounded-xl flex-shrink-0 transition-colors"
         style={page.published
@@ -129,6 +131,29 @@ function IconBtn({ onClick, disabled, title, children }: { onClick: () => void; 
     <button onClick={onClick} disabled={disabled} title={title} aria-label={title}
       className="p-2 rounded-lg disabled:opacity-30 hover:bg-[#F2F3F4]" style={{ color: MUTED }}>
       {children}
+    </button>
+  )
+}
+
+// The page also autosaves; this button is the explicit, always-visible way to
+// save now (and to know the state at a glance). Ctrl/Cmd+S does the same.
+function SaveButton({ status, onSave }: { status: ReturnType<typeof selectSaveStatus>; onSave: () => void }) {
+  const base = 'flex items-center gap-2 text-[13px] font-semibold px-3 sm:px-4 py-2.5 rounded-xl flex-shrink-0 transition-colors'
+  if (status === 'saving') return (
+    <button type="button" disabled className={base} style={{ background: '#F2F3F4', color: LIGHT, cursor: 'wait' }} aria-label="Guardando">
+      <Loader2 size={14} className="animate-spin" /> <span className="hidden sm:inline">Guardando…</span>
+    </button>
+  )
+  if (status === 'saved') return (
+    <button type="button" disabled className={base} style={{ background: '#F2F3F4', color: LIGHT }} aria-label="Todo guardado">
+      <Check size={14} /> <span className="hidden sm:inline">Guardado</span>
+    </button>
+  )
+  const isError = status === 'error'
+  return (
+    <button type="button" onClick={onSave} title="Guardar (Ctrl+S)" aria-label={isError ? 'Reintentar guardar' : 'Guardar cambios'} className={base}
+      style={{ background: isError ? '#C8110A' : '#E8150A', color: '#fff', boxShadow: '0 2px 10px rgba(232,21,10,0.28)' }}>
+      {isError ? <AlertCircle size={14} /> : <Save size={14} />} <span>{isError ? 'Reintentar' : 'Guardar'}</span>
     </button>
   )
 }

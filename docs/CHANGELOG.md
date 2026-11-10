@@ -2,6 +2,25 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-10 — WhatsApp único de la página y diagnóstico de la base de datos
+
+**Añadido**
+- Campo **WhatsApp del negocio** en el editor (Diseño y ajustes → Cabecera, `settings.profile.whatsapp`). Los bloques de pedidos y de citas lo usan si no tienen número propio (`src/lib/whatsapp.ts`); también lo leen el SEO/`llms.txt` y las herramientas MCP públicas. Aviso en el lienzo si falta.
+- `src/lib/dbErrors.ts`: las pantallas de administración distinguen «clave de servidor inválida» de «falta aplicar la migración» (antes decían siempre lo segundo), y `/admin/system` avisa de una clave inválida.
+- Propuesta de comandas, cobro de pedidos y calendario en `docs/estrategia/pedidos-y-agenda.md` (sin construir).
+
+## 2026-11-10 — Portada y logo
+
+**Corregido**
+- Con una foto de portada, la imagen tapaba el marcador de posición del logo (el botón de portada del editor hizo que la portada se pintara por encima). El avatar tiene ahora `z-index` propio.
+
+## 2026-11-09 — Código de un solo uso, botón Guardar y arreglo de dominios
+
+**Cambiado**
+- Acceso por **código de un solo uso** además del enlace: el correo de acceso y el de confirmación llevan un código de 6 dígitos (`{{ .Token }}`) que se escribe en la pestaña que lo pidió, y `/auth` lo comprueba con `verifyOtp`. Si el enlace se abre en otra pestaña del mismo navegador, la pestaña original entra sola. Hay que pegar las plantillas actualizadas en Supabase (Auth → Email Templates; `npm run emails:build`) y comprobar «Email OTP Length» = 6.
+- Editor: botón **Guardar** siempre visible en la barra superior (Guardar / Guardando… / Guardado / Reintentar). Sigue habiendo autoguardado y Ctrl/Cmd+S.
+- **Corregido:** `proxy.ts` devolvía 404 en cualquier host que no fuera el de `NEXT_PUBLIC_APP_URL` ni `*.vercel.app` (p. ej. `linkhub.johelpastorino.com`). Ahora solo se trata como dominio de cliente el que tiene una fila activa; el resto es la plataforma.
+
 ## 2026-11-09 — Base de datos migrada y correcciones del asesor de seguridad
 
 **Hecho** (proyecto Supabase `linkhub`, ref `rfgmqiuujpngemnngzmo`, que hoy sirve a producción y staging)

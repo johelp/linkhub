@@ -1,1 +1,1 @@
-Confirma tu correo en LinkHub
+Tu código para activar LinkHub: {{ .Token }}

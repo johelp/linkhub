@@ -19,7 +19,7 @@ Flujo **manual** (sin token de Vercel): el cliente configura su DNS, el servidor
 4. Si el cliente quita el dominio, **bórralo también de Vercel** para no dejarlo colgando.
 
 ## Qué se sirve en un dominio de cliente
-Solo la página pública (`/`), `llms.txt`, `facts.json`, `contact.vcf`, `opengraph-image` y los endpoints que la página necesita (`/api/pay/*`, `/api/subscribers`, `/api/loyalty`, `/api/tickets`, `/t/*`, `/_next/*`). Todo lo demás (dashboard, editor, admin, auth, resto de `/api`) responde 404 en esos hosts. Un host desconocido o no activo también responde 404.
+Solo la página pública (`/`), `llms.txt`, `facts.json`, `contact.vcf`, `opengraph-image` y los endpoints que la página necesita (`/api/pay/*`, `/api/subscribers`, `/api/loyalty`, `/api/tickets`, `/t/*`, `/_next/*`). Todo lo demás (dashboard, editor, admin, auth, resto de `/api`) responde 404 en esos hosts. Un host que no es de ningún cliente activo (incluido el dominio de producción, el subdominio de pruebas y las previews) se trata como la propia plataforma y sirve la web normal.
 
 ## Límites conocidos
 - Tras un pago, la pasarela vuelve al dominio de la plataforma, no al del cliente.
