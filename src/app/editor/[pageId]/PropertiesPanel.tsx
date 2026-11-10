@@ -730,9 +730,9 @@ function AppointmentEditor({ block, lang, onUpdate }: {
       <Section label="Tu agenda">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Reservá tu turno" /></Field>
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Elegí servicio, día y horario" /></Field>
-        <Field label="WhatsApp donde recibís las solicitudes">
+        <Field label="WhatsApp para las solicitudes (opcional)">
           <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
-          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Es una solicitud: vos confirmás la disponibilidad por chat.</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Si lo dejas vacío se usa el WhatsApp del negocio (Diseño y ajustes → Cabecera). Es una solicitud: tú confirmas la disponibilidad por chat.</p>
         </Field>
         <Field label="Zona horaria">
           <Input value={d.timezone} onChange={v => onUpdate(block.id, { timezone: v })} placeholder="America/Argentina/Buenos_Aires" />
@@ -891,9 +891,9 @@ function OrderMenuEditor({ block, lang, onUpdate }: {
       <Section label="Tu tienda">
         <Field label="Título"><Input value={t.title} onChange={v => setT('title', v)} placeholder="Hacé tu pedido" /></Field>
         <Field label="Descripción"><Input value={t.description} onChange={v => setT('description', v)} placeholder="Horario de entrega, zona..." /></Field>
-        <Field label="WhatsApp donde recibís los pedidos">
+        <Field label="WhatsApp para los pedidos (opcional)">
           <Input value={d.whatsapp} onChange={v => onUpdate(block.id, { whatsapp: v })} placeholder="+54 9 11 2345 6789" />
-          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Con código de país. El cliente arma el pedido y se abre un chat con este número.</p>
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Si lo dejas vacío se usa el WhatsApp del negocio (Diseño y ajustes → Cabecera). El cliente arma el pedido y se abre un chat con ese número.</p>
         </Field>
         <Field label="Moneda">
           <select value={d.currency} onChange={e => onUpdate(block.id, { currency: e.target.value })}
@@ -1234,6 +1234,11 @@ function PageSettingsEditor({ settings, limits, onUpdate }: {
         <Field label="Frase o descripción corta">
           <Input value={settings.profile?.tagline ?? ''} placeholder="Hamburguesas artesanales · Palermo"
             onChange={v => onUpdate({ profile: { ...settings.profile, tagline: v.slice(0, 160) } })} />
+        </Field>
+        <Field label="WhatsApp del negocio">
+          <Input value={settings.profile?.whatsapp ?? ''} placeholder="+34 600 000 000"
+            onChange={v => onUpdate({ profile: { ...settings.profile, whatsapp: v.slice(0, 24) } })} />
+          <p className="text-xs mt-1" style={{ color: '#6B6E71' }}>Con código de país. Es el número al que llegan los pedidos y las solicitudes de cita. Se escribe una sola vez; cada bloque puede usar otro si lo necesitas.</p>
         </Field>
         <Field label="Logo o foto">
           {settings.profile?.avatarUrl && (

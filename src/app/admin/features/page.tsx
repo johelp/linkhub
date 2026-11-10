@@ -2,6 +2,7 @@ import { listFlagConfig } from '@/lib/flags.server'
 import { FLAGS, FLAG_KEYS } from '@/lib/flags'
 import { FlagsEditor } from './FlagsEditor'
 import { ROADMAP } from '@/lib/roadmap'
+import { classifyDbError, dbFailureMessage } from '@/lib/dbErrors'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export const metadata = { title: 'Funciones | Admin' }
@@ -26,12 +27,12 @@ export default async function FeaturesPage() {
     <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[980px] mx-auto">
       <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Funciones</h1>
       <p className="text-sm text-[#5A5D60] mt-1 mb-5 max-w-2xl">Lanza cada función poco a poco: primero a clientes puntuales, después a un porcentaje y por último a todos. Los administradores ven todo siempre, para probar en producción.</p>
-      {!cfg.ready && <p className="rounded-xl p-3.5 mb-5 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>Falta aplicar la migración <code>016_feature_flags.sql</code>. Mientras tanto rigen los valores por defecto del código (las funciones nuevas están apagadas).</p>}
+      {!cfg.ready && <p className="rounded-xl p-3.5 mb-5 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>{dbFailureMessage(classifyDbError(cfg.rowsError) ?? 'other', '016_feature_flags.sql')} Mientras tanto rigen los valores por defecto del código (las funciones nuevas están apagadas).</p>}
       <FlagsEditor flags={flags} />
 
       <h2 className="text-[18px] font-bold text-[#1A1B1C] mt-10 mb-1">Próximamente: votos de los clientes</h2>
       <p className="text-sm text-[#5A5D60] mb-3 max-w-2xl">Qué piden más. Es una señal para priorizar, no una encuesta representativa.</p>
-      {votesRes.error && <p className="rounded-xl p-3.5 mb-3 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>Falta aplicar la migración <code>020_roadmap_votes.sql</code>.</p>}
+      {votesRes.error && <p className="rounded-xl p-3.5 mb-3 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>{dbFailureMessage(classifyDbError(votesRes.error) ?? 'other', '020_roadmap_votes.sql')}</p>}
       <ul className="bg-white rounded-2xl" style={{ listStyle: 'none', padding: 0, margin: 0, border: '1px solid rgba(26,27,28,0.08)' }}>
         {ranking.map((i, idx) => (
           <li key={i.id} className="flex items-center gap-3 px-4 py-3" style={{ borderTop: idx ? '1px solid rgba(26,27,28,0.06)' : 'none' }}>

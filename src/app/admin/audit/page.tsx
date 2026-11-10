@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { classifyDbError, dbFailureMessage } from '@/lib/dbErrors'
 
 export const metadata = { title: 'Auditoría | Admin' }
 export const dynamic = 'force-dynamic'
@@ -12,7 +13,7 @@ export default async function AuditPage() {
     <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-8 max-w-[980px] mx-auto">
       <h1 className="text-[24px] lg:text-[28px] font-bold tracking-tight text-[#1A1B1C]">Auditoría</h1>
       <p className="text-sm text-[#5A5D60] mt-1 mb-5">Cada acción de administración queda registrada: quién, qué y cuándo. No se puede editar desde la app.</p>
-      {error && <p className="rounded-xl p-3.5 mb-4 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>Falta aplicar la migración <code>013_hardening_phase2.sql</code>.</p>}
+      {error && <p className="rounded-xl p-3.5 mb-4 text-[13px]" style={{ background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>{dbFailureMessage(classifyDbError(error) ?? 'other', '013_hardening_phase2.sql')}</p>}
       <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(26,27,28,0.08)' }}>
         {rows.length === 0 ? <p className="p-8 text-center text-sm text-[#6B6E71]">Todavía no hay acciones registradas.</p> : (
           <ul>{rows.map(r => (

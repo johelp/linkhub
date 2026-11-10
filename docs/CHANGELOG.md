@@ -2,6 +2,13 @@
 
 Formato: más reciente primero. Cada cambio en rutas, migraciones, variables, bloques, flags, herramientas MCP o pasarelas debe añadir aquí una entrada (ver «Política de documentación» en `AGENTS.md`).
 
+## 2026-11-10 — WhatsApp único de la página y diagnóstico de la base de datos
+
+**Añadido**
+- Campo **WhatsApp del negocio** en el editor (Diseño y ajustes → Cabecera, `settings.profile.whatsapp`). Los bloques de pedidos y de citas lo usan si no tienen número propio (`src/lib/whatsapp.ts`); también lo leen el SEO/`llms.txt` y las herramientas MCP públicas. Aviso en el lienzo si falta.
+- `src/lib/dbErrors.ts`: las pantallas de administración distinguen «clave de servidor inválida» de «falta aplicar la migración» (antes decían siempre lo segundo), y `/admin/system` avisa de una clave inválida.
+- Propuesta de comandas, cobro de pedidos y calendario en `docs/estrategia/pedidos-y-agenda.md` (sin construir).
+
 ## 2026-11-10 — Portada y logo
 
 **Corregido**

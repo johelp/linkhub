@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { Camera } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -11,6 +11,7 @@ import { sanitizeBlocks } from '@/lib/security'
 import { mapEmbedUrl } from '@/lib/maps'
 import { summarizeBlock } from '@/lib/blocks/summary'
 import type { KnowledgeEntry } from '@/lib/knowledge'
+import { withPageWhatsapp } from '@/lib/whatsapp'
 import { OrderMenu } from './OrderMenu'
 import { AppointmentRequest } from './AppointmentRequest'
 
@@ -117,7 +118,8 @@ function MiniBar({ target, name, avatarUrl, initial, pc }: { target: React.RefOb
   )
 }
 
-export function PageView({ page, editing = false, controls, knowledge = [] }: Props) {
+export function PageView({ page: rawPage, editing = false, controls, knowledge = [] }: Props) {
+  const page = useMemo(() => withPageWhatsapp(rawPage), [rawPage])
   const rootRef = useRef<HTMLDivElement>(null)
   const heroRef = useRef<HTMLElement>(null)
   const [visitorLang, setLang] = useState<Lang>(page.settings.defaultLang)

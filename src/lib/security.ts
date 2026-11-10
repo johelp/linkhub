@@ -51,13 +51,14 @@ export const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,60}[a-z0-9]$/
 
 // Settings carry owner-supplied image URLs (avatar, cover, OG image): keep
 // them to http(s) so they can't smuggle javascript:/data: into <img>/<meta>.
-export function sanitizeSettings<T extends { profile?: { avatarUrl?: string; coverUrl?: string; tagline?: string }; seo?: { ogImage?: string | null } }>(settings: T): T {
+export function sanitizeSettings<T extends { profile?: { avatarUrl?: string; coverUrl?: string; tagline?: string; whatsapp?: string }; seo?: { ogImage?: string | null } }>(settings: T): T {
   const out = structuredClone(settings)
   const web = (u?: string | null) => (u && /^https?:\/\//i.test(u.trim()) && isSafeUrl(u) ? u.trim() : '')
   if (out.profile) {
     out.profile.avatarUrl = web(out.profile.avatarUrl)
     out.profile.coverUrl = web(out.profile.coverUrl)
     out.profile.tagline = (out.profile.tagline ?? '').slice(0, 160)
+    if ('whatsapp' in out.profile) out.profile.whatsapp = (out.profile.whatsapp ?? '').replace(/[^\d+()\s-]/g, '').slice(0, 24).trim()
   }
   if (out.seo && 'ogImage' in out.seo) out.seo.ogImage = web(out.seo.ogImage) || null
   return out

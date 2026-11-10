@@ -1,3 +1,4 @@
+import { withPageWhatsapp } from './whatsapp.ts'
 import type { Page, Block, Lang } from '@/types'
 import { faqPairs, type KnowledgeEntry } from './knowledge.ts'
 
@@ -69,7 +70,8 @@ export interface Facts {
 }
 
 // Flatten what the owner built into plain facts about the business.
-export function extractFacts(page: Page, lang: Lang = page.settings.defaultLang, knowledge: KnowledgeEntry[] = []): Facts {
+export function extractFacts(rawPage: Page, lang: Lang = rawPage.settings.defaultLang, knowledge: KnowledgeEntry[] = []): Facts {
+  const page = withPageWhatsapp(rawPage)
   const blocks = (page.blocks as Block[]).filter(b => b.visible)
   const f: Facts = { name: page.name, tagline: page.settings.profile?.tagline?.trim() ?? '', description: '', sameAs: [], hours: [], offers: [], menu: [], faqs: faqPairs(knowledge).slice(0, 50), hasBooking: false }
   for (const b of blocks) {

@@ -36,7 +36,7 @@ const settingsPatch: Extract<Schema, { type: 'object' }> = {
       ogImage: str('URL https de la imagen OG ("" para quitarla)', { maxLength: 500 }),
       schemaType: { type: 'string', enum: SCHEMA_TYPES }, noindex: { type: 'boolean' } } },
     profile: { type: 'object', properties: {
-      avatarUrl: str('URL https', { maxLength: 500 }), coverUrl: str('URL https', { maxLength: 500 }), tagline: str('Lema', { maxLength: 160 }) } },
+      avatarUrl: str('URL https', { maxLength: 500 }), coverUrl: str('URL https', { maxLength: 500 }), tagline: str('Lema', { maxLength: 160 }), whatsapp: str('WhatsApp por defecto para pedidos y citas', { maxLength: 24 }) } },
     pixels: { type: 'object', properties: {
       ga4Id: str('G-XXXXXXXX', { pattern: '^(G-[A-Z0-9]{4,20})?$', maxLength: 24 }), metaPixelId: str('ID numérico', { pattern: '^(\\d{10,20})?$', maxLength: 20 }) } },
   },
